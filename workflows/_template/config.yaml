@@ -1,0 +1,44 @@
+# Workflow Configuration Template
+# Copy and customize for your prediction domain
+
+workflow:
+  name: "template"
+  description: "Template workflow"
+
+data:
+  sources: []
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  reference_dir: "data/reference"
+
+features:
+  differentials: []
+  rolling_windows: [5, 10]
+  normalize: true
+  normalize_method: "standard"
+
+model:
+  backend: "xgboost"
+  params:
+    max_depth: 6
+    learning_rate: 0.05
+    n_estimators: 500
+    subsample: 0.8
+    colsample_bytree: 0.8
+
+split:
+  train_frac: 0.60
+  val_frac: 0.20
+  season_col: "season"
+
+calibration:
+  method: "isotonic"
+
+evaluation:
+  primary_metric: "log_loss"
+  metrics: ["log_loss", "accuracy", "brier_score"]
+
+bankroll:
+  kelly_fraction: 0.25
+  min_edge: 0.05
+  max_bet_fraction: 0.10

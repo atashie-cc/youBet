@@ -1,0 +1,106 @@
+# NCAA March Madness 2026 Configuration
+
+workflow:
+  name: "ncaa_march_madness"
+  description: "NCAA Men's Basketball March Madness bracket prediction"
+  year: 2026
+
+data:
+  sources:
+    - name: "kaggle"
+      competition: "march-machine-learning-mania-2026"
+      files:
+        - "MRegularSeasonDetailedResults.csv"
+        - "MNCAATourneyDetailedResults.csv"
+        - "MNCAATourneySeeds.csv"
+        - "MMasseyOrdinals.csv"
+        - "MTeams.csv"
+        - "MSeasons.csv"
+    - name: "kenpom"
+      url: "https://kenpom.com"
+      requires_auth: true
+    - name: "barttorvik"
+      url: "https://barttorvik.com"
+      requires_auth: false
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  reference_dir: "data/reference"
+  seasons:
+    train_start: 2003
+    train_end: 2022
+    val_start: 2023
+    val_end: 2024
+    test_start: 2025
+    test_end: 2025
+    predict_year: 2026
+
+features:
+  differentials:
+    - "adj_oe"          # Adjusted offensive efficiency
+    - "adj_de"          # Adjusted defensive efficiency
+    - "net_eff"         # Net efficiency margin
+    - "adj_tempo"       # Adjusted tempo
+    - "sos"             # Strength of schedule
+    - "seed"            # Tournament seed
+    - "elo"             # Custom Elo rating
+    - "kenpom_rank"     # KenPom ranking
+    - "win_pct"         # Season win percentage
+    - "win_pct_last5"   # Last 5 games win percentage
+    - "to_rate"         # Turnover rate
+    - "ft_rate"         # Free throw rate
+    - "three_pt_rate"   # Three-point shooting rate
+    - "oreb_rate"       # Offensive rebound rate
+    - "ast_rate"        # Assist rate
+    - "blk_rate"        # Block rate
+    - "stl_rate"        # Steal rate
+    - "experience"      # Team experience/continuity
+  rolling_windows: [5, 10]
+  normalize: true
+  normalize_method: "standard"
+
+elo:
+  k_factor: 20.0
+  home_advantage: 100.0
+  initial_rating: 1500.0
+  mean_reversion_factor: 0.75
+
+model:
+  backend: "xgboost"
+  params:
+    max_depth: 6
+    learning_rate: 0.05
+    n_estimators: 500
+    subsample: 0.8
+    colsample_bytree: 0.8
+    min_child_weight: 3
+    reg_alpha: 0.1
+    reg_lambda: 1.0
+
+split:
+  train_frac: 0.60
+  val_frac: 0.20
+  season_col: "season"
+
+calibration:
+  method: "isotonic"
+
+evaluation:
+  primary_metric: "log_loss"
+  metrics: ["log_loss", "accuracy", "brier_score"]
+
+bracket:
+  simulations: 10000
+  strategies:
+    - name: "chalk"
+      description: "Always pick the higher probability team"
+    - name: "balanced"
+      description: "Pick upsets proportional to model probability"
+    - name: "contrarian"
+      description: "Slightly favor upsets for pool differentiation"
+      upset_boost: 0.10
+
+bankroll:
+  initial: 1000.0
+  kelly_fraction: 0.25
+  min_edge: 0.05
+  max_bet_fraction: 0.10

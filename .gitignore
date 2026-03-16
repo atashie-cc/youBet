@@ -1,0 +1,47 @@
+# Data files
+*.csv
+*.parquet
+*.h5
+*.hdf5
+data/raw/
+data/processed/
+data/reference/
+
+# Models
+*.pkl
+*.joblib
+*.json
+models/*.xgb
+models/*.lgb
+
+# Environment
+.env
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Output (keep structure, not files)
+output/brackets/*.json
+output/reports/*.html
+output/reports/*.pdf
