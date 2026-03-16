@@ -21,7 +21,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from youbet.core.calibration import IsotonicCalibrator
+from youbet.core.calibration import get_calibrator
 from youbet.core.evaluation import EvaluationResult, evaluate_predictions
 from youbet.core.models import GradientBoostModel
 from youbet.utils.io import ensure_dirs, load_config, load_csv
@@ -38,12 +38,49 @@ DIFF_FEATURES = [
 ]
 
 
+def compute_sample_weights(
+    features: pd.DataFrame,
+    decay: float,
+    max_daynum: int = 132,
+) -> np.ndarray:
+    """Compute exponential recency weights from DayNum.
+
+    Weight function: w(d) = exp(-decay * (1 - d / max_daynum))
+    - decay=0 → uniform weights (all 1.0)
+    - Higher decay → earlier games weighted less
+
+    Tournament matchups (day_num is NaN) always get weight=1.0.
+    """
+    if decay == 0.0:
+        return np.ones(len(features))
+
+    day_nums = features["day_num"].values.copy()
+    weights = np.ones(len(features))
+
+    # Only weight rows that have a valid day_num (regular season games)
+    valid_mask = ~np.isnan(day_nums)
+    if valid_mask.any():
+        d = day_nums[valid_mask]
+        # Clip to [0, max_daynum] for safety
+        d = np.clip(d, 0, max_daynum)
+        weights[valid_mask] = np.exp(-decay * (1.0 - d / max_daynum))
+
+    return weights
+
+
 def backtest_season(
     features: pd.DataFrame,
     test_season: int,
-    model_config: dict,
+    config: dict,
+    decay: float = 0.0,
 ) -> dict | None:
     """Train on all data before test_season, predict tournament games for test_season."""
+    model_config = config["model"]
+    cal_config = config.get("calibration", {})
+    cal_method = cal_config.get("method", "platt")
+    clip_range = (cal_config.get("clip_min", 0.03), cal_config.get("clip_max", 0.97))
+    val_window = cal_config.get("val_window_seasons", 3)
+
     # Get tournament games for this season
     tourney_mask = (
         (features["season"] == test_season)
@@ -62,12 +99,15 @@ def backtest_season(
         logger.warning("Season %d: insufficient training data (%d)", test_season, len(train_data))
         return None
 
-    # Validation data: most recent complete season before test
-    val_season = test_season - 1
-    # Skip 2020 (COVID — no tournament)
-    if val_season == 2020:
-        val_season = 2019
-    val_mask = features["season"] == val_season
+    # Validation data: rolling window of last N seasons (skip 2020)
+    val_seasons = []
+    candidate = test_season - 1
+    while len(val_seasons) < val_window and candidate >= features["season"].min():
+        if candidate != 2020:  # Skip COVID season
+            val_seasons.append(candidate)
+        candidate -= 1
+
+    val_mask = features["season"].isin(val_seasons)
     val_data = features[val_mask]
 
     if len(val_data) == 0:
@@ -83,15 +123,20 @@ def backtest_season(
     X_test = test_games[DIFF_FEATURES]
     y_test = test_games["team_a_won"]
 
+    # Compute sample weights for training data (NOT validation/test)
+    sample_weight = None
+    if decay > 0.0 and "day_num" in train_data.columns:
+        sample_weight = compute_sample_weights(train_data, decay)
+
     # Train model
     model = GradientBoostModel(
         backend=model_config["backend"],
         params=model_config["params"],
     )
-    model.fit(X_train, y_train, X_val, y_val)
+    model.fit(X_train, y_train, X_val, y_val, sample_weight=sample_weight)
 
     # Calibrate
-    calibrator = IsotonicCalibrator()
+    calibrator = get_calibrator(method=cal_method, clip_range=clip_range)
     val_probs = model.predict_proba(X_val)
     calibrator.fit(val_probs, y_val.values)
 
@@ -139,7 +184,6 @@ def main() -> None:
     logger.info("Backtesting seasons (need %d+ years training): %s",
                 min_train_seasons, backtest_seasons)
 
-    model_config = config["model"]
     season_results = []
     all_predictions = []
     all_actuals = []
@@ -147,7 +191,7 @@ def main() -> None:
     for season in backtest_seasons:
         logger.info("-" * 40)
         logger.info("Backtesting season %d", season)
-        result = backtest_season(features, season, model_config)
+        result = backtest_season(features, season, config)
 
         if result is None:
             logger.warning("Season %d: skipped (no tournament data)", season)

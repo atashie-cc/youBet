@@ -18,7 +18,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from youbet.core.calibration import IsotonicCalibrator
+from youbet.core.calibration import get_calibrator
 from youbet.core.models import GradientBoostModel
 from youbet.utils.io import ensure_dirs, load_config, load_csv, save_csv
 
@@ -58,8 +58,11 @@ def main() -> None:
     model.load(models_dir / "xgboost_model.joblib")
     model.feature_names = DIFF_FEATURES
 
-    calibrator = IsotonicCalibrator()
-    calibrator.load(models_dir / "isotonic_calibrator.joblib")
+    cal_config = config.get("calibration", {})
+    cal_method = cal_config.get("method", "platt")
+    clip_range = (cal_config.get("clip_min", 0.03), cal_config.get("clip_max", 0.97))
+    calibrator = get_calibrator(method=cal_method, clip_range=clip_range)
+    calibrator.load(models_dir / "calibrator.joblib")
 
     # Load team features for prediction year
     logger.info("Loading team features")

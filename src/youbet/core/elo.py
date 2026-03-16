@@ -40,6 +40,7 @@ class EloRating:
         score_b: float | None = None,
         neutral: bool = True,
         mov: float | None = None,
+        k_override: float | None = None,
     ) -> tuple[float, float]:
         """Update ratings after a game. Returns new (rating_a, rating_b).
 
@@ -50,6 +51,7 @@ class EloRating:
             score_b: Actual outcome for team_b. If None, computed as 1 - score_a.
             neutral: Whether the game is on a neutral court.
             mov: Margin of victory for K-factor scaling. If None, no MOV adjustment.
+            k_override: If set, use this K-factor instead of self.k_factor.
         """
         if score_b is None:
             score_b = 1.0 - score_a
@@ -57,7 +59,7 @@ class EloRating:
         expected_a = self.expected_score(team_a, team_b, neutral)
         expected_b = 1.0 - expected_a
 
-        k = self.k_factor
+        k = k_override if k_override is not None else self.k_factor
         if mov is not None:
             # Log-based MOV multiplier (FiveThirtyEight style)
             k *= math.log(abs(mov) + 1) * (2.2 / (2.2 + 0.001 * abs(self.get_rating(team_a) - self.get_rating(team_b))))

@@ -11,7 +11,7 @@ Building a general-purpose prediction/betting framework, starting with NCAA Marc
 - **Config-driven workflows**: Each workflow uses `config.yaml` for all parameters. No magic numbers in code.
 - **XGBoost on stat differentials as baseline**: Proven by multiple independent sources (77-90% accuracy).
 - **Log loss as primary metric**: Calibration > accuracy for betting ROI.
-- **Isotonic regression calibration**: Standard post-processing step.
+- **Platt scaling calibration**: Replaced isotonic (overfits small val sets) with Platt scaling + probability clipping (0.03-0.97).
 - **60/20/20 temporal split**: Prevents data leakage from future seasons.
 - **Kelly Criterion for bet sizing**: Quarter Kelly as default to reduce variance.
 

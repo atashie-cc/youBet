@@ -147,21 +147,22 @@ def simulate_tournament(
         if current_round:
             regional_winners.append(current_round[0])
 
-    # Final Four (pair regions: typically 0v1, 2v3)
+    # Final Four — NCAA pairs East vs South, Midwest vs West
+    # Regions are sorted alphabetically: [East, Midwest, South, West] = indices [0, 1, 2, 3]
+    # Correct pairing: (0, 2) = East vs South, (1, 3) = Midwest vs West
+    ff_pairings = [(0, 2), (1, 3)]
     ff_games = []
     ff_winners = []
-    for i in range(0, len(regional_winners), 2):
-        if i + 1 < len(regional_winners):
+    for i, j in ff_pairings:
+        if i < len(regional_winners) and j < len(regional_winners):
             team_a = regional_winners[i]
-            team_b = regional_winners[i + 1]
+            team_b = regional_winners[j]
             prob = get_matchup_prob(prob_lookup, team_a, team_b)
             a_wins = simulate_game(prob, strategy, rng, upset_boost)
             winner = team_a if a_wins else team_b
             loser = team_b if a_wins else team_a
             ff_games.append({"winner": winner, "loser": loser, "prob": prob if a_wins else 1 - prob})
             ff_winners.append(winner)
-        else:
-            ff_winners.append(regional_winners[i])
 
     results["final_four"] = ff_games
 

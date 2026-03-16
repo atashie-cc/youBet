@@ -126,27 +126,49 @@ class GradientBoostModel:
         y_train: pd.Series,
         X_val: pd.DataFrame | None = None,
         y_val: pd.Series | None = None,
+        sample_weight: np.ndarray | None = None,
+        early_stopping_rounds: int | None = None,
     ) -> None:
-        """Train the model with optional early stopping on validation set."""
+        """Train the model with optional early stopping on validation set.
+
+        Args:
+            sample_weight: Per-sample weights for training data. If provided,
+                must have same length as X_train.
+            early_stopping_rounds: Stop training if validation metric doesn't
+                improve for this many rounds. Requires X_val and y_val.
+        """
         merged_params = {**self._default_params(), **self.params}
         self.feature_names = list(X_train.columns)
 
         if self.backend == "xgboost":
             import xgboost as xgb
 
+            if early_stopping_rounds is not None:
+                merged_params["early_stopping_rounds"] = early_stopping_rounds
             self.model = xgb.XGBClassifier(**merged_params)
             fit_kwargs: dict[str, Any] = {}
             if X_val is not None and y_val is not None:
                 fit_kwargs["eval_set"] = [(X_val, y_val)]
                 fit_kwargs["verbose"] = False
+            if sample_weight is not None:
+                fit_kwargs["sample_weight"] = sample_weight
             self.model.fit(X_train, y_train, **fit_kwargs)
         else:
             import lightgbm as lgb
 
+            if early_stopping_rounds is not None:
+                merged_params["n_estimators"] = merged_params.get("n_estimators", 500)
+                fit_callbacks = [lgb.early_stopping(early_stopping_rounds, verbose=False)]
+            else:
+                fit_callbacks = None
             self.model = lgb.LGBMClassifier(**merged_params)
             fit_kwargs = {}
             if X_val is not None and y_val is not None:
                 fit_kwargs["eval_set"] = [(X_val, y_val)]
+            if fit_callbacks is not None:
+                fit_kwargs["callbacks"] = fit_callbacks
+            if sample_weight is not None:
+                fit_kwargs["sample_weight"] = sample_weight
             self.model.fit(X_train, y_train, **fit_kwargs)
 
         logger.info("Trained %s model on %d samples", self.backend, len(X_train))

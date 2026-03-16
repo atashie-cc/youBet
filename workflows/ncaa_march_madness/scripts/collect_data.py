@@ -2,15 +2,22 @@
 
 Primary source: Kaggle March ML Mania competition CSVs.
 Secondary: Bart Torvik T-Rank (free), KenPom (subscription).
+
+Usage:
+    python collect_data.py          # Download missing files only
+    python collect_data.py --force  # Re-download even if files exist
 """
 
 from __future__ import annotations
 
+import argparse
 import logging
 import os
 import sys
 import zipfile
 from pathlib import Path
+
+import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
@@ -35,7 +42,7 @@ OPTIONAL_FILES = [
 ]
 
 
-def collect_kaggle_data(config: dict) -> bool:
+def collect_kaggle_data(config: dict, force: bool = False) -> bool:
     """Download Kaggle March ML Mania competition data.
 
     Uses the Kaggle CLI if available, otherwise provides manual instructions.
@@ -48,11 +55,15 @@ def collect_kaggle_data(config: dict) -> bool:
 
     # Check if required files already exist
     missing = [f for f in REQUIRED_FILES if not (raw_dir / f).exists()]
-    if not missing:
+    if not missing and not force:
         logger.info("All required Kaggle files already present in %s", raw_dir)
+        _validate_season_coverage(raw_dir)
         return True
 
-    logger.info("Missing files: %s", missing)
+    if force:
+        logger.info("Force re-download requested")
+    else:
+        logger.info("Missing files: %s", missing)
 
     # Try Kaggle Python API (more reliable than CLI which may not be on PATH)
     try:
@@ -79,7 +90,9 @@ def collect_kaggle_data(config: dict) -> bool:
         logger.warning("Kaggle download failed: %s", e)
         _print_manual_instructions(competition, raw_dir)
 
-    return _check_required_files(raw_dir)
+    present = _check_required_files(raw_dir)
+    _validate_season_coverage(raw_dir)
+    return present
 
 
 def _check_required_files(raw_dir: Path) -> bool:
@@ -111,6 +124,40 @@ def _check_required_files(raw_dir: Path) -> bool:
                 logger.info("  OPTIONAL (not found): %s", f)
 
     return all_present
+
+
+def _validate_season_coverage(raw_dir: Path) -> None:
+    """Log the max season in each CSV to detect data gaps."""
+    season_files = [
+        "MRegularSeasonDetailedResults.csv",
+        "MNCAATourneyDetailedResults.csv",
+        "MNCAATourneySeeds.csv",
+        "MTeams.csv",
+        "MSeasons.csv",
+        "MRegularSeasonCompactResults.csv",
+        "MNCAATourneyCompactResults.csv",
+    ]
+    logger.info("Season coverage validation:")
+    has_gap = False
+    for f in season_files:
+        path = raw_dir / f
+        if not path.exists():
+            continue
+        try:
+            df = pd.read_csv(path, usecols=["Season"])
+            min_s, max_s = int(df["Season"].min()), int(df["Season"].max())
+            logger.info("  %s: seasons %d-%d", f, min_s, max_s)
+            if "RegularSeason" in f and max_s < 2025:
+                has_gap = True
+                logger.warning("  ^^^ Regular season data ends at %d — missing 2018-2025!", max_s)
+        except (ValueError, KeyError):
+            # File doesn't have a Season column (e.g., MTeams has FirstD1Season)
+            pass
+
+    if has_gap:
+        logger.warning(
+            "Data gap detected! Run scrape_game_results.py to fill 2018-2025 game data."
+        )
 
 
 def _print_manual_instructions(competition: str, raw_dir: Path) -> None:
@@ -155,13 +202,20 @@ def collect_kenpom_data(config: dict) -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Collect NCAA March Madness data")
+    parser.add_argument(
+        "--force", action="store_true",
+        help="Re-download from Kaggle even if files already exist",
+    )
+    args = parser.parse_args()
+
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     config = load_config(WORKFLOW_DIR / "config.yaml")
 
     logger.info("Collecting data for NCAA March Madness %s", config["workflow"]["year"])
     logger.info("=" * 60)
 
-    success = collect_kaggle_data(config)
+    success = collect_kaggle_data(config, force=args.force)
     if success:
         logger.info("Kaggle data ready")
     else:

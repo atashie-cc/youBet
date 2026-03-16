@@ -4,7 +4,7 @@ General-purpose prediction and betting framework. Built for iterative research w
 
 ## First Workflow: NCAA March Madness 2026
 
-Predict tournament game outcomes and generate bracket picks using XGBoost on team stat differentials with isotonic calibration.
+Predict tournament game outcomes and generate bracket picks using XGBoost on team stat differentials with Platt calibration.
 
 ## Quick Start
 
@@ -15,8 +15,10 @@ pip install -e ".[dev]"
 # Run NCAA pipeline
 cd workflows/ncaa_march_madness
 python scripts/collect_data.py
+python scripts/scrape_game_results.py --force
+python scripts/compute_elo.py
 python scripts/build_features.py
-python scripts/train.py
+python scripts/train.py --tune --production
 python scripts/predict.py
 python scripts/generate_bracket.py
 ```
@@ -32,7 +34,7 @@ docs/               — Research, decisions, runbooks
 ## Key Design Decisions
 
 - **Calibration > Accuracy**: Log loss is the primary metric
-- **XGBoost on stat differentials**: Proven baseline (77-90% accuracy in literature)
-- **17-25 features as differentials**: Team A stat - Team B stat
-- **Isotonic regression calibration**: Standard post-processing step
+- **XGBoost on 16 stat differentials**: Team A stat - Team B stat
+- **Platt scaling calibration**: 2-parameter post-processing with probability clipping
+- **Random season splits**: Recent years in training for current team dynamics
 - **Kelly Criterion**: For bankroll management and bet sizing

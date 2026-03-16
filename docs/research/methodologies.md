@@ -17,7 +17,7 @@ Living catalog of proven approaches from research.
 | Features | 17-25 as differentials | Multiple |
 | Split | 60/20/20 temporal | Standard |
 | Primary metric | Log loss | arXiv calibration study |
-| Calibration | Isotonic regression | Standard post-processing |
+| Calibration | Platt scaling + clip(0.03, 0.97) | Phase 4 finding: Platt > isotonic for small val sets |
 | Bet sizing | Quarter Kelly | Standard practice |
 
 ## Elo Ratings

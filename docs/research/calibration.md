@@ -20,21 +20,33 @@ Why? Because betting is about finding edges — games where your estimated proba
 
 ## Calibration Methods
 
-### Isotonic Regression (preferred)
+### Platt Scaling (preferred)
+- Parametric (logistic regression on raw outputs): only 2 parameters
+- Works well with small validation sets (as few as ~185 samples — Phase 4 finding)
+- Assumes sigmoid-shaped miscalibration (good fit for tree-based models)
+- Combined with probability clipping (0.03-0.97) to prevent infinite log loss
+- NCAA workflow uses rolling 3-season validation window for calibration fitting
+
+### Isotonic Regression
 - Non-parametric: makes no assumptions about the mapping function
 - Fit on held-out validation set
 - Handles non-monotonic miscalibration
 - Needs sufficient validation data (100+ samples)
-
-### Platt Scaling
-- Parametric (logistic regression on raw outputs)
-- Works with smaller validation sets
-- Assumes sigmoid-shaped miscalibration
+- Can overfit with small samples — Platt preferred when val set is small
 
 ## Implementation
 
 1. Train model on training set
-2. Generate probabilities on validation set
-3. Fit isotonic regression: `calibrator.fit(val_probabilities, val_true_labels)`
+2. Generate probabilities on validation set (rolling 3-season window)
+3. Fit Platt calibrator: `calibrator.fit(val_probabilities, val_true_labels)`
 4. Apply to test/production predictions: `calibrated = calibrator.calibrate(raw_probabilities)`
-5. Verify: calibration curve should be close to diagonal
+5. Clip probabilities: `np.clip(calibrated, 0.03, 0.97)` to prevent infinite loss
+6. Verify: calibration curve should be close to diagonal
+
+## Lessons Learned (NCAA March Madness)
+- Platt scaling reduced log loss from 1.021 → 0.578 (Phase 4)
+- Isotonic regression had been overfitting on small tournament validation sets (~60 games)
+- Probability clipping is essential: without it, a single confident wrong prediction causes catastrophic log loss
+- Rolling 3-season validation window gives consistent >4K calibration samples
+- Separate calibration holdout hurts — with only 2 Platt parameters, shared val set is fine (Phase 10 Exp 1)
+- Raw XGBoost probabilities can be well-calibrated already — Platt adds +0.006 LL overhead in Phase 11 (0.4905 raw → 0.4967 calibrated). Still worth keeping for safety at extreme probabilities

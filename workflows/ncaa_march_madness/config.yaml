@@ -16,6 +16,11 @@ data:
         - "MMasseyOrdinals.csv"
         - "MTeams.csv"
         - "MSeasons.csv"
+    - name: "espn"
+      url: "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball"
+      requires_auth: false
+      coverage: "2018-2025 game results + box scores"
+      script: "scrape_game_results.py"
     - name: "kenpom"
       url: "https://kenpom.com"
       requires_auth: true
@@ -29,9 +34,9 @@ data:
     train_start: 2003
     train_end: 2022
     val_start: 2023
-    val_end: 2024
-    test_start: 2025
-    test_end: 2025
+    val_end: 2025
+    test_start: 2026
+    test_end: 2026
     predict_year: 2026
 
 features:
@@ -63,18 +68,24 @@ elo:
   home_advantage: 100.0
   initial_rating: 1500.0
   mean_reversion_factor: 0.75
+  seed_season: 2002
+  tournament_daynum_cutoff: 134
 
 model:
   backend: "xgboost"
   params:
-    max_depth: 6
-    learning_rate: 0.05
-    n_estimators: 500
+    max_depth: 7
+    learning_rate: 0.01
+    n_estimators: 1000
     subsample: 0.8
-    colsample_bytree: 0.8
-    min_child_weight: 3
+    colsample_bytree: 1.0
+    min_child_weight: 7
     reg_alpha: 0.1
     reg_lambda: 1.0
+  sample_weight:
+    decay: 0.3          # was 0.5 — Phase 10 Exp 4 sweet spot [0.1-0.4]
+    max_daynum: 132
+  early_stopping_rounds: 50  # Phase 10 Exp 1 showed convergence at ~414/750
 
 split:
   train_frac: 0.60
@@ -82,7 +93,10 @@ split:
   season_col: "season"
 
 calibration:
-  method: "isotonic"
+  method: "platt"
+  clip_min: 0.03
+  clip_max: 0.97
+  val_window_seasons: 3
 
 evaluation:
   primary_metric: "log_loss"
