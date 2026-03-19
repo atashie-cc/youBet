@@ -3,9 +3,12 @@
 *.parquet
 *.h5
 *.hdf5
+*.txt
 data/raw/
 data/processed/
 data/reference/
+**/data/raw/
+**/data/processed/
 
 # Models
 *.pkl
@@ -45,3 +48,7 @@ Thumbs.db
 output/brackets/*.json
 output/reports/*.html
 output/reports/*.pdf
+**/output/*.md
+**/output/reports/*.png
+**/output/reports/*.pdf
+**/output/reports/*.html
