@@ -4,6 +4,65 @@ Track experiments, findings, and decisions. Most recent entries at top. Read at 
 
 ---
 
+## 2026-04-01 — Experiment 5.7: Robustness Checks
+
+### Permutation Test (500 iterations)
+- Real model LL: 0.6775 | Null mean: 0.6915 | Z-score: -73.63 | **p=0.0000**
+- Model has overwhelming statistical significance — genuine predictive power
+
+### Fixed-Window vs Expanding Walk-Forward
+- Expanding (all prior seasons): 0.6793 | Fixed (5-year): 0.6795
+- Expanding wins 7/13 seasons — old data helps marginally
+
+### Vig-Adjusted P&L
+- Overall: **+4.1% ROI** on 20,138 bets (10/13 seasons profitable)
+- **2022-2025 (DraftKings): -3.2% ROI** on 6,298 bets — model cannot profit against modern lines
+- 2017-2021 (Kaggle): +9.8% to +13.6% ROI — driven by softer historical odds
+
+### Model vs Elo
+- FG prior-season stats add +0.0013 LL over Elo alone (0.6807 → 0.6793)
+- Closes 76% of Elo-to-market gap, but remaining 0.0004 LL gap persists
+
+### Files Created
+- `scripts/experiment_robustness.py`
+- `research/robustness_results.md`
+
+---
+
+## 2026-04-01 — Experiment 5.6: Market Efficiency by Game Context
+
+### Setup
+Model: LogReg(C=0.005) with 8 features (Elo + prior-season FG). Walk-forward on 27,394 games (2012-2025). Overall: Model LL=0.6793, Market LL=0.6789, Gap=+0.0004.
+
+### Results
+
+**1. By Odds Source Era (KEY FINDING)**
+| Era | N | Model LL | Market LL | Gap |
+|-----|---|----------|-----------|-----|
+| Kaggle (2011-2021) | 18,587 | 0.6798 | 0.6815 | **-0.0017** (model wins) |
+| DraftKings (2022-2025) | 8,807 | 0.6783 | 0.6734 | **+0.0049** (market wins) |
+
+The model beats Kaggle-era lines but loses to DraftKings lines in **every single month** (0/8 months). This is the strongest evidence yet that the historical "edge" was an artifact of softer odds data.
+
+**2. By Month**: Model beats market in May (-0.0016), Aug (-0.0015), Sep (-0.0007) overall, but this is entirely driven by the Kaggle era. No month shows an edge in the DraftKings era.
+
+**3. By Line Size**: Model beats market on heavy favorites (-0.0007) and moderate lines (-0.0019), but loses on toss-ups (+0.0029). This is the opposite of the hypothesis. The model's Elo+FG features identify mispricings better for games with clear favorites, not close games.
+
+**4. By Day of Week**: No difference. Weekday +0.0001, Weekend +0.0010. Hypothesis rejected.
+
+### Key Takeaways
+1. **The odds source era is the dominant factor.** DraftKings 2022-2025 closing lines are ~0.008 LL sharper than Kaggle 2011-2021 lines. The model cannot beat modern lines in any context.
+2. **No seasonal pattern exploitable against modern lines.** Early season edge hypothesis rejected.
+3. **Weekend softness hypothesis rejected.** No day-of-week effect.
+4. **Line-size finding is interesting but academic.** Model has a small edge on favorites against Kaggle lines, but not against DraftKings.
+5. **This confirms the Phase 4 conclusion**: with clean features and modern odds, the MLB closing line is approximately efficient. Further model improvements (rolling in-season stats, SP features) are unlikely to overcome the ~0.005 LL gap against DraftKings lines.
+
+### Files Created
+- `scripts/experiment_context.py` — Experiment 5.6 implementation
+- `research/context_results.md` — Full results with all tables
+
+---
+
 ## 2026-04-01 — Phase 4: Lookahead Bias Discovery, Clean Pipeline Rerun
 
 ### Critical Bug Found: Lookahead Bias in FanGraphs Features

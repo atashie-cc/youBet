@@ -192,7 +192,7 @@ def fetch_season_boxscores(season: int, existing_ids: set[int] | None = None) ->
             box["game_date"] = game_info.get("game_date", "")
             box["season"] = season
             records.append(box)
-        time.sleep(0.3)  # Rate limit: ~3 requests/sec
+        time.sleep(0.15)  # Rate limit: ~6 requests/sec
 
     df = pd.DataFrame(records)
     logger.info("Fetched %d box scores for %d", len(df), season)
