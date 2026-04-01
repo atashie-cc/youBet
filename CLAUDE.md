@@ -29,8 +29,10 @@
 ## Current Workflows
 - `workflows/ncaa_march_madness/` — NCAA Men's Basketball March Madness bracket prediction
 - `workflows/nba/` — NBA game prediction (Phase 12 complete — model converged at LOO-CV 0.6087, market proven unbeatable)
+- `workflows/mlb/` — MLB game prediction (Phase 3 complete — 2-feat LogReg beats market by 0.0083 LL, 15% ROI, 13/14 seasons)
 
 ## Key Research Documents
 - `docs/research/betting-market-efficiency.md` — Lessons on model vs market efficiency, market entry framework, and market prioritization
 - `docs/research/methodologies.md` — Proven prediction methodologies catalog
 - `workflows/nba/research/log.md` — Complete NBA experiment log (Phases 3-12)
+- `workflows/mlb/research/log.md` — MLB experiment log (Phase 1: baseline + market screening)

@@ -1,44 +1,82 @@
-# Workflow Configuration Template
-# Copy and customize for your prediction domain
+# MLB Game Prediction Configuration
 
 workflow:
-  name: "template"
-  description: "Template workflow"
+  name: "mlb"
+  description: "MLB game outcome prediction (moneylines)"
 
 data:
-  sources: []
+  sources:
+    - name: "retrosheet"
+      type: "game_logs"
+      coverage: "2010-2025"
+    - name: "fangraphs_team"
+      type: "team_season_stats"
+      coverage: "2011-2025"
+    - name: "fangraphs_player"
+      type: "player_season_stats"
+      coverage: "2015-2025"
+    - name: "historical_odds"
+      type: "moneylines"
+      coverage: "2011-2021"
   raw_dir: "data/raw"
   processed_dir: "data/processed"
   reference_dir: "data/reference"
 
+elo:
+  k_factor: 6.0
+  home_advantage: 24.0
+  mean_elo: 1500.0
+  season_reversion: 0.33
+  mov_multiplier: 1.0
+
 features:
-  differentials: []
-  rolling_windows: [5, 10]
-  normalize: true
-  normalize_method: "standard"
+  differentials:
+    - elo_diff
+    - diff_bat_wRC+
+    - diff_bat_wOBA
+    - diff_bat_ISO
+    - diff_bat_K%
+    - diff_bat_BB%
+    - diff_bat_WAR
+    - diff_bat_HR_per_g
+    - diff_pit_ERA
+    - diff_pit_FIP
+    - diff_pit_WHIP
+    - diff_pit_K/9
+    - diff_pit_BB/9
+    - diff_pit_HR/9
+    - diff_pit_LOB%
+    - diff_pit_WAR
+    - diff_win_pct_10
+    - diff_win_pct_30
+    - diff_rest_days
+  rolling_windows: [10, 30]
 
 model:
   backend: "xgboost"
   params:
-    max_depth: 6
-    learning_rate: 0.05
+    max_depth: 4
+    learning_rate: 0.03
     n_estimators: 500
     subsample: 0.8
     colsample_bytree: 0.8
-
-split:
-  train_frac: 0.60
-  val_frac: 0.20
-  season_col: "season"
-
-calibration:
-  method: "isotonic"
+    min_child_weight: 10
+    reg_alpha: 0.1
+    reg_lambda: 1.0
 
 evaluation:
   primary_metric: "log_loss"
   metrics: ["log_loss", "accuracy", "brier_score"]
+  validation: "loo_season_cv"
+
+market_benchmark:
+  market_closing_ll: 0.6821
+  market_opening_ll: 0.6827
+  naive_ll: 0.6908
+  n_games: 24267
+  coverage: "2011-2021"
 
 bankroll:
   kelly_fraction: 0.25
-  min_edge: 0.05
+  min_edge: 0.03
   max_bet_fraction: 0.10
