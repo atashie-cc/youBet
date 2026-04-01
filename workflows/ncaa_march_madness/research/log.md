@@ -4,6 +4,63 @@ Track experiments, findings, and decisions. Most recent entries at top. Read at 
 
 ---
 
+## 2026-03-24 — Phase 12: Tournament Retroactive Analysis & Betting Backtest
+
+### 2026 Tournament Results (through R32, 48 games)
+
+**Accuracy**: 38/48 correct (79.2%) — well above backtested tournament accuracy of 70.5%
+- R64: 26/32 (81.3%) | R32: 12/16 (75.0%)
+- Sweet 16 field: 12/16 teams correct
+- East + Midwest: 8/8 R32 perfect | South + West: 4/8 (upsets by Iowa, Nebraska, Texas, High Point)
+
+**Calibration**: Strong across all probability bins
+- 85-95% predictions: 95% correct (expected ~90%)
+- 65-80%: 71% correct (expected ~72%)
+- 50-64%: 64% correct (expected ~57%)
+
+### Market Comparison
+
+Compared model vs FanDuel/DraftKings opening moneylines for all 48 games.
+
+- **R64: Model and market TIED 26/32.** Identical 6 misses (TCU, VCU, A&M, Saint Louis, High Point, Texas). All were 55-66% favorites except Wisconsin (87-89%).
+- **R32: Model 7/1, market 6/2** (on 8 games with available lines). Model correctly picked Alabama (58%) while market had Texas Tech (-1.5).
+- **Championship futures**: Both had same top-4 (Duke, Michigan, Arizona, Florida) in different order.
+
+### Platt Compression Finding (Critical)
+
+Model assigns heavy favorites 87-93% while market assigns 95-99%. This compression creates phantom underdog edges in Kelly sizing:
+
+| Strategy | Bets | Win Rate | ROI |
+|----------|------|----------|-----|
+| All sides (no filter) | 39/48 | 35.9% | **-24.1%** |
+| Model favorites (>50%) | 16/48 | 75.0% | **+8.9%** |
+| Conviction bets (>55%) | 15/48 | 80.0% | **+16.0%** |
+
+Quarter Kelly outperforms flat betting by +10 ROI points on conviction bets.
+
+### Literature Review Key Findings
+
+1. **Temperature scaling > Platt** for XGBoost at extremes (Niculescu-Mizil & Caruana, ICML 2005)
+2. **Isotonic regression** preferred when calibration set > 2000 samples
+3. **NCAA market is efficient** but not perfectly so; 4-7% long-term ROI is world-class (Hickman 2020)
+4. **Tournament distribution shift**: 0.03-0.05 LL inflation expected; weight tournament games 6x (arXiv:2508.02725)
+5. **Net efficiency margin** explains ~30% of game outcome variance alone; feature sweet spot is 17-25
+
+### Files Created
+- `scripts/betting_analysis.py` — Vig-aware Kelly betting analysis with model-min filter
+- `data/reference/betting_lines_2026.csv` — 48 games with FanDuel/DraftKings moneylines
+- `output/reports/betting_analysis_2026.md` — Retroactive P&L report
+
+### Files Modified
+- `src/youbet/core/bankroll.py` — Added `american_to_decimal()` and `remove_vig()` functions
+
+### Next Steps
+- Investigate temperature scaling as Platt replacement
+- Sweet 16 prospective betting analysis when lines available
+- NBA workflow as second prediction domain
+
+---
+
 ## 2026-03-16 — Phase 11: Production Pipeline Update from Experiment Results
 
 ### Motivation

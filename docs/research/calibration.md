@@ -50,3 +50,31 @@ Why? Because betting is about finding edges — games where your estimated proba
 - Rolling 3-season validation window gives consistent >4K calibration samples
 - Separate calibration holdout hurts — with only 2 Platt parameters, shared val set is fine (Phase 10 Exp 1)
 - Raw XGBoost probabilities can be well-calibrated already — Platt adds +0.006 LL overhead in Phase 11 (0.4905 raw → 0.4967 calibrated). Still worth keeping for safety at extreme probabilities
+
+## Platt Compression at Extremes (2026 Tournament Finding)
+
+The 2026 NCAA tournament revealed a critical Platt scaling limitation: **probability compression at extremes**. Our model assigned heavy favorites 87-93% win probability while the betting market priced them at 95-99%. Both went 26/32 on R64 picks, but the compressed probabilities had real dollar consequences.
+
+### The Phantom Edge Problem
+
+When model prob = 87% (Duke over Siena) and market prob = 99%, the 1 - model = 13% creates a perceived "edge" on the underdog. A naive Kelly strategy that bets all positive-edge sides — including underdogs where the "edge" is just calibration compression — returned **-24% ROI** on $100.
+
+Filtering to only bet sides where model probability exceeds 55% (genuine conviction, not compression artifacts) returned **+16% ROI** on the same $100 bankroll. The compression tax was $40 in a 48-game sample.
+
+### Literature on Alternatives
+
+| Method | Strengths | Weaknesses | When to use |
+|--------|-----------|------------|-------------|
+| **Platt Scaling** | Simple (2 params), works with small val sets | Compresses extremes toward 0.5 | Val set < 2000 samples |
+| **Isotonic Regression** | Non-parametric, handles non-sigmoid miscalibration | Overfits with small val sets | Val set > 2000 samples |
+| **Temperature Scaling** | Single parameter, preserves rank order, stable | May underperform on imbalanced data | Default choice for tree models |
+
+Key references:
+- Niculescu-Mizil & Caruana (ICML 2005): Boosted trees exhibit characteristic sigmoid distortion; Platt works but compresses tails
+- Temperature scaling is "considerably better than Platt" for neural nets and XGBoost (preserves rank metrics, avoids infinite log loss)
+
+### Action Items
+
+1. **Investigate temperature scaling** as Platt replacement — single parameter `T` in `p_cal = sigmoid(logit(p_raw) / T)`
+2. **Add isotonic regression option** for workflows with >2000 calibration samples (NBA will qualify)
+3. **Always apply model-min filter** (>=0.55) when using probabilities for Kelly bet sizing

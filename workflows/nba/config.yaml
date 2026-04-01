@@ -1,0 +1,128 @@
+# NBA Game Prediction — Workflow Configuration
+# All parameters in one place. No magic numbers in code.
+
+workflow:
+  name: "nba"
+  description: "NBA regular season and playoff game prediction"
+  predict_season: 2026
+
+# =============================================================================
+# PREDICTION ROUTINE — optimizing model quality (log loss, calibration)
+# =============================================================================
+
+data:
+  sources:
+    - name: "nba_api_game_logs"
+      description: "LeagueGameFinder: basic box scores (PTS, FGM, FGA, REB, AST, etc.)"
+      seasons_start: 2001
+      seasons_end: 2026
+    - name: "nba_api_advanced_team"
+      description: "BoxScoreAdvancedV3 TeamStats: official possession-adjusted team stats (ORTG, DRTG, PACE, etc.)"
+    - name: "nba_api_advanced_player"
+      description: "BoxScoreAdvancedV3 PlayerStats: per-player advanced metrics (USG_PCT, PIE, NET_RATING, etc.)"
+    - name: "kaggle_betting_lines"
+      description: "Historical closing moneylines and spreads (betting routine only)"
+      url: "https://www.kaggle.com/datasets/ehallmar/nba-historical-stats-and-betting-data"
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  reference_dir: "data/reference"  # Static reference files (arenas.csv)
+  # Operational assumption: predictions made >= 1 day before tip-off.
+  # Data fetched in batch (overnight refresh). No real-time or in-game data.
+
+features:
+  differentials:
+    # Official NBA possession-adjusted stats (from boxscoreadvancedv2)
+    # These replace hand-computed approximations from raw box scores.
+    - OFF_RATING       # Offensive rating (pts per 100 poss)
+    - DEF_RATING       # Defensive rating (pts allowed per 100 poss)
+    - NET_RATING       # OFF_RATING - DEF_RATING (single most predictive feature)
+    - PACE             # Possessions per 48 min
+    - TS_PCT           # True shooting %
+    - EFG_PCT          # Effective FG %
+    - AST_PCT          # Assist %
+    - OREB_PCT         # Offensive rebound %
+    - DREB_PCT         # Defensive rebound %
+    - TM_TOV_PCT       # Team turnover %
+    # Derived from game results
+    - win_pct          # Season win percentage
+    - win_pct_last10   # Last 10 games win %
+    # Computed from game history
+    - elo              # Pre-game Elo rating
+    # Player-aggregated features (from BoxScoreAdvancedV3 PlayerStats)
+    - top3_usg         # Star usage concentration (mean USG_PCT of top 3 by minutes)
+    - top3_pie         # Star PIE concentration (mean PIE of top 3 by minutes)
+    - bench_pie_gap    # Starter-bench efficiency gap (starter PIE - bench PIE)
+    - pie_std          # Team talent distribution (std dev of player PIE)
+    - usg_hhi          # Usage concentration HHI (ball dominance)
+    - min_weighted_net_rtg  # Minutes-weighted player net rating
+  context:
+    - rest_days_home   # Days since home team's last game
+    - rest_days_away   # Days since away team's last game
+    - is_playoff       # 1 if playoff game
+    # Phase 10a: Schedule features
+    - is_b2b_home      # Home team on back-to-back
+    - is_b2b_away      # Away team on back-to-back
+    - is_3in4_home     # Home team playing 3rd+ game in 4 days
+    - is_3in4_away     # Away team playing 3rd+ game in 4 days
+    - games_last_7_home  # Home team games in past 7 days
+    - games_last_7_away  # Away team games in past 7 days
+    - consecutive_away_home  # Home team consecutive away games (always 0)
+    - consecutive_away_away  # Away team current road trip length
+    # Phase 10a: Travel/altitude features
+    - travel_km_home   # Home team km traveled from previous game
+    - travel_km_away   # Away team km traveled from previous game
+    - tz_change_home   # Home team timezone change from previous game
+    - tz_change_away   # Away team timezone change from previous game
+    - altitude_ft      # Game venue elevation in feet
+    - altitude_diff    # Home arena elevation minus away team home elevation
+
+model:
+  backend: "xgboost"
+  params:
+    max_depth: 3              # Phase 6: depths 2-5 tied, 3 marginal best
+    learning_rate: 0.08       # Phase 6: mid-range optimal
+    n_estimators: 750         # Converges via early stopping
+    subsample: 0.7            # Phase 6: slight preference for 0.7
+    colsample_bytree: 1.0     # Phase 6: no benefit from column subsampling
+    min_child_weight: 3       # Phase 6: insensitive, 3 marginal best
+    reg_alpha: 0.1
+    reg_lambda: 1.0
+  early_stopping_rounds: 50
+  tune_iterations: 50
+  sample_weight:
+    decay: 0.3
+
+split:
+  method: "random"           # Randomly assign seasons to train/val (seed=42)
+  val_frac: 0.15             # ~15% of non-test seasons go to validation
+  test_season: 2024          # Hold out 2024-25 season as test (most recent complete)
+  train_start_year: 2001     # Phase 7 LOO-CV: more data is monotonically better.
+                              # 2001 has best test LL (0.6192) and accuracy (66.2%).
+                              # Phase 5/6 results (2008/2007) were val-split artifacts.
+  season_col: "season"
+  # Remaining seasons (train_start_year to 2023) randomly split into train/val
+  # Each season is an independent unit — no data bleed between splits
+
+calibration:
+  method: "isotonic"     # isotonic preferred — NBA has >10K cal samples per split
+  clip_min: 0.05
+  clip_max: 0.95
+
+evaluation:
+  primary_metric: "log_loss"
+  metrics: ["log_loss", "accuracy", "brier_score"]
+
+elo:
+  k_factor: 20.0
+  home_advantage: 75.0
+  initial_rating: 1500.0
+  mean_reversion_factor: 0.75
+
+# =============================================================================
+# BETTING ROUTINE — optimizing wagering strategy given predictions + lines
+# =============================================================================
+
+betting:
+  kelly_fraction: 0.25
+  min_edge: 0.05
+  max_bet_fraction: 0.10

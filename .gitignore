@@ -17,6 +17,14 @@ data/reference/
 models/*.xgb
 models/*.lgb
 
+# Training artifacts
+catboost_info/
+*.tfevents
+*.tsv
+
+# Database files
+*.sqlite
+
 # Environment
 .env
 .venv/

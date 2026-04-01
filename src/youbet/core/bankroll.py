@@ -23,6 +23,43 @@ class BetRecommendation:
     expected_value: float
 
 
+def american_to_decimal(ml: float) -> float:
+    """Convert American moneyline to decimal odds.
+
+    Args:
+        ml: American moneyline (e.g., -150, +130).
+
+    Returns:
+        Decimal odds (e.g., 1.667 for -150, 2.30 for +130).
+    """
+    if ml >= 100:
+        return ml / 100 + 1
+    elif ml <= -100:
+        return 100 / abs(ml) + 1
+    else:
+        raise ValueError(f"Invalid American moneyline: {ml}")
+
+
+def remove_vig(ml_a: float, ml_b: float) -> tuple[float, float, float]:
+    """Remove vig from two-sided moneylines to get true market probabilities.
+
+    Args:
+        ml_a: American moneyline for side A.
+        ml_b: American moneyline for side B.
+
+    Returns:
+        (vig_free_prob_a, vig_free_prob_b, overround) where overround is
+        the total vig (e.g., 0.042 for a 4.2% overround).
+    """
+    dec_a = american_to_decimal(ml_a)
+    dec_b = american_to_decimal(ml_b)
+    ip_a = 1.0 / dec_a
+    ip_b = 1.0 / dec_b
+    total = ip_a + ip_b
+    overround = total - 1.0
+    return ip_a / total, ip_b / total, overround
+
+
 def kelly_criterion(prob: float, decimal_odds: float) -> float:
     """Compute full Kelly fraction for a single bet.
 

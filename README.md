@@ -2,9 +2,13 @@
 
 General-purpose prediction and betting framework. Built for iterative research with calibrated probabilistic models.
 
-## First Workflow: NCAA March Madness 2026
+## Workflows
 
-Predict tournament game outcomes and generate bracket picks using XGBoost on team stat differentials with Platt calibration.
+### NCAA March Madness 2026
+Predict tournament game outcomes and generate bracket picks. XGBoost on 16 stat differentials with Platt calibration. **Phase 12**: 79.2% accuracy through R32, tied betting market on picks, +16% ROI with conviction-filtered Kelly betting.
+
+### NBA Game Prediction (New)
+Predict NBA regular season and playoff outcomes. XGBoost on 15 stat differentials + rest/home features with isotonic calibration. Uses `nba_api` for official NBA stats.
 
 ## Quick Start
 
@@ -15,12 +19,18 @@ pip install -e ".[dev]"
 # Run NCAA pipeline
 cd workflows/ncaa_march_madness
 python scripts/collect_data.py
-python scripts/scrape_game_results.py --force
+python scripts/train.py --tune --production
+python scripts/predict.py
+python scripts/generate_bracket.py
+
+# Run NBA pipeline
+cd workflows/nba
+pip install nba_api
+python scripts/collect_data.py
 python scripts/compute_elo.py
 python scripts/build_features.py
 python scripts/train.py --tune --production
 python scripts/predict.py
-python scripts/generate_bracket.py
 ```
 
 ## Architecture

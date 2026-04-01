@@ -51,3 +51,34 @@ More features ≠ better. Research consistently shows 17-25 well-chosen features
 4. Remove features with near-zero importance
 5. Check for multicollinearity (VIF > 5 suggests redundancy)
 6. Re-train and compare log loss
+
+## NBA-Specific Features
+
+NBA prediction benefits from the same differential-based approach but with sport-specific metrics:
+
+### Efficiency (most predictive)
+- Net Rating (ORTG - DRTG) — NBA equivalent of KenPom AdjEM
+- Offensive / Defensive Rating — points per 100 possessions
+- Pace — possessions per game (affects variance and matchup dynamics)
+
+### Shooting
+- eFG% — Effective FG% (weights 3PT at 1.5x)
+- TS% — True Shooting (incorporates FT)
+- 3PT Rate — 3PA / FGA (style indicator)
+- FT Rate — FTA / FGA (aggression/foul drawing)
+
+### Possession Quality
+- OREB% / DREB% — Offensive and defensive rebounding rates
+- TOV% — Turnover rate (possessions lost)
+- AST% — Assist rate (ball movement quality)
+
+### Context Features (NOT differentials)
+- Rest days (each team separately — rest advantage is well-documented: ~4 pts for 2+ days vs back-to-back)
+- Home/away indicator (NBA home court ~60% win rate, ~3-4 point spread)
+- Playoff flag (playoff games have different dynamics — shorter rotations, higher intensity)
+
+### Literature Findings
+- Net efficiency margin explains ~30% of game outcome variance alone (same as NCAA)
+- 17-25 features is the sweet spot across domains — beyond 25, marginal features add noise
+- NCAA Phase 10 Exp 3 confirmed: removing features from 16 to 8 loses only 0.0004 LL; adding beyond 16 gains nothing
+- Feature importance shifts between regular season and tournament/playoffs: defensive rebounding increases, 3PT decreases
