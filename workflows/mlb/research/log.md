@@ -4,7 +4,82 @@ Track experiments, findings, and decisions. Most recent entries at top. Read at 
 
 ---
 
+## 2026-04-01 — Phase 4: Lookahead Bias Discovery, Clean Pipeline Rerun
+
+### Critical Bug Found: Lookahead Bias in FanGraphs Features
+
+**All Phase 1-3 FanGraphs-based results were invalid.** Three independent reviews (betting forums, academic literature, code audit) identified the same fatal flaw:
+
+`build_features.py` joined FanGraphs team-season stats on `["season", "home"]`, meaning every game used **end-of-season aggregates** — a game on April 15 used ERA/wOBA values that included July-September performance. This is textbook lookahead bias.
+
+**What was contaminated**: All FanGraphs team-season differential features (diff_bat_*, diff_pit_*)
+**What was clean**: Elo (sequential), rolling win% (sequential), rest days (sequential), park factors (prior-season), SP features (prior-season)
+
+**Fix applied**: Changed `build_features.py` to use prior-season FG stats (season Y-1 for games in season Y). Same approach already used correctly for SP features and park factors.
+
+### Clean Pipeline Results (Prior-Season FG Stats)
+
+**The market wins.** With clean features, no model configuration beats MLB closing lines.
+
+#### Model Architectures (20 features, walk-forward 2012-2025)
+
+| Model | WF LL | Market LL | Gap | Seasons Won |
+|-------|-------|-----------|-----|-------------|
+| LogReg C=0.005 | 0.6798 | 0.6789 | +0.0009 | 5/13 |
+| LogReg C=0.001 | 0.6799 | 0.6789 | +0.0010 | 5/13 |
+| Elo only | 0.6807 | 0.6792 | +0.0014 | 6/14 |
+| RF md=8/msl=100 | 0.6808 | 0.6789 | +0.0019 | 4/13 |
+| LightGBM nl=8/lr=0.01 | 0.6814 | 0.6789 | +0.0025 | 4/13 |
+| XGBoost md3/lr0.01 | 0.6830 | 0.6789 | +0.0041 | 4/13 |
+| **2-feat LR (ERA+wOBA)** | **0.6842** | **0.6789** | **+0.0053** | **3/13** |
+
+#### Feature Subsets (XGBoost)
+
+| Config | WF LL | Gap | Seasons Won |
+|--------|-------|-----|-------------|
+| Elo only | 0.6807 | +0.0014 | 6/14 |
+| Elo + rolling | 0.6836 | +0.0044 | 5/14 |
+| Sequential only | 0.6841 | +0.0049 | 4/14 |
+| ERA + wOBA (2) | 0.6880 | +0.0091 | 0/13 |
+| Full 20 features | 0.6849 | +0.0060 | 3/13 |
+
+#### Flat-Bet P&L (LogReg C=0.005, 20 features)
+
+| Edge Filter | Bets | Win% | Total P&L | ROI | Profitable Seasons |
+|-------------|------|------|-----------|-----|--------------------|
+| > 2% | 20,309 | 48.7% | +$80,646 | +4.0% | 9/13 |
+| > 5% | 11,199 | 48.3% | +$78,838 | +7.0% | 9/13 |
+
+P&L is positive overall but driven by 2017-2021 (market may have been softer in Kaggle odds data). 2022-2025 (DraftKings odds) shows no edge.
+
+### Key Findings
+
+1. **The Phase 3 "0.0083 LL edge" was 100% lookahead bias.** End-of-season FG stats gave the model future information.
+2. **With clean features, MLB closing lines are approximately efficient** — matching the NBA finding. Best model loses by 0.0009 LL.
+3. **Prior-season FG stats have weak predictive power** — correlations drop from ~0.15 to ~0.10. Teams change significantly year-to-year (trades, injuries, aging).
+4. **Elo alone (0.6807) nearly matches the 20-feature model (0.6798)** — prior-season FG stats add minimal incremental value over Elo.
+5. **The 2017-2021 profit may reflect softer Kaggle odds data** rather than a real model edge. DraftKings 2022-2025 shows no profit.
+6. **LogReg still outperforms tree models** — even without lookahead, the signal is approximately linear and regularization helps.
+
+### What's Still Worth Pursuing
+
+The model nearly matches the market (gap: 0.0009 LL) using only prior-season stats + Elo. This suggests:
+1. **In-season rolling FG stats** (cumulative ERA/wOBA up to game date) could close the gap — but requires game-level stat computation, not just season aggregates
+2. **Starting pitcher game-level stats** (rolling ERA for each SP through the season) are the highest-value missing feature
+3. **Real-time lineup/injury data** is what the market incorporates that our model cannot
+
+### Files Created/Modified
+- `scripts/build_features.py` — **FIXED**: uses prior-season FG stats (no lookahead)
+- `scripts/experiment_clean_rerun.py` — Full clean pipeline rerun
+- `research/log.md` — Updated with Phase 4 findings
+
+---
+
 ## 2026-04-01 — Phase 3: Model Selection, Ablation, Production Config
+
+**NOTE: All results in Phase 3 are INVALID due to lookahead bias. See Phase 4 above.**
+
+
 
 ### 2022-2025 Odds Acquired
 - Downloaded mlb-odds-scraper dataset (76MB JSON, 2021-2025, DraftKings/FanDuel/Bet365/Caesars)

@@ -101,10 +101,20 @@ def build_team_season_features(bat: pd.DataFrame, pit: pd.DataFrame) -> pd.DataF
 
 
 def build_matchup_features(games: pd.DataFrame, team_features: pd.DataFrame) -> pd.DataFrame:
-    """Create game-level matchup features as home stat - away stat."""
-    # Merge home team features
+    """Create game-level matchup features as home stat - away stat.
+
+    IMPORTANT: Uses PRIOR-SEASON FanGraphs stats to avoid lookahead bias.
+    For a game in season Y, we use team stats from season Y-1.
+    This means early-season and late-season games in the same year use the
+    same feature values, which is correct (no future information leaks).
+    """
+    # Shift team_features forward by 1 season so they serve as priors
+    prior_features = team_features.copy()
+    prior_features["Season"] = prior_features["Season"] + 1
+
+    # Merge home team features (prior season)
     home = games.merge(
-        team_features,
+        prior_features,
         left_on=["season", "home"],
         right_on=["Season", "Team"],
         how="left",
@@ -116,9 +126,9 @@ def build_matchup_features(games: pd.DataFrame, team_features: pd.DataFrame) -> 
     # Rename home features
     home = home.rename(columns={c: f"home_{c}" for c in feat_cols})
 
-    # Merge away team features
+    # Merge away team features (prior season)
     merged = home.merge(
-        team_features,
+        prior_features,
         left_on=["season", "away"],
         right_on=["Season", "Team"],
         how="left",

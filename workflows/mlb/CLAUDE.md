@@ -37,13 +37,13 @@ Three different conventions across data sources:
 - Rolling: win% last 10 games, win% last 30 games
 - Rest days difference
 
-## Current Performance (Phase 3 — Production Model)
-- **Production model: LogReg(C=0.1) with 2 features (diff_pit_ERA, diff_bat_wOBA)**
-- Walk-forward LL: **0.6709** | Market closing LL: **0.6792** | **Edge: 0.0083 LL**
-- Beats market in **13/14 seasons** (2012-2023, 2025; only 2024 ties)
-- 2025 holdout (fully OOS): LL **0.6725** vs market **0.6770** (edge: 0.0045)
-- Flat-bet ROI: **+15.0%** (5% edge filter, 56.3% win rate, all 14 seasons profitable)
-- 2 features outperform 20 features: simpler = less overfitting = larger edge
+## Current Performance (Phase 4 — Clean Pipeline, No Lookahead)
+- **Best model: LogReg(C=0.005) with 20 prior-season features**
+- Walk-forward LL: **0.6798** | Market closing LL: **0.6789** | **Market wins by 0.0009 LL**
+- Model beats market in **5/13 seasons** (2017-2021 only)
+- Flat-bet ROI: **+4.0%** (2% edge, driven by 2017-2021; 2022-2025 shows no edge)
+- Prior-season FG stats have weak predictive power; Elo alone nearly matches 20 features
+- **Phase 3 results were INVALID** — used end-of-season FG stats (lookahead bias)
 
 ## Key Domain Considerations
 - Starting pitcher is the single biggest game-specific factor (not yet in model)
