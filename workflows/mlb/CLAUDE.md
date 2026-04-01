@@ -19,10 +19,12 @@ python scripts/train.py --production          # Train on all data
 
 ## Data Sources
 1. **Retrosheet** (primary game data): Game logs 2010-2025, 34,913 games with scores, starting pitchers, park IDs
-2. **FanGraphs** (team stats): Team-season batting (319 cols) and pitching (392 cols) via `pybaseball`
-3. **FanGraphs** (player stats): Player-season batting (320 cols) and pitching (393 cols), 2015-2025
-4. **Kaggle historical odds** (2011-2021): 24,267 games, repaired from dataset with scrambled team pairings
-5. **Missing**: Odds 2022-2025, Statcast pitch-level, park factors, weather
+2. **FanGraphs** (team stats): Team-season batting (319 cols) and pitching (392 cols) via `pybaseball`. **WARNING: season-level only — use as PRIOR-SEASON features, never same-season (lookahead bias).**
+3. **FanGraphs** (player stats): Player-season batting (320 cols) and pitching (393 cols), 2015-2025. Same warning as above.
+4. **MLB Stats API box scores** (game-level): Team batting/pitching totals + SP stats per game, via `statsapi`. 2015-2025 (fetching). **Point-in-time safe — use for rolling in-season features.**
+5. **Kaggle historical odds** (2011-2021): 24,267 games, repaired from dataset with scrambled team pairings
+6. **mlb-odds-scraper** (2022-2025): 7,806 games from DraftKings/FanDuel/Bet365/Caesars
+7. **Statcast aggregates** (2015-2025): Player-level EV, barrels, expected stats
 
 ### Team Code Mapping
 Three different conventions across data sources:
@@ -51,6 +53,15 @@ Three different conventions across data sources:
 - 162-game season means large sample sizes but also more variance per game
 - Opening→closing line movement is tiny (0.0006 LL) — less sharp-money efficiency than NBA
 - 2020 COVID season (60 games) behaves differently
+
+## Feature Safety Rules
+**CRITICAL: All features must be point-in-time. No exceptions.**
+- Season-level FanGraphs stats → **ONLY as prior-season** (Y-1 for games in Y)
+- Rolling stats from game logs → **Safe** (sequential by construction)
+- Elo ratings → **Safe** (sequential by construction)
+- Park factors → **Prior-season only**
+- SP stats → **Prior-season or rolling in-season from game-level data**
+- **NEVER** join season-aggregate data on same-season — this is the #1 lookahead trap
 
 ## Research Log
 See `research/log.md` — read at start of every session.

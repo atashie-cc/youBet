@@ -10,6 +10,8 @@
 7. **Iterative refinement** — start simple (XGBoost baseline), measure, then improve.
 8. **Validate with LOO-CV** — single val-split results are unreliable. Always confirm with leave-one-season-out cross-validation.
 9. **Test market efficiency early** — compare model LL vs market-implied LL at Stage 2 (baseline model), not Stage 12. Kill early if the market is more accurate.
+10. **Point-in-time features only** — NEVER use season-level aggregates for mid-season games. All features must use only data available before game time: prior-season stats, rolling/cumulative in-season stats from game logs, or sequential ratings (Elo). Season summary stats contain future information and produce fake edges. See MLB Phase 4 for the cautionary tale.
+11. **Audit before celebrating** — when backtest results seem too good to be true, run three independent checks before trusting them: code audit for lookahead, literature review for plausibility, and forum check for common pitfalls.
 
 ## Architecture
 - `src/youbet/core/` — domain-agnostic prediction components (Elo, features, models, calibration, evaluation, bankroll, pipeline)
@@ -35,4 +37,4 @@
 - `docs/research/betting-market-efficiency.md` — Lessons on model vs market efficiency, market entry framework, and market prioritization
 - `docs/research/methodologies.md` — Proven prediction methodologies catalog
 - `workflows/nba/research/log.md` — Complete NBA experiment log (Phases 3-12)
-- `workflows/mlb/research/log.md` — MLB experiment log (Phase 1: baseline + market screening)
+- `workflows/mlb/research/log.md` — MLB experiment log (Phases 1-4 + rolling feature experiments)
