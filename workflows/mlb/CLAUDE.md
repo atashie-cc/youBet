@@ -41,11 +41,11 @@ Three different conventions across data sources:
 
 ## Current Performance (Phase 5 — Final Assessment)
 - **Best model: LogReg(C=0.005) with Elo + runs rolling + prior-season FG + park factor**
-- Walk-forward LL: **0.6792** | Market closing LL: **0.6786** | **Market wins by 0.0006 LL**
+- Walk-forward LL: **0.6776** | Market closing LL: **0.6775** | **Dead tie (gap 0.0000 LL)**
 - Model beats market in **5/13 seasons** (2017-2021 only, Kaggle-era odds)
 - **2022-2025 (DraftKings): market wins every season** — modern lines are ~0.008 LL sharper
 - Flat-bet ROI: **+4.3%** overall but **-5% on 2022-2025** — not viable against modern lines
-- Box-score rolling stats (ERA, WHIP, OBP from game-level data) capture same signal as Elo
+- Box-score rolling stats improved over prior-season FG (0.6776 vs 0.6793) but still tie market
 - **Conclusion: MLB closing lines are approximately efficient against public statistical models**
 
 ## Key Domain Considerations

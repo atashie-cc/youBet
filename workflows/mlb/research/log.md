@@ -7,7 +7,7 @@ Track experiments, findings, and decisions. Most recent entries at top. Read at 
 ## 2026-04-01 — Phase 5: Box-Score Rolling Features (Final Assessment)
 
 ### Box-Score Data
-- Fetched game-level box scores from MLB Stats API for 2015-2016, 2022-2025 (14,549 games)
+- Fetched game-level box scores from MLB Stats API for **all 11 seasons (2015-2025, 25,139 games)**
 - Per team per game: AB, H, HR, BB, K, R (batting); IP, H, ER, BB, K, HR (pitching)
 - Computed rolling features: OBP, SLG, K-rate (batting); ERA, WHIP, K/9, BB/9, HR/9 (pitching)
 - Windows: 15, 30, 60 games — all strictly point-in-time
@@ -24,21 +24,22 @@ Track experiments, findings, and decisions. Most recent entries at top. Read at 
 
 Box-score features are comparable in strength to prior-season FG stats and runs-based rolling — all capture the same underlying signal (team quality).
 
-### Walk-Forward Results (Market Comparison)
+### Walk-Forward Results — Full 11 Seasons (Definitive)
 
 | Config | WF LL | Market LL | Gap | Seasons Won |
 |--------|-------|-----------|-----|-------------|
-| Box batting only (9) | 0.6884 | 0.6749 | +0.0135 | 0/5 |
-| Box pitching only (15) | 0.6847 | 0.6749 | +0.0098 | 0/5 |
-| Elo + box pitching (16) | 0.6807 | 0.6749 | +0.0058 | 0/5 |
-| Elo + box all (25) | 0.6812 | 0.6749 | +0.0062 | 0/5 |
-| Full kitchen sink + box (40+) | 0.6809 | 0.6751 | +0.0058 | 0/5 |
-| **Elo + runs + FG + park (Phase 4)** | **0.6792** | **0.6786** | **+0.0006** | **5/13** |
+| Box batting only (9) | 0.6870 | 0.6775 | +0.0095 | 0/10 |
+| Box pitching only (15) | 0.6817 | 0.6775 | +0.0042 | 4/10 |
+| Box all (24) | 0.6806 | 0.6775 | +0.0031 | 5/10 |
+| **Elo + box pitching (16)** | **0.6776** | **0.6775** | **+0.0000** | **5/10** |
+| Elo + box all (25) | 0.6779 | 0.6775 | +0.0004 | 5/10 |
+| Full kitchen sink + box | 0.6778 | 0.6772 | +0.0006 | 5/10 |
+| Elo + runs + FG + park (Phase 4) | 0.6792 | 0.6786 | +0.0006 | 5/13 |
 
-**Box-score features lose to the market 0/5 seasons.** The test set (2016, 2023-2025) is dominated by DraftKings-era sharp lines (market LL 0.6749). No feature combination can beat these.
+**Elo + box pitching achieves a dead tie with the market (gap: 0.0000).** Box-score rolling features improve over prior-season FG stats (0.6776 vs 0.6793) but still cannot beat closing lines. Model wins 2017-2021, market wins 2022-2025.
 
 ### 2025 Holdout
-Model LL: 0.6796 | Market LL: 0.6793 | Gap: +0.0003 (market wins)
+Model LL: 0.6781 | Market LL: 0.6769 | Gap: +0.0011 (market wins)
 
 ### Conclusion
 
@@ -57,13 +58,13 @@ The MLB moneyline market is **approximately efficient against public statistical
 |----------------|--------|
 | Prior-season FG stats | Market wins by 0.0004 LL |
 | Rolling in-season stats (runs) | Market wins by 0.0006 LL |
-| Rolling box-score stats (ERA, WHIP, OBP) | Market wins by 0.0058 LL |
+| **Rolling box-score stats (ERA, WHIP, OBP)** | **Dead tie: 0.0000 LL** |
 | Starting pitcher prior-season stats | No incremental value |
 | Streakiness/EWMA features | No value |
-| 5 model architectures | All lose to market |
-| 10+ feature set combinations | All lose to market |
+| 5 model architectures | All lose to or tie market |
+| 10+ feature set combinations | Best ties market |
 
-The model has genuine predictive power (permutation p=0.0000) but cannot beat the market's closing lines. The gap is smallest with Elo + prior-season FG (0.0004 LL) — tantalizingly close but on the wrong side.
+The model has genuine predictive power (permutation p=0.0000) and achieves a dead tie with closing lines using Elo + rolling box-score pitching. But it cannot consistently beat them — winning 5/10 seasons is coin-flip territory.
 
 ### What Would It Take?
 
