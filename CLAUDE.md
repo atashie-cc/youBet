@@ -31,7 +31,7 @@
 ## Current Workflows
 - `workflows/ncaa_march_madness/` — NCAA Men's Basketball March Madness bracket prediction
 - `workflows/nba/` — NBA game prediction (Phase 12 complete — model converged at LOO-CV 0.6087, market proven unbeatable)
-- `workflows/mlb/` — MLB game prediction (Phase 4 — clean pipeline, market approximately efficient, gap 0.0009 LL)
+- `workflows/mlb/` — MLB game prediction (Phase 5 COMPLETE — market efficient, public stats cannot beat closing lines)
 
 ## Key Research Documents
 - `docs/research/betting-market-efficiency.md` — Lessons on model vs market efficiency, market entry framework, and market prioritization

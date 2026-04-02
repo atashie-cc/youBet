@@ -39,13 +39,14 @@ Three different conventions across data sources:
 - Rolling: win% last 10 games, win% last 30 games
 - Rest days difference
 
-## Current Performance (Phase 4 — Clean Pipeline, No Lookahead)
-- **Best model: LogReg(C=0.005) with 20 prior-season features**
-- Walk-forward LL: **0.6798** | Market closing LL: **0.6789** | **Market wins by 0.0009 LL**
-- Model beats market in **5/13 seasons** (2017-2021 only)
-- Flat-bet ROI: **+4.0%** (2% edge, driven by 2017-2021; 2022-2025 shows no edge)
-- Prior-season FG stats have weak predictive power; Elo alone nearly matches 20 features
-- **Phase 3 results were INVALID** — used end-of-season FG stats (lookahead bias)
+## Current Performance (Phase 5 — Final Assessment)
+- **Best model: LogReg(C=0.005) with Elo + runs rolling + prior-season FG + park factor**
+- Walk-forward LL: **0.6792** | Market closing LL: **0.6786** | **Market wins by 0.0006 LL**
+- Model beats market in **5/13 seasons** (2017-2021 only, Kaggle-era odds)
+- **2022-2025 (DraftKings): market wins every season** — modern lines are ~0.008 LL sharper
+- Flat-bet ROI: **+4.3%** overall but **-5% on 2022-2025** — not viable against modern lines
+- Box-score rolling stats (ERA, WHIP, OBP from game-level data) capture same signal as Elo
+- **Conclusion: MLB closing lines are approximately efficient against public statistical models**
 
 ## Key Domain Considerations
 - Starting pitcher is the single biggest game-specific factor (not yet in model)
