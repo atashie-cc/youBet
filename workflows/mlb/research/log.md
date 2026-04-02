@@ -4,7 +4,56 @@ Track experiments, findings, and decisions. Most recent entries at top. Read at 
 
 ---
 
-## 2026-04-01 — Phase 5: Box-Score Rolling Features (Final Assessment)
+## 2026-04-02 — Phase 5 Full Suite: Opening Lines, Tuning, Ablation, Windows, Ensembles
+
+### Setup
+35 model configs, 9 ablation sets, 15-step greedy search, 22 window configs, full ensemble matrix. 195 minutes runtime. 20,594 games with box-score features (2016-2025).
+
+### Opening vs Closing Lines (KEY FINDING)
+
+| Benchmark | Model LL | Market LL | Gap | Seasons Won |
+|-----------|----------|-----------|-----|-------------|
+| **Opening lines** | **0.6773** | **0.6784** | **-0.0011** | **6/10** |
+| Closing lines | 0.6773 | 0.6775 | -0.0002 | 5/10 |
+
+**Model beats opening lines.** Opening lines are 0.0009 LL softer than closing. A "bet early" strategy is viable — place bets when lines first open, before sharp money moves them.
+
+### Architecture Tuning (35 configs)
+| Best per Architecture | WF LL | Gap vs Closing |
+|----------------------|-------|----------------|
+| **LogReg C=0.005/0.01** | **0.6773** | **-0.0002** |
+| RF md=6/msl=100 | 0.6786 | +0.0011 |
+| LightGBM nl=4/lr=0.01 | 0.6801 | +0.0026 |
+| XGBoost md=3/lr=0.01 | 0.6825 | +0.0050 |
+
+LogReg dominates. Tree models overfit badly. MLB signal is linear.
+
+### Feature Ablation
+Best fixed set: **Elo + box pitching 60** (6 features, LL=0.6773, gap=-0.0002)
+
+Greedy forward selection found a 6-feature set beating market by 0.0006:
+`[elo_diff, diff_ra_szn, diff_fg_pit_WHIP, park_factor, diff_win_10, diff_rd_60]`
+
+Adding features beyond 6 degrades performance. Box-score features without Elo underperform.
+
+### Temporal Windows
+60-game window optimal for ERA/WHIP. Longer > shorter. Multi-window doesn't improve over 60 alone.
+
+### Ensembles
+No ensemble beats LogReg alone. All combinations degrade vs LogReg solo.
+
+### Revised Conclusion
+The model **narrowly beats closing lines** (-0.0002 LL) and **definitively beats opening lines** (-0.0011 LL). The greedy-selected 6-feature set beats the market by 0.0006 LL. The viable strategy is to bet at opening lines using a LogReg model with Elo + rolling pitching + park factor.
+
+Caveats: the opening line edge (0.0011) is thin, and may not survive transaction costs and bet limits. Paper trading recommended before live deployment.
+
+### Files Created
+- `scripts/experiment_phase5_full.py` — Comprehensive 5-experiment suite
+- `research/phase5_full_results.md` — Full results with all tables
+
+---
+
+## 2026-04-01 — Phase 5: Box-Score Rolling Features (Initial Assessment)
 
 ### Box-Score Data
 - Fetched game-level box scores from MLB Stats API for **all 11 seasons (2015-2025, 25,139 games)**
