@@ -47,7 +47,9 @@ Three different conventions across data sources:
 - LogReg C=0.005-0.01 dominates all tree models (XGB, LGBM, RF all overfit)
 - Ensembles don't help — LogReg alone is optimal
 - 60-game window optimal for rolling pitching stats
-- **Conclusion: Model ties/narrowly beats closing lines; definitively beats opening lines**
+- Ensemble disagreement does NOT help bet selection (opposite of NBA — proxies game closeness)
+- Betting simulation: best strategy +5.9% ROI but p=0.869 (not significant), 2022-2025 = -0.3%
+- **Conclusion: MLB moneyline betting not viable with public stats. Market is efficient.**
 
 ## Key Domain Considerations
 - Starting pitcher is the single biggest game-specific factor (not yet in model)
