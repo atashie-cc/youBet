@@ -126,11 +126,27 @@ Season-level stat aggregates (e.g., FanGraphs team ERA) contain end-of-season va
 
 All three sports confirm: moneyline closing lines are efficient against public statistical models. MMA was predicted to be less efficient (0.65-0.68 LL) but empirically proved comparable to team sports (closing 0.61, opening 0.63). MMA opening lines move +0.019 LL from open to close (more than NBA's ~0.007) due to weigh-ins, injuries, and camp news, but even opening lines are too accurate for public models to beat.
 
+### 10. Use the Experiment Runner for All New Workflows
+
+The `src/youbet/core/experiment.py` Experiment class was built after 4 Codex adversarial reviews found PIT leakage in every workflow (NBA random season splits, MLB in-sample evaluation, MMA age/reach leakage and calibration fold overlap). The Experiment runner structurally prevents these issues:
+- Walk-forward folds with `PITViolation` exceptions on temporal overlap
+- Calibration data carved from the training window (not a whole excluded year)
+- Feature transforms fitted on training data only via stateful `FeaturePipeline`
+- Audit metadata logged per fold for reproducibility
+
+New workflows should always use the Experiment runner. Do not write ad-hoc walk-forward loops in per-workflow scripts.
+
 ## Files
 
+- `src/youbet/core/experiment.py` — Split-aware experiment runner with PIT enforcement
+- `src/youbet/core/transforms.py` — Stateful Normalizer/Imputer with fit/transform separation
+- `src/youbet/core/pit.py` — Point-in-time validation checks
 - `workflows/nba/betting/scripts/retroactive_simulation.py` — NBA closing line P&L simulation
 - `workflows/nba/betting/scripts/retroactive_opening_lines.py` — NBA opening vs closing comparison
 - `workflows/mlb/betting/scripts/retroactive_simulation.py` — MLB 7-strategy betting simulation
 - `workflows/mlb/betting/scripts/analyze_disagreement.py` — MLB ensemble disagreement analysis
 - `workflows/mlb/research/phase5_full_results.md` — MLB model vs opening/closing lines
+- `workflows/mma/scripts/train_v2.py` — MMA reference implementation using Experiment runner
+- `workflows/mma/scripts/evaluate_opening_lines.py` — MMA opening vs closing line comparison
 - `workflows/nba/research/log.md` — Phase 12 detailed findings
+- `workflows/mma/research/log.md` — MMA experiment log with Codex review findings

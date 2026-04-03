@@ -8,13 +8,25 @@
 5. **Research log is the feedback loop** — `research/log.md` in each workflow is read at start of every session.
 6. **Differentials, not absolutes** — features are always Team A stat minus Team B stat.
 7. **Iterative refinement** — start simple (XGBoost baseline), measure, then improve.
-8. **Validate with LOO-CV** — single val-split results are unreliable. Always confirm with leave-one-season-out cross-validation.
+8. **Validate with walk-forward CV** — use the core `Experiment` runner which enforces temporal splits and PIT safety structurally. Never use random season splits for validation.
 9. **Test market efficiency early** — compare model LL vs market-implied LL at Stage 2 (baseline model), not Stage 12. Kill early if the market is more accurate.
-10. **Point-in-time features only** — NEVER use season-level aggregates for mid-season games. All features must use only data available before game time: prior-season stats, rolling/cumulative in-season stats from game logs, or sequential ratings (Elo). Season summary stats contain future information and produce fake edges. See MLB Phase 4 for the cautionary tale.
+10. **Point-in-time features only** — NEVER use season-level aggregates for mid-season games. All features must use only data available before game time: prior-season stats, rolling/cumulative in-season stats from game logs, or sequential ratings (Elo). The core `pit.py` module provides structural PIT checks that raise `PITViolation` on detected leakage.
 11. **Audit before celebrating** — when backtest results seem too good to be true, run three independent checks before trusting them: code audit for lookahead, literature review for plausibility, and forum check for common pitfalls.
+12. **Stateful transforms** — feature normalization and imputation must use fit/transform separation via `core/transforms.py`. Fit on training data only, never on the full dataset. The old `normalize_features()` leaked test distribution into training across all three workflows.
 
 ## Architecture
-- `src/youbet/core/` — domain-agnostic prediction components (Elo, features, models, calibration, evaluation, bankroll, pipeline)
+- `src/youbet/core/` — domain-agnostic prediction components:
+  - `experiment.py` — **Split-aware experiment runner** with walk-forward folds, PIT enforcement, audit metadata, and market comparison. New workflows should use this instead of ad-hoc train scripts.
+  - `transforms.py` — **Stateful transforms** (Normalizer, Imputer, FeaturePipeline) with fit/transform separation. Prevents the most common cross-workflow leakage pattern.
+  - `pit.py` — **Point-in-time validation** checks. Raises `PITViolation` on temporal overlap, cal/train leakage, or suspicious feature stationarity.
+  - `elo.py` — Elo rating system with configurable K-factor, time decay, MOV scaling
+  - `features.py` — Differential computation, rolling stats
+  - `models.py` — GradientBoostModel wrapper (XGBoost/LightGBM)
+  - `calibration.py` — Platt scaling, isotonic regression
+  - `evaluation.py` — Log loss, accuracy, Brier score, calibration curves
+  - `bankroll.py` — Kelly criterion, vig removal
+  - `betting.py` — Edge detection, bet sizing, P&L reporting
+  - `pipeline.py` — Legacy abstract pipeline (prefer `experiment.py` for new workflows)
 - `src/youbet/utils/` — I/O and visualization helpers
 - `workflows/` — domain-specific prediction workflows (NCAA March Madness, etc.)
 - `docs/` — research findings, architectural decisions, runbooks
@@ -27,6 +39,33 @@
 - Tests in `tests/` mirroring `src/` structure
 - Data files never committed to git (in `.gitignore`)
 - Primary metric: log loss. Always report alongside accuracy and Brier score.
+- Feature columns declared explicitly in `config.yaml` — train scripts must read from config and fail on mismatches (never auto-discover `diff_*` columns)
+- New workflows should use `core/experiment.py` Experiment runner, not ad-hoc walk-forward loops
+
+## New Workflow Quickstart
+```python
+from youbet.core.experiment import Experiment, compare_to_market
+from youbet.core.models import GradientBoostModel
+from youbet.core.transforms import FeaturePipeline, Imputer, Normalizer
+
+experiment = Experiment(
+    data=features_df,
+    target_col="team_a_win",
+    date_col="event_date",
+    fold_col="year",         # Walk-forward by calendar year
+    feature_cols=[...],      # Explicit list from config.yaml
+    min_train_folds=5,
+    cal_fraction=0.2,        # Last 20% of pre-eval window for calibration
+)
+result = experiment.run(
+    model_factory=lambda: GradientBoostModel(backend="xgboost", params=...),
+    feature_pipeline=FeaturePipeline(steps=[
+        ("impute", Imputer(strategy="median", group_col="weight_class")),
+        ("normalize", Normalizer(method="standard")),
+    ]),
+)
+comparison = compare_to_market(result, data, "market_prob_a", "team_a_win")
+```
 
 ## Current Workflows
 - `workflows/ncaa_march_madness/` — NCAA Men's Basketball March Madness bracket prediction

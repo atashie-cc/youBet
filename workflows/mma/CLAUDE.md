@@ -11,7 +11,8 @@ python scripts/collect_data.py --process-only # Process raw data only
 python scripts/compute_elo.py                 # Fighter Elo ratings (overall + weight-class)
 python scripts/tune_elo.py                    # Grid search Elo parameters (~720 combos)
 python scripts/build_features.py              # 13 differential features + 2 context
-python scripts/train.py                       # Walk-forward CV by year
+python scripts/train.py                       # Walk-forward CV by year (ad-hoc)
+python scripts/train_v2.py                    # Walk-forward CV via core Experiment runner (preferred)
 python scripts/train.py --tune                # Hyperparameter tuning
 python scripts/evaluate_market.py             # Model LL vs market closing LL
 python scripts/scrape_opening_lines.py        # Scrape BFO opening/closing lines
