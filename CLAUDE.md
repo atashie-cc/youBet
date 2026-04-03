@@ -32,9 +32,11 @@
 - `workflows/ncaa_march_madness/` — NCAA Men's Basketball March Madness bracket prediction
 - `workflows/nba/` — NBA game prediction (Phase 12 complete — model converged at LOO-CV 0.6087, market proven unbeatable)
 - `workflows/mlb/` — MLB COMPLETE (Phases 1-6) — market efficient, ensemble betting not viable, p=0.869
+- `workflows/mma/` — MMA/UFC COMPLETE (Phases 1-2) — model LL 0.6608 vs opening 0.6318, closing 0.6130. Both opening and closing lines efficient. 3 Codex review rounds, 7 fixes applied.
 
 ## Key Research Documents
 - `docs/research/betting-market-efficiency.md` — Lessons on model vs market efficiency, market entry framework, and market prioritization
 - `docs/research/methodologies.md` — Proven prediction methodologies catalog
 - `workflows/nba/research/log.md` — Complete NBA experiment log (Phases 3-12)
 - `workflows/mlb/research/log.md` — MLB experiment log (Phases 1-6, complete)
+- `workflows/mma/research/log.md` — MMA experiment log (Phases 1-2, complete)

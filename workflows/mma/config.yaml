@@ -1,0 +1,94 @@
+# MMA/UFC Fight Outcome Prediction
+# All parameters tunable here — no magic numbers in code.
+
+workflow:
+  name: "mma"
+  description: "UFC/MMA fight outcome prediction (moneyline)"
+
+data:
+  sources:
+    - name: "kaggle_ufc"
+      type: "csv_download"
+      description: "Ultimate UFC Dataset — fight records with odds"
+      coverage: "1993-present"
+    - name: "ufcstats"
+      type: "web_scrape"
+      description: "Round-by-round fight statistics (Phase 3)"
+      url: "http://ufcstats.com"
+      coverage: "1993-present"
+    - name: "bestfightodds"
+      type: "web_scrape"
+      description: "Historical odds from 12+ sportsbooks (Phase 4)"
+      url: "https://www.bestfightodds.com"
+      coverage: "2008-present"
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  reference_dir: "data/reference"
+  min_year: 2010  # Exclude early UFC (pre-modern rules, sparse stats)
+
+elo:
+  k_factor: 80.0              # Tuned via tune_elo.py grid search (quick)
+  home_advantage: 0.0          # MMA is always neutral venue
+  initial_rating: 1500.0
+  time_decay_rate: 0.10        # Tuned: annual decay for inactivity
+  finish_bonus: 1.2            # Tuned: 20% K bonus for KO/TKO/SUB wins
+  weight_class_transfer_penalty: 0.0  # Tuned: no penalty (not helpful)
+  k_schedule:
+    first_n_fights: 5          # Higher K for fighters with few UFC fights
+    early_k_multiplier: 1.5
+
+features:
+  differentials:
+    # Elo systems
+    - elo
+    - wc_elo
+    # Fight stats (rolling career averages)
+    - sig_str_landed_avg
+    - str_accuracy
+    - td_landed_avg
+    - td_pct
+    - sub_att_avg
+    - win_rate
+    - win_streak
+    # Physical / context
+    - reach
+    - height
+    - age
+    - days_since_last
+  context:
+    - weight_class_move_a
+    - weight_class_move_b
+  ewma_span: 5
+  min_fights: 1
+
+model:
+  backend: "xgboost"
+  params:
+    max_depth: 3
+    learning_rate: 0.05
+    n_estimators: 500
+    subsample: 0.8
+    colsample_bytree: 0.8
+    min_child_weight: 5
+    reg_alpha: 0.1
+    reg_lambda: 1.0
+    random_state: 42
+
+split:
+  method: "walk_forward_year"
+  season_col: "year"
+  min_train_years: 5
+
+calibration:
+  method: "platt"
+  clip_min: 0.05
+  clip_max: 0.95
+
+evaluation:
+  primary_metric: "log_loss"
+  metrics: ["log_loss", "accuracy", "brier_score"]
+
+bankroll:
+  kelly_fraction: 0.125       # Conservative — small sample per year
+  min_edge: 0.03
+  max_bet_fraction: 0.05

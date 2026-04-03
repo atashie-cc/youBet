@@ -55,6 +55,7 @@ Based on literature review and our empirical findings:
 | MLB moneylines | Moderate-high | Less public attention than NFL/NBA, pitching matchups create variance | Low-moderate |
 | NHL moneylines | Moderate | Less liquidity, more variance (goaltending) | Moderate |
 | Soccer (major leagues) | High | Massive global liquidity, 3-way market adds complexity | Low |
+| **MMA/UFC moneylines** | High | Closing LL 0.6099 empirically measured — efficient despite lower liquidity | Low (confirmed) |
 | **NCAA basketball** | Moderate | 350+ teams, less data per team, oddsmaker attention spread thin | **Moderate-high** |
 | **Minor/niche leagues** | Low | Thin liquidity, less oddsmaker attention | **High** |
 | **Player props** | Low-moderate | Combinatorial explosion, less modeling by books | **High** |
@@ -121,8 +122,9 @@ Season-level stat aggregates (e.g., FanGraphs team ERA) contain end-of-season va
 |-------|--------------|-------------------|-----|-----------------|
 | NBA | 0.6219 (WF) | 0.5918 | +0.030 | No — market wins every season |
 | MLB | 0.6773 (WF) | 0.6775 | +0.000 | No — p=0.869, 2022-2025 = -0.3% ROI |
+| MMA/UFC | 0.6608 (XGB WF) | 0.6130 (close) / 0.6318 (open) | +0.033 (vs open) | No — even opening lines beat model. 3 Codex reviews, 7 fixes applied. |
 
-Both sports confirm: major-sport moneyline closing lines are approximately efficient against public statistical models.
+All three sports confirm: moneyline closing lines are efficient against public statistical models. MMA was predicted to be less efficient (0.65-0.68 LL) but empirically proved comparable to team sports (closing 0.61, opening 0.63). MMA opening lines move +0.019 LL from open to close (more than NBA's ~0.007) due to weigh-ins, injuries, and camp news, but even opening lines are too accurate for public models to beat.
 
 ## Files
 
