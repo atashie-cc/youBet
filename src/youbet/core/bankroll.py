@@ -23,6 +23,15 @@ class BetRecommendation:
     expected_value: float
 
 
+@dataclass
+class RiskLimits:
+    """Risk management parameters for betting strategies."""
+
+    max_daily_exposure: float = 0.20      # Max fraction of bankroll at risk per day
+    max_single_bet: float = 0.05          # Max fraction on any single bet
+    stop_loss_threshold: float = 0.50     # Halt if bankroll drops below this fraction of start
+
+
 def american_to_decimal(ml: float) -> float:
     """Convert American moneyline to decimal odds.
 
@@ -87,6 +96,34 @@ def fractional_kelly(
     retaining most of the growth rate. Standard practice in sports betting.
     """
     return kelly_criterion(prob, decimal_odds) * fraction
+
+
+def confidence_kelly(
+    prob: float,
+    decimal_odds: float,
+    base_fraction: float = 0.125,
+    confidence_multiplier: float = 1.0,
+    max_bet_fraction: float = 0.05,
+) -> float:
+    """Compute confidence-adjusted fractional Kelly bet size.
+
+    Extends fractional_kelly with a multiplier derived from ensemble
+    agreement. High-confidence bets (multiplier > 1) get larger sizing;
+    low-confidence bets (multiplier < 1) get smaller sizing.
+
+    Args:
+        prob: Estimated win probability (from primary model).
+        decimal_odds: Decimal odds offered by sportsbook.
+        base_fraction: Base Kelly fraction (e.g., 0.125 = eighth-Kelly).
+        confidence_multiplier: Scaling factor from ensemble agreement
+            (e.g., 1.5 for high agreement, 0.5 for disagreement, 0 to skip).
+        max_bet_fraction: Hard cap on bet size as fraction of bankroll.
+    """
+    if confidence_multiplier <= 0:
+        return 0.0
+    base = fractional_kelly(prob, decimal_odds, base_fraction)
+    scaled = base * confidence_multiplier
+    return min(scaled, max_bet_fraction)
 
 
 def size_bets(

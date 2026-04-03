@@ -4,6 +4,69 @@ Track experiments, findings, and decisions. Most recent entries at top. Read at 
 
 ---
 
+## 2026-04-02 — Phase 6: Betting Optimization with Ensemble Uncertainty
+
+### Hypothesis
+Ensemble disagreement (std across LogReg, RF, LightGBM, XGBoost predictions) can identify which games to bet confidently. Bet more on high-agreement, less/skip on high-disagreement. Target opening lines (0.0011 LL softer than closing).
+
+### Disagreement Analysis (19,610 games, 2016-2025)
+
+**The hypothesis is wrong.** Ensemble disagreement is NOT a useful signal in MLB:
+
+| Quintile | N | Accuracy | Log Loss | Avg |pred-0.5| |
+|----------|---|----------|----------|-----------------|
+| Q0 (agree) | 3,533 | 55.4% | 0.6869 | 0.057 |
+| Q1 | 3,552 | 54.2% | 0.6880 | 0.061 |
+| Q2 | 3,752 | 56.1% | 0.6799 | 0.064 |
+| Q3 | 4,057 | 58.0% | 0.6735 | 0.071 |
+| Q4 (disagree) | 4,716 | 60.7% | 0.6613 | 0.094 |
+
+High disagreement = BETTER performance (opposite of NBA). But this is entirely confounded by game closeness — models disagree more on strong favorites (which are easier to predict). After controlling for probability bins, the quintile effect disappears.
+
+### Betting Simulation (7 strategies, 10 seasons)
+
+| Strategy | Bets | ROI | 2016-2021 ROI | 2022-2025 ROI | p-value |
+|----------|------|-----|---------------|---------------|---------|
+| conservative (best) | 3,612 | +5.9% | +31.8% | **-0.3%** | **0.869** |
+| q1q2_only | 5,049 | +5.1% | — | — | — |
+| confidence_scaled | 10,537 | +2.9% | — | — | — |
+| flat_eighth_open | 13,973 | +2.9% | — | — | — |
+| selective | 4,584 | +4.8% | — | — | — |
+
+**Permutation test: p=0.869** — the best strategy's P&L is NOT statistically significant. 87% of random shuffles did as well or better.
+
+**Era split is definitive:**
+- 2016-2021: +31.8% ROI, Sharpe 3.47 (strong, but against softer Kaggle-era odds)
+- **2022-2025: -0.3% ROI, Sharpe 0.01** (flat/losing against DraftKings)
+
+**Negative CLV** across all strategies (-0.002 avg) — the model bets against line movement.
+
+### Conclusion
+
+The ensemble uncertainty approach does not work for MLB because:
+1. Disagreement proxies game closeness, not prediction uncertainty
+2. The 0.0011 LL edge over opening lines is too thin to survive vig
+3. The edge is concentrated in 2016-2021 (softer odds source) and absent in 2022-2025
+4. P&L is not statistically significant (p=0.869)
+
+**MLB moneyline betting is not viable** with public statistical models, regardless of:
+- Feature engineering (prior-season, rolling, box-score)
+- Model architecture (LogReg, XGBoost, LightGBM, RF)
+- Ensemble uncertainty (disagreement not predictive)
+- Bet sizing strategy (flat, confidence-scaled, conservative)
+- Line targeting (opening vs closing)
+
+This matches the NBA conclusion and the academic literature on major-sport market efficiency.
+
+### Files Created
+- `betting/scripts/analyze_disagreement.py` — Ensemble disagreement analysis
+- `betting/scripts/retroactive_simulation.py` — Full 7-strategy betting simulation
+- `betting/output/reports/disagreement_analysis.md` — Quintile analysis results
+- `betting/output/reports/ensemble_predictions.csv` — Per-game 4-model predictions
+- `betting/output/reports/retroactive_simulation.md` — Strategy comparison + permutation test
+
+---
+
 ## 2026-04-02 — Phase 5 Full Suite: Opening Lines, Tuning, Ablation, Windows, Ensembles
 
 ### Setup
