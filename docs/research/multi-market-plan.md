@@ -9,19 +9,30 @@ For each market, follow the validated 5-stage pipeline:
 4. **Paper Trade** (4-8 weeks): Live predictions, track CLV over 200+ bets
 5. **Live** (ongoing): Eighth-Kelly → quarter-Kelly, rolling 500-bet monitoring
 
-## Market Prioritization
+## Completed Markets
 
-| Priority | Market | Data Volume | Data Quality | Efficiency | Props Potential | Rationale |
-|----------|--------|-------------|-------------|------------|-----------------|-----------|
-| **1** | **NBA Player Props** | High (664K rows) | Good | Low-moderate | **Primary** | Data already downloaded; props have high vig but weak modeling by books |
-| **2** | **MLB** (moneylines + totals) | Very high (2,430/yr) | Excellent (Statcast) | Moderate | High | Highest volume, best data, weather/park/umpire edges |
-| **3** | **NCAA Basketball** | High (5,500/yr) | Inconsistent | Moderate | Low | Existing workflow; 350+ teams = information asymmetry |
-| **4** | **NHL** | High (1,312/yr) | Improving (xG) | Moderate | Moderate | Goaltender-driven variance creates modeling surface |
-| **5** | **Soccer (top leagues)** | High (~1,900/yr across top 5) | Good (xG era) | High | Moderate | Massive global liquidity but very sharp |
-| **6** | **Soccer (niche/national)** | Low-moderate | Variable | Low | Low | Less sharp money but data scarcity |
-| **7** | **Esports** | Moderate (~2,000/yr per title) | Variable | Low | Low | Immature market, rapid meta-changes |
-| **8** | **MMA** | Low (~500/yr UFC) | Moderate | Moderate | Low | Small sample, high variance, style-matchup driven |
-| **9** | **Boxing** | Very low (~100/yr major) | Poor | Low-moderate | Very low | Too few fights for statistical modeling |
+| Market | Phases | Result | Key Finding |
+|--------|--------|--------|-------------|
+| **NBA moneylines** | 12 phases | Market wins by 0.030 LL | Closing lines unbeatable; 0/18 seasons profitable |
+| **MLB moneylines** | 6 phases | Market wins by 0.000 LL | Model ties market but p=0.869; 2022-2025 = -0.3% ROI |
+
+Both confirm: **major-sport moneyline closing lines are approximately efficient against public statistical models.** Ensemble disagreement helps bet selection in NBA but not MLB.
+
+## Revised Market Prioritization
+
+Based on lessons learned: avoid deep-liquidity moneyline markets. Target markets where books model less carefully (props, niche leagues) or where the closing line is less efficient.
+
+| Priority | Market | Data Volume | Efficiency | Rationale |
+|----------|--------|-------------|------------|-----------|
+| **1** | **NBA/MLB Player Props** | High | Low-moderate | Books use simpler models; combinatorial explosion limits attention |
+| **2** | **MLB Totals/Run Lines** | Very high | Moderate | Same data, different market — totals may be less efficient than ML |
+| **3** | **NCAA Basketball** | High (5,500/yr) | Moderate | 350+ teams = information asymmetry; existing workflow |
+| **4** | **NHL** | High (1,312/yr) | Moderate | Goaltender-driven variance; less liquid than NBA/MLB |
+| **5** | **Soccer (niche/national)** | Low-moderate | Low | Less sharp money; data scarcity is the challenge |
+| **6** | **Esports** | Moderate | Low | Immature market but rapid meta-changes |
+| ~~7~~ | ~~NBA moneylines~~ | ~~High~~ | ~~Very high~~ | ~~KILLED: market too efficient (Phase 12)~~ |
+| ~~8~~ | ~~MLB moneylines~~ | ~~Very high~~ | ~~Very high~~ | ~~KILLED: market too efficient (Phase 6)~~ |
+| ~~9~~ | ~~Soccer (top leagues)~~ | ~~High~~ | ~~Very high~~ | ~~Deprioritized: massive global liquidity = very sharp~~ |
 
 ## Per-Market Implementation Plans
 

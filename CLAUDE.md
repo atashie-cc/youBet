@@ -37,4 +37,4 @@
 - `docs/research/betting-market-efficiency.md` — Lessons on model vs market efficiency, market entry framework, and market prioritization
 - `docs/research/methodologies.md` — Proven prediction methodologies catalog
 - `workflows/nba/research/log.md` — Complete NBA experiment log (Phases 3-12)
-- `workflows/mlb/research/log.md` — MLB experiment log (Phases 1-4 + rolling feature experiments)
+- `workflows/mlb/research/log.md` — MLB experiment log (Phases 1-6, complete)

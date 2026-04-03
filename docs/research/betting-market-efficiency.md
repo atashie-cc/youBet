@@ -103,8 +103,32 @@ Before entering any betting market, establish:
 6. **Sample size**: Minimum 1,000+ games for reliable simulation. Per-season variance is enormous (our NBA std was 0.018 LL across seasons).
 7. **Strategy simulation**: Walk-forward P&L with fractional Kelly, tracking max drawdown, win rate, ROI, and bankroll trajectory.
 
+### 7. Permutation Tests Are Essential
+
+Always run permutation tests on betting strategy P&L. Shuffle outcomes within each season 1000+ times and check if actual P&L falls in the top 5% of the null distribution. The MLB betting simulation showed +5.9% ROI but p=0.869 — 87% of random shuffles did as well or better. Without the permutation test, we would have mistakenly believed the strategy was profitable.
+
+### 8. Ensemble Disagreement Is Domain-Dependent
+
+In NBA, ensemble disagreement (model std) correlated with prediction quality — high agreement = 70.1% accuracy vs 63.0% for disagreement (Phase 10f). In MLB, disagreement correlates with game closeness instead — high disagreement = strong favorites = higher accuracy. The signal does NOT transfer across sports. Always validate disagreement analysis with game-closeness controls before building a betting strategy on it.
+
+### 9. Point-in-Time Features Are Non-Negotiable
+
+Season-level stat aggregates (e.g., FanGraphs team ERA) contain end-of-season values. Using these for mid-season games is lookahead bias — the #1 most common error in sports betting backtests. The MLB workflow inflated its edge from 0.0006 to 0.0083 LL through this single mistake. Safe alternatives: prior-season stats, rolling/cumulative stats from game logs, sequential ratings (Elo).
+
+## Empirical Results Across Sports
+
+| Sport | Best Model LL | Market Closing LL | Gap | Betting Viable? |
+|-------|--------------|-------------------|-----|-----------------|
+| NBA | 0.6219 (WF) | 0.5918 | +0.030 | No — market wins every season |
+| MLB | 0.6773 (WF) | 0.6775 | +0.000 | No — p=0.869, 2022-2025 = -0.3% ROI |
+
+Both sports confirm: major-sport moneyline closing lines are approximately efficient against public statistical models.
+
 ## Files
 
-- `workflows/nba/betting/scripts/retroactive_simulation.py` — Closing line P&L simulation
-- `workflows/nba/betting/scripts/retroactive_opening_lines.py` — Opening vs closing comparison
+- `workflows/nba/betting/scripts/retroactive_simulation.py` — NBA closing line P&L simulation
+- `workflows/nba/betting/scripts/retroactive_opening_lines.py` — NBA opening vs closing comparison
+- `workflows/mlb/betting/scripts/retroactive_simulation.py` — MLB 7-strategy betting simulation
+- `workflows/mlb/betting/scripts/analyze_disagreement.py` — MLB ensemble disagreement analysis
+- `workflows/mlb/research/phase5_full_results.md` — MLB model vs opening/closing lines
 - `workflows/nba/research/log.md` — Phase 12 detailed findings
