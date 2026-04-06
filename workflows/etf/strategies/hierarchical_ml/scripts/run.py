@@ -78,7 +78,8 @@ class HierarchicalML(BaseStrategy):
                 continue
             if ticker not in prices.columns:
                 continue
-            monthly = prices[ticker].loc[:as_of_date].resample("ME").last().dropna()
+            # Strict < to prevent fold-boundary PIT leak
+            monthly = prices[ticker].loc[prices.index < as_of_date].resample("ME").last().dropna()
             class_returns[cls] = monthly.pct_change().dropna()
         return pd.DataFrame(class_returns).dropna()
 
@@ -117,8 +118,10 @@ class HierarchicalML(BaseStrategy):
         # Fit one Ridge model per asset class
         self._models = {}
         for cls in class_rets.columns:
-            # Target: next-month class return
-            y = class_rets[cls].shift(-1).loc[common].dropna()
+            # Target: next-month class return. Drop last row to prevent
+            # fold-boundary leak (same fix as ml_strategy.py).
+            y = class_rets[cls].shift(-1).loc[common]
+            y = y.iloc[:-1].dropna()
             valid_idx = X_scaled.index.intersection(y.index)
             if len(valid_idx) < 12:
                 continue
@@ -189,7 +192,7 @@ class HierarchicalML(BaseStrategy):
                 continue
 
             # Pick top N by momentum within class
-            cls_prices = prices[class_tickers].loc[:as_of_date].dropna(axis=1, how="all")
+            cls_prices = prices[class_tickers].loc[prices.index < as_of_date].dropna(axis=1, how="all")
             top = momentum_rank(cls_prices, self.lookback_months, self.top_per_class)
 
             if not top:

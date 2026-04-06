@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 WORKFLOW_ROOT = Path(__file__).resolve().parents[3]  # workflows/etf/
@@ -52,15 +53,21 @@ def _run_grid_search(
     actual_n = cv.get_n_splits(X)
     if actual_n < 2:
         # Fall back: fit with default params, no CV
-        estimator.fit(X, y)
+        scaler = StandardScaler()
+        X_s = pd.DataFrame(scaler.fit_transform(X), index=X.index, columns=X.columns)
+        estimator.fit(X_s, y)
         diag = CVDiagnostics(best_params={}, fold_val_scores=[])
         diag.compute()
-        return estimator, diag
+        return estimator, diag, scaler
+
+    # Wrap in Pipeline so scaler refits per CV fold (Codex fix #4)
+    pipe = Pipeline([("scaler", StandardScaler()), ("model", estimator)])
+    pipe_grid = {f"model__{k}": v for k, v in param_grid.items()}
 
     grid = GridSearchCV(
-        estimator,
-        param_grid,
-        cv=cv,  # Reuse same CV instance for consistency
+        pipe,
+        pipe_grid,
+        cv=cv,
         scoring=scoring,
         refit=True,
         return_train_score=True,
@@ -76,8 +83,11 @@ def _run_grid_search(
         for i in range(n_folds)
     ]
 
+    # Strip model__ prefix from reported params
+    best_params = {k.replace("model__", ""): v for k, v in grid.best_params_.items()}
+
     diag = CVDiagnostics(
-        best_params=grid.best_params_,
+        best_params=best_params,
         fold_val_scores=fold_scores,
     )
     diag.compute()
@@ -88,7 +98,12 @@ def _run_grid_search(
         diag.consistency_ratio,
     )
 
-    return grid.best_estimator_, diag
+    # Extract the fitted model and scaler from the best pipeline
+    best_pipe = grid.best_estimator_
+    best_scaler = best_pipe.named_steps["scaler"]
+    best_model = best_pipe.named_steps["model"]
+
+    return best_model, diag, best_scaler
 
 
 class MLLogistic(MLStrategy):
@@ -105,14 +120,10 @@ class MLLogistic(MLStrategy):
     def _fit_model(self, X: pd.DataFrame, y: pd.Series) -> None:
         y_class = (y > 0).astype(int)
 
-        X_scaled = pd.DataFrame(
-            self._scaler.fit_transform(X), index=X.index, columns=X.columns
-        )
-
-        self._model, self.cv_diagnostics = _run_grid_search(
+        self._model, self.cv_diagnostics, self._scaler = _run_grid_search(
             estimator=LogisticRegression(penalty="l2", max_iter=1000, solver="lbfgs"),
             param_grid=self.hp_grid,
-            X=X_scaled,
+            X=X,
             y=y_class,
             scoring="accuracy",  # Not neg_log_loss — single-month test folds can be single-class
         )
@@ -156,14 +167,10 @@ class MLRidge(MLStrategy):
         self._model = None
 
     def _fit_model(self, X: pd.DataFrame, y: pd.Series) -> None:
-        X_scaled = pd.DataFrame(
-            self._scaler.fit_transform(X), index=X.index, columns=X.columns
-        )
-
-        self._model, self.cv_diagnostics = _run_grid_search(
+        self._model, self.cv_diagnostics, self._scaler = _run_grid_search(
             estimator=Ridge(),
             param_grid=self.hp_grid,
-            X=X_scaled,
+            X=X,
             y=y,
             scoring="neg_mean_squared_error",
         )
@@ -211,10 +218,6 @@ class MLXGBoost(MLStrategy):
     def _fit_model(self, X: pd.DataFrame, y: pd.Series) -> None:
         import xgboost as xgb
 
-        X_scaled = pd.DataFrame(
-            self._scaler.fit_transform(X), index=X.index, columns=X.columns
-        )
-
         base_params = {
             "subsample": 0.8,
             "colsample_bytree": 0.8,
@@ -222,10 +225,10 @@ class MLXGBoost(MLStrategy):
             "verbosity": 0,
         }
 
-        self._model, self.cv_diagnostics = _run_grid_search(
+        self._model, self.cv_diagnostics, self._scaler = _run_grid_search(
             estimator=xgb.XGBRegressor(**base_params),
             param_grid=self.hp_grid,
-            X=X_scaled,
+            X=X,
             y=y,
             scoring="neg_mean_squared_error",
         )
@@ -272,10 +275,6 @@ class MLLightGBM(MLStrategy):
     def _fit_model(self, X: pd.DataFrame, y: pd.Series) -> None:
         import lightgbm as lgb
 
-        X_scaled = pd.DataFrame(
-            self._scaler.fit_transform(X), index=X.index, columns=X.columns
-        )
-
         base_params = {
             "subsample": 0.8,
             "colsample_bytree": 0.8,
@@ -283,10 +282,10 @@ class MLLightGBM(MLStrategy):
             "verbosity": -1,
         }
 
-        self._model, self.cv_diagnostics = _run_grid_search(
+        self._model, self.cv_diagnostics, self._scaler = _run_grid_search(
             estimator=lgb.LGBMRegressor(**base_params),
             param_grid=self.hp_grid,
-            X=X_scaled,
+            X=X,
             y=y,
             scoring="neg_mean_squared_error",
         )

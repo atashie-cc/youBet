@@ -111,7 +111,34 @@ def evaluate_model(
     scoring: str,
     is_classifier: bool = False,
 ) -> dict:
-    """Run 10-fold rolling CV on train, evaluate on test, report consistency."""
+    """Run 10-fold rolling CV on train, evaluate on test, report consistency.
+
+    Note: scaler is wrapped inside a Pipeline so each CV fold refits on its
+    own training slice only (Codex review fix #4 — no preprocessing leakage).
+    """
+    from sklearn.pipeline import Pipeline
+
+    cv = RollingWindowCV(n_splits=N_CV_SPLITS, train_size=TRAIN_SIZE_MONTHS, test_size=1)
+    actual_n = cv.get_n_splits(X_train)
+
+    if actual_n < 2:
+        return {"model": model_name, "error": "insufficient data for CV"}
+
+    # Wrap estimator in Pipeline so scaler refits per CV fold
+    pipe = Pipeline([("scaler", StandardScaler()), ("model", estimator)])
+    pipe_grid = {f"model__{k}": v for k, v in param_grid.items()}
+
+    grid = GridSearchCV(
+        pipe,
+        pipe_grid,
+        cv=cv,
+        scoring=scoring,
+        refit=True,
+        return_train_score=True,
+    )
+    grid.fit(X_train, y_train)
+
+    # For final test evaluation, fit scaler on full train then transform test
     scaler = StandardScaler()
     X_train_s = pd.DataFrame(
         scaler.fit_transform(X_train), index=X_train.index, columns=X_train.columns
@@ -119,22 +146,6 @@ def evaluate_model(
     X_test_s = pd.DataFrame(
         scaler.transform(X_test), index=X_test.index, columns=X_test.columns
     )
-
-    cv = RollingWindowCV(n_splits=N_CV_SPLITS, train_size=TRAIN_SIZE_MONTHS, test_size=1)
-    actual_folds = list(cv.split(X_train_s))
-
-    if len(actual_folds) < 2:
-        return {"model": model_name, "error": "insufficient data for CV"}
-
-    grid = GridSearchCV(
-        estimator,
-        param_grid,
-        cv=RollingWindowCV(n_splits=N_CV_SPLITS, train_size=TRAIN_SIZE_MONTHS, test_size=1),
-        scoring=scoring,
-        refit=True,
-        return_train_score=True,
-    )
-    grid.fit(X_train_s, y_train)
 
     # --- Best HP config (highest mean CV score) ---
     best_idx = grid.best_index_
@@ -162,7 +173,8 @@ def evaluate_model(
             best_consistency = ratio
             consistent_idx = i
 
-    consistent_params = grid.cv_results_["params"][consistent_idx]
+    consistent_params_raw = grid.cv_results_["params"][consistent_idx]
+    consistent_params = {k.replace("model__", ""): v for k, v in consistent_params_raw.items()}
     consistent_fold_scores = [
         grid.cv_results_[f"split{j}_test_score"][consistent_idx]
         for j in range(n_folds)
@@ -171,25 +183,30 @@ def evaluate_model(
     consistent_std = float(np.std(consistent_fold_scores))
 
     # --- Test-set evaluation ---
-    best_model = grid.best_estimator_
+    # grid.best_estimator_ is a Pipeline; use it directly (it handles scaling)
+    best_pipe = grid.best_estimator_
 
     # Refit consistent model if different from best
     if consistent_idx != best_idx:
-        consistent_estimator = estimator.__class__(**consistent_params)
-        if hasattr(estimator, 'get_params'):
-            base_params = {k: v for k, v in estimator.get_params().items()
-                          if k not in consistent_params}
-            consistent_estimator = estimator.__class__(**{**base_params, **consistent_params})
-        consistent_estimator.fit(X_train_s, y_train)
+        # Strip model__ prefix from params for the raw estimator
+        raw_params = {k.replace("model__", ""): v for k, v in consistent_params.items()}
+        cons_est = estimator.__class__(**{**estimator.get_params(), **raw_params})
+        cons_est.fit(X_train_s, y_train)
     else:
-        consistent_estimator = best_model
+        cons_est = None
 
     if is_classifier:
-        best_test_score = -log_loss(y_test, best_model.predict_proba(X_test_s))
-        cons_test_score = -log_loss(y_test, consistent_estimator.predict_proba(X_test_s))
+        best_test_score = -log_loss(y_test, best_pipe.predict_proba(X_test))
+        if cons_est is not None:
+            cons_test_score = -log_loss(y_test, cons_est.predict_proba(X_test_s))
+        else:
+            cons_test_score = best_test_score
     else:
-        best_test_score = -mean_squared_error(y_test, best_model.predict(X_test_s))
-        cons_test_score = -mean_squared_error(y_test, consistent_estimator.predict(X_test_s))
+        best_test_score = -mean_squared_error(y_test, best_pipe.predict(X_test))
+        if cons_est is not None:
+            cons_test_score = -mean_squared_error(y_test, cons_est.predict(X_test_s))
+        else:
+            cons_test_score = best_test_score
 
     return {
         "model": model_name,
@@ -197,7 +214,7 @@ def evaluate_model(
         "n_test": len(X_test),
         "n_cv_folds": n_folds,
         # Best HP
-        "best_params": grid.best_params_,
+        "best_params": {k.replace("model__", ""): v for k, v in grid.best_params_.items()},
         "best_val_mean": best_mean,
         "best_val_std": best_std,
         "best_val_consistency": best_std / abs(best_mean) if abs(best_mean) > 1e-10 else float("inf"),

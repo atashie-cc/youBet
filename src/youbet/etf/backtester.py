@@ -279,6 +279,19 @@ class Backtester:
                 if bsum > 0 and abs(bsum - 1.0) > 0.01:
                     bench_weights = bench_weights / bsum
 
+            # Validate weights — warn if empty or degenerate
+            if len(new_weights) == 0 or new_weights.sum() < 1e-10:
+                logger.warning(
+                    "Strategy %s returned empty/zero weights at %s — "
+                    "portfolio will be 100%% cash this period",
+                    strategy.name, rebal_date.date(),
+                )
+            if (new_weights < 0).any():
+                logger.warning(
+                    "Strategy %s returned negative weights at %s",
+                    strategy.name, rebal_date.date(),
+                )
+
             # Transaction costs
             if len(current_weights) > 0:
                 cost = self.cost_model.rebalance_cost(
