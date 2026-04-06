@@ -1,0 +1,21 @@
+strategy:
+  name: "combined_blend"
+  description: "Blend of top rule-based strategies: trend following + risk parity + asset class rotation"
+
+variants:
+  top3_equal:
+    description: "Equal-weight blend of trend_following + risk_parity + asset_class_rotation"
+    members: ["trend_following", "risk_parity", "asset_class_rotation"]
+    weights: [0.333, 0.333, 0.334]
+
+  trend_riskparity:
+    description: "50/50 trend following + risk parity"
+    members: ["trend_following", "risk_parity"]
+    weights: [0.5, 0.5]
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"
+  initial_capital: 100000
