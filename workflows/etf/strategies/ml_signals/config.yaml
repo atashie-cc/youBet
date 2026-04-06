@@ -1,0 +1,71 @@
+strategy:
+  name: "ml_signals"
+  description: "ML/regression models on price + macro features to predict next-month VTI excess return"
+
+signal:
+  equity_ticker: "VTI"
+  risk_off_ticker: "VGSH"
+  # Weight mapping: equity_pct = clip(base + scale * prediction, min, max)
+  weight_base: 0.6                # Base equity allocation
+  weight_scale: 4.0               # Sensitivity to prediction
+  weight_min: 0.20                # Never below 20% equity
+  weight_max: 1.00                # No leverage
+
+features:
+  price_derived:
+    - trailing_vol_63d             # 63-day realized vol (annualized)
+    - trailing_return_1m           # 1-month trailing return
+    - trailing_return_6m           # 6-month trailing return
+  macro:
+    - yield_curve
+    - credit_spread
+    - vix
+    - pmi
+    - cape
+
+models:
+  logistic:
+    type: "classification"
+    hp_grid:
+      C: [0.01, 0.1, 1.0, 10.0]
+    cv_splits: 3
+
+  ridge:
+    type: "regression"
+    hp_grid:
+      alpha: [0.01, 0.1, 1.0, 10.0, 100.0]
+    cv_splits: 3
+
+  xgboost:
+    type: "regression"
+    params:
+      max_depth: 2
+      learning_rate: 0.05
+      min_child_weight: 5
+      subsample: 0.8
+      colsample_bytree: 0.8
+      n_estimators: 200
+    cal_fraction: 0.20
+
+  lightgbm:
+    type: "regression"
+    params:
+      num_leaves: 8
+      learning_rate: 0.05
+      min_data_in_leaf: 5
+      subsample: 0.8
+      colsample_bytree: 0.8
+      n_estimators: 200
+    cal_fraction: 0.20
+
+  ensemble:
+    type: "ensemble"
+    members: ["logistic", "ridge", "xgboost", "lightgbm"]
+    weighting: "equal"
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"
+  initial_capital: 100000

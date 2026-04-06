@@ -1,0 +1,28 @@
+strategy:
+  name: "factor_timing"
+  description: "Rotate between growth/value, large/small based on macro regime"
+
+signal:
+  pairs:
+    style:
+      growth: "VUG"
+      value: "VTV"
+    size:
+      small: "VB"
+      large: "VV"
+    quality:
+      dividend: "VIG"
+      tech: "VGT"
+  diversifiers:
+    bond: "BND"
+    intl: "VXUS"
+  pair_allocation: 0.60         # 60% in factor pairs
+  bond_allocation: 0.20         # 20% bonds
+  intl_allocation: 0.20         # 20% international
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"
+  initial_capital: 100000

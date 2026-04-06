@@ -9,6 +9,10 @@ data/processed/
 data/reference/
 **/data/raw/
 **/data/processed/
+**/data/snapshots/
+
+# Allow committed reference CSVs
+!workflows/etf/data/reference/vanguard_universe.csv
 
 # Models
 *.pkl

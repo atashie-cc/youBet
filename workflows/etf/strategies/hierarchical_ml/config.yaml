@@ -1,0 +1,17 @@
+strategy:
+  name: "hierarchical_ml"
+  description: "Two-stage: Ridge predicts class returns → within-class momentum selects ETFs"
+
+signal:
+  alpha: 10.0                      # Ridge regularization (strong for small N)
+  top_per_class: 2                 # Top 2 ETFs per asset class by momentum
+  lookback_months: 6               # Momentum lookback for within-class selection
+  vol_lookback_days: 63
+  min_class_weight: 0.05           # Minimum 5% per class to ensure diversification
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"
+  initial_capital: 100000

@@ -1,0 +1,51 @@
+ticker,name,inception_date,expense_ratio,category,aum_billions
+VTI,Vanguard Total Stock Market ETF,2001-05-24,0.0003,broad_us_equity,427.0
+VOO,Vanguard S&P 500 ETF,2010-09-07,0.0003,broad_us_equity,560.0
+VV,Vanguard Large-Cap ETF,2004-01-27,0.0004,broad_us_equity,37.0
+VB,Vanguard Small-Cap ETF,2004-01-26,0.0005,broad_us_equity,52.0
+VO,Vanguard Mid-Cap ETF,2004-01-26,0.0004,broad_us_equity,64.0
+VUG,Vanguard Growth ETF,2004-01-26,0.0004,factor,120.0
+VTV,Vanguard Value ETF,2004-01-26,0.0004,factor,120.0
+VXF,Vanguard Extended Market ETF,2001-12-27,0.0006,broad_us_equity,18.0
+MGK,Vanguard Mega Cap Growth ETF,2007-12-17,0.0007,factor,21.0
+MGV,Vanguard Mega Cap Value ETF,2007-12-17,0.0007,factor,8.0
+VBK,Vanguard Small-Cap Growth ETF,2004-01-26,0.0007,factor,16.0
+VBR,Vanguard Small-Cap Value ETF,2004-01-26,0.0007,factor,28.0
+VOT,Vanguard Mid-Cap Growth ETF,2006-08-17,0.0007,factor,14.0
+VOE,Vanguard Mid-Cap Value ETF,2006-08-17,0.0007,factor,18.0
+VXUS,Vanguard Total International Stock ETF,2011-01-26,0.0005,broad_intl_equity,74.0
+VEA,Vanguard FTSE Developed Markets ETF,2007-07-20,0.0005,broad_intl_equity,130.0
+VWO,Vanguard FTSE Emerging Markets ETF,2005-03-04,0.0008,broad_intl_equity,82.0
+VGK,Vanguard FTSE Europe ETF,2005-03-04,0.0008,broad_intl_equity,20.0
+VPL,Vanguard FTSE Pacific ETF,2005-03-04,0.0008,broad_intl_equity,8.0
+VSS,Vanguard FTSE All-World ex-US Small-Cap ETF,2009-04-02,0.0007,broad_intl_equity,9.0
+BND,Vanguard Total Bond Market ETF,2007-04-03,0.0003,broad_us_bond,113.0
+BNDX,Vanguard Total International Bond ETF,2013-05-31,0.0007,broad_us_bond,55.0
+VGSH,Vanguard Short-Term Treasury ETF,2009-11-19,0.0004,cash_equivalent,24.0
+VGIT,Vanguard Intermediate-Term Treasury ETF,2009-11-19,0.0004,broad_us_bond,20.0
+VGLT,Vanguard Long-Term Treasury ETF,2009-11-19,0.0004,broad_us_bond,11.0
+BSV,Vanguard Short-Term Bond ETF,2007-04-03,0.0004,broad_us_bond,38.0
+BIV,Vanguard Intermediate-Term Bond ETF,2007-04-03,0.0004,broad_us_bond,14.0
+BLV,Vanguard Long-Term Bond ETF,2007-04-03,0.0005,broad_us_bond,7.0
+VCSH,Vanguard Short-Term Corporate Bond ETF,2009-11-19,0.0004,broad_us_bond,42.0
+VCIT,Vanguard Intermediate-Term Corporate Bond ETF,2009-11-19,0.0004,broad_us_bond,48.0
+VCLT,Vanguard Long-Term Corporate Bond ETF,2009-11-19,0.0004,broad_us_bond,12.0
+VTIP,Vanguard Short-Term Inflation-Protected Securities ETF,2012-10-12,0.0004,sector_thematic,57.0
+VNQ,Vanguard Real Estate ETF,2004-09-23,0.0012,sector_thematic,62.0
+VNQI,Vanguard Global ex-U.S. Real Estate ETF,2010-11-01,0.0012,sector_thematic,5.0
+VIG,Vanguard Dividend Appreciation ETF,2006-04-21,0.0006,factor,88.0
+VYM,Vanguard High Dividend Yield ETF,2006-11-10,0.0006,factor,57.0
+VIGI,Vanguard International Dividend Appreciation ETF,2016-02-25,0.0015,factor,6.0
+VYMI,Vanguard International High Dividend Yield ETF,2016-02-25,0.0022,factor,8.0
+VGT,Vanguard Information Technology ETF,2004-01-26,0.0010,sector_thematic,78.0
+VHT,Vanguard Health Care ETF,2004-01-26,0.0010,sector_thematic,18.0
+VDC,Vanguard Consumer Staples ETF,2004-01-26,0.0010,sector_thematic,7.0
+VCR,Vanguard Consumer Discretionary ETF,2004-01-26,0.0010,sector_thematic,7.0
+VFH,Vanguard Financials ETF,2004-01-26,0.0010,sector_thematic,12.0
+VIS,Vanguard Industrials ETF,2004-09-23,0.0010,sector_thematic,7.0
+VAW,Vanguard Materials ETF,2004-01-26,0.0010,sector_thematic,3.0
+VDE,Vanguard Energy ETF,2004-09-23,0.0010,sector_thematic,9.0
+VPU,Vanguard Utilities ETF,2004-01-26,0.0010,sector_thematic,6.0
+VOX,Vanguard Communication Services ETF,2004-09-23,0.0010,sector_thematic,4.0
+VMBS,Vanguard Mortgage-Backed Securities ETF,2009-11-19,0.0004,broad_us_bond,17.0
+EDV,Vanguard Extended Duration Treasury ETF,2007-12-06,0.0006,broad_us_bond,3.0

@@ -1,0 +1,18 @@
+strategy:
+  name: "vol_risk_premium"
+  description: "VRP = implied vol (VIX) minus realized vol. Contrarian at extremes."
+
+signal:
+  equity_ticker: "VTI"
+  risk_off_ticker: "VGSH"
+  realized_vol_days: 21            # 21-day trailing realized vol
+  complacent_threshold: 5          # VRP > 5 → market complacent → reduce (70%)
+  stressed_threshold: -5           # VRP < -5 → market stressed → buy (100%)
+  neutral_equity_pct: 0.80
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"
+  initial_capital: 100000

@@ -1,0 +1,13 @@
+strategy:
+  name: "buy_and_hold_vti"
+  description: "100% VTI buy-and-hold. THE benchmark — every strategy must beat this."
+
+allocations:
+  VTI: 1.0
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"
+  initial_capital: 100000

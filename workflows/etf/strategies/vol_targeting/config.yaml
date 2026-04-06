@@ -1,0 +1,19 @@
+strategy:
+  name: "vol_targeting"
+  description: "Scale equity exposure inversely to trailing realized volatility (Moreira & Muir 2017)"
+
+# Pre-specified defaults from literature — committed before seeing results
+signal:
+  equity_ticker: "VTI"
+  risk_off_ticker: "VGSH"          # Short-term treasury when reducing exposure
+  target_vol: 0.16                  # 16% annualized target volatility
+  vol_lookback_days: 63             # ~3 months trailing vol estimation
+  min_equity_weight: 0.20           # Never go below 20% equity
+  max_equity_weight: 1.00           # No leverage
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"
+  initial_capital: 100000

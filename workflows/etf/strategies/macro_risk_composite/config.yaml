@@ -1,0 +1,29 @@
+strategy:
+  name: "macro_risk_composite"
+  description: "Rule-based composite of macro risk signals with pre-specified weights"
+
+# Pre-specified signal weights — committed BEFORE seeing results.
+# Equal weight across available signals. NOT fitted to data.
+signal:
+  equity_ticker: "VTI"
+  risk_off_ticker: "VGSH"
+  # Z-score thresholds for allocation shifts
+  defensive_threshold: -1.0    # composite z < -1 → defensive
+  aggressive_threshold: 1.0    # composite z > +1 → aggressive
+  # Allocation regimes
+  defensive_equity_pct: 0.50
+  neutral_equity_pct: 0.80
+  aggressive_equity_pct: 1.00
+  # Feature weights (equal weight, pre-specified)
+  feature_weights:
+    yield_curve: 0.25          # Positive = normal curve = good
+    credit_spread: -0.25       # Negative = high spread = bad (inverted)
+    vix: -0.25                 # Negative = high VIX = bad (inverted)
+    pmi: 0.25                  # Positive = expansion = good
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"
+  initial_capital: 100000

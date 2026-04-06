@@ -1,0 +1,29 @@
+strategy:
+  name: "sector_rotation"
+  description: "6-month momentum across 10 Vanguard sector ETFs, hold top 3"
+
+signal:
+  lookback_months: 6
+  top_k: 3
+  absolute_momentum: true
+  weighting: "inverse_volatility"
+  risk_off_ticker: "VGSH"
+  vol_lookback_days: 63
+  sector_tickers:
+    - VGT   # Info Technology
+    - VHT   # Healthcare
+    - VDC   # Consumer Staples
+    - VCR   # Consumer Discretionary
+    - VFH   # Financials
+    - VIS   # Industrials
+    - VAW   # Materials
+    - VDE   # Energy
+    - VPU   # Utilities
+    - VOX   # Communication Services
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"
+  initial_capital: 100000

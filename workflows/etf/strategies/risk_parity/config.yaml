@@ -1,0 +1,19 @@
+strategy:
+  name: "risk_parity"
+  description: "Inverse-volatility weighting across 5 asset class representatives (no leverage)"
+
+signal:
+  vol_lookback_days: 63
+  representatives:
+    us_equity: "VTI"
+    intl_equity: "VXUS"
+    us_bond: "BND"
+    real_assets: "VNQ"
+    tips: "VTIP"
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"
+  initial_capital: 100000

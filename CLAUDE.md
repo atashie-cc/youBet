@@ -4,7 +4,7 @@
 1. **Calibration over accuracy** — optimize for log loss, not accuracy. Well-calibrated probabilities yield better betting returns.
 2. **Beat the market, not the outcome** — a model must produce better probabilities than the market's implied odds to be profitable. Accuracy alone is insufficient. See `docs/research/betting-market-efficiency.md`.
 3. **Config-driven** — all parameters live in `config.yaml` per workflow. No magic numbers in code.
-4. **One-way dependencies** — `workflows/` depends on `src/youbet/core/`, never reverse.
+4. **One-way dependencies** — `workflows/` depends on `src/youbet/` (`core/`, `etf/`, `utils/`), never reverse.
 5. **Research log is the feedback loop** — `research/log.md` in each workflow is read at start of every session.
 6. **Differentials, not absolutes** — features are always Team A stat minus Team B stat.
 7. **Iterative refinement** — start simple (XGBoost baseline), measure, then improve.
@@ -27,8 +27,19 @@
   - `bankroll.py` — Kelly criterion, vig removal
   - `betting.py` — Edge detection, bet sizing, P&L reporting
   - `pipeline.py` — Legacy abstract pipeline (prefer `experiment.py` for new workflows)
+- `src/youbet/etf/` — ETF strategy evaluation engine:
+  - `backtester.py` — Walk-forward portfolio backtester with T+1 execution, transaction costs, T-bill cash rate
+  - `strategy.py` — BaseStrategy ABC (fit, generate_weights)
+  - `stats.py` — Block bootstrap (Politis-Romano), Holm correction, excess Sharpe CIs, Romano-Wolf simultaneous CIs
+  - `risk.py` — Sharpe, Sortino, MaxDD, CVaR, information ratio, Calmar, risk of ruin
+  - `pit.py` — PIT validation: temporal splits, survivorship guard, publication lag enforcement (PITFeatureSeries)
+  - `costs.py` — Per-category transaction cost model with expense ratio drag
+  - `transforms.py` — Stateful normalizer with drift monitoring (PSI, KS test)
+  - `allocation.py` — Momentum rank, inverse-vol weight, absolute momentum filter
+  - `data.py` — yfinance price fetcher, FRED T-bill rates, snapshot caching
+  - `macro/fetchers.py` — Tier 1 macro signals: yield curve, credit spread, VIX, PMI, CAPE
 - `src/youbet/utils/` — I/O and visualization helpers
-- `workflows/` — domain-specific prediction workflows (NCAA March Madness, etc.)
+- `workflows/` — domain-specific prediction workflows (NCAA March Madness, ETF strategies, etc.)
 - `docs/` — research findings, architectural decisions, runbooks
 
 ## Conventions
@@ -72,6 +83,8 @@ comparison = compare_to_market(result, data, "market_prob_a", "team_a_win")
 - `workflows/nba/` — NBA game prediction (Phase 12 complete — model converged at LOO-CV 0.6087, market proven unbeatable)
 - `workflows/mlb/` — MLB COMPLETE (Phases 1-6) — market efficient, ensemble betting not viable, p=0.869
 - `workflows/mma/` — MMA/UFC COMPLETE (Phases 1-2) — model LL 0.6608 vs opening 0.6318, closing 0.6130. Both opening and closing lines efficient. 3 Codex review rounds, 7 fixes applied.
+- `workflows/pga/` — PGA Golf H2H matchup prediction (Phase 1 — Screen). Individual sport with SG decomposition, course-player fit, 140+ player fields. Data Golf API primary source.
+- `workflows/etf/` — Vanguard ETF strategy evaluation COMPLETE. 17 strategies tested (rule-based, macro, momentum, ML, multi-asset) — none pass strict gate vs VTI. Trend-following best at +0.210 ExSharpe but CI spans zero. ML models consistently destroy value. 52-ETF universe, 20yr data, block bootstrap + Holm correction. 2 Codex review rounds, 5 fixes applied.
 
 ## Key Research Documents
 - `docs/research/betting-market-efficiency.md` — Lessons on model vs market efficiency, market entry framework, and market prioritization
@@ -79,3 +92,6 @@ comparison = compare_to_market(result, data, "market_prob_a", "team_a_win")
 - `workflows/nba/research/log.md` — Complete NBA experiment log (Phases 3-12)
 - `workflows/mlb/research/log.md` — MLB experiment log (Phases 1-6, complete)
 - `workflows/mma/research/log.md` — MMA experiment log (Phases 1-2, complete)
+- `workflows/pga/research/log.md` — PGA Golf experiment log (Phase 1, active)
+- `workflows/etf/research/etf-market-efficiency.md` — Phase 0 ETF market efficiency findings
+- `workflows/etf/research/strategy-catalog.md` — Feature taxonomy and Phase 1-5 strategy roadmap

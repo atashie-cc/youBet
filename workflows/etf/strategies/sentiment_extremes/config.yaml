@@ -1,0 +1,17 @@
+strategy:
+  name: "sentiment_extremes"
+  description: "VIX-based contrarian: buy fear, sell complacency"
+
+signal:
+  equity_ticker: "VTI"
+  risk_off_ticker: "VGSH"
+  fear_threshold: 30               # VIX > 30 → contrarian buy (100% equity)
+  complacency_threshold: 15        # VIX < 15 → reduce risk (60% equity)
+  neutral_equity_pct: 0.80         # Default allocation
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"
+  initial_capital: 100000

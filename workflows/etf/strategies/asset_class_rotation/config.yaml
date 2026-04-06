@@ -1,0 +1,19 @@
+strategy:
+  name: "asset_class_rotation"
+  description: "Macro-driven rotation across 5 asset classes using representative ETFs"
+
+signal:
+  default_weights:
+    us_equity: 0.50
+    intl_equity: 0.15
+    us_bond: 0.25
+    real_assets: 0.05
+    cash: 0.05
+  regime_shift_pct: 0.10       # Each extreme macro signal shifts ±10%
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"
+  initial_capital: 100000

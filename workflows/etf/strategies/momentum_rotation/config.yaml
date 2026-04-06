@@ -1,0 +1,28 @@
+strategy:
+  name: "momentum_rotation"
+  description: "Rotate into top-performing Vanguard ETFs by trailing return"
+
+# Pre-specified defaults from literature — committed before seeing results
+signal:
+  lookback_months: 6                # Rank by trailing 6-month return
+  top_k: 5                          # Hold top 5 ETFs
+  absolute_momentum: true           # Only hold if trailing return > 0
+  weighting: "inverse_volatility"   # "equal" or "inverse_volatility"
+  risk_off_ticker: "VGSH"           # Short-term treasury when abs momentum fails
+  vol_lookback_days: 63             # For inverse-vol weighting
+
+universe_filter:
+  min_aum_billions: 5.0             # Liquidity filter
+  categories:                        # Asset classes to rotate across
+    - broad_us_equity
+    - broad_intl_equity
+    - broad_us_bond
+    - sector_thematic
+    - factor
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"
+  initial_capital: 100000

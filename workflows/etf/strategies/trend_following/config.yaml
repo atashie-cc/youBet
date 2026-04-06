@@ -1,0 +1,16 @@
+strategy:
+  name: "trend_following"
+  description: "Price vs SMA trend following (Meb Faber GTAA-style)"
+
+signal:
+  equity_ticker: "VTI"
+  risk_off_ticker: "VGSH"
+  sma_days: 200                    # 200-day simple moving average
+  # 100% equity if price > SMA, 100% risk-off if below
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"
+  initial_capital: 100000

@@ -1,0 +1,19 @@
+strategy:
+  name: "dual_momentum"
+  description: "Antonacci's Global Equity Momentum: relative + absolute momentum"
+
+signal:
+  us_equity: "VTI"
+  intl_equity: "VXUS"
+  bond: "BND"
+  lookback_months: 12
+  # Hold VTI if VTI 12mo return > VXUS AND > 0
+  # Hold VXUS if VXUS 12mo return > VTI AND > 0
+  # Else hold BND (risk-off)
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"
+  initial_capital: 100000
