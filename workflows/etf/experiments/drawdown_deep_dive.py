@@ -83,10 +83,11 @@ def _bootstrap_drawdown_ci(
     alpha = 1 - confidence
     lower = float(np.percentile(diffs, 100 * alpha / 2))
     upper = float(np.percentile(diffs, 100 * (1 - alpha / 2)))
-    point = float(np.mean(diffs))
+    # Point estimate = realized sample diff, NOT bootstrap mean (Codex fix #1)
+    realized_diff = _max_drawdown(strat_returns) - _max_drawdown(bench_returns)
 
     return {
-        "point_estimate": point,
+        "point_estimate": float(realized_diff),
         "ci_lower": lower,
         "ci_upper": upper,
         "pct_positive": float((diffs > 0).mean()),
@@ -362,12 +363,21 @@ def experiment_4_insurance_premium(results: dict):
         if name not in results:
             continue
         r = results[name]
-        excess = r.overall_returns - r.benchmark_returns
 
-        bull_drag = float(excess[bull_mask].sum())  # Total drag during normal times
-        crisis_gain = float(excess[crisis_mask].sum())  # Total gain during crises
+        # Compounded active wealth: (1+strat)/(1+bench) - 1 per day
+        # Then compound over normal/crisis periods (Codex fix #3)
+        active_wealth = (1 + r.overall_returns).cumprod() / (1 + r.benchmark_returns).cumprod()
+        bull_active = active_wealth[bull_mask]
+        crisis_active = active_wealth[crisis_mask]
+
+        # Compounded drag/gain = ratio of active wealth at end vs start of each regime
+        # Use log returns for additivity across periods
+        log_excess = np.log1p(r.overall_returns) - np.log1p(r.benchmark_returns)
+        bull_drag = float(log_excess[bull_mask].sum())  # Log active return during normal
+        crisis_gain = float(log_excess[crisis_mask].sum())  # Log active return during crisis
         net = bull_drag + crisis_gain
-        annual_premium = -bull_drag / n_years  # Annualized cost
+        n_bull_years = bull_mask.sum() / 252
+        annual_premium = -bull_drag / n_bull_years if n_bull_years > 0 else 0  # Cost per non-crisis year
         payoff_ratio = abs(crisis_gain / bull_drag) if abs(bull_drag) > 1e-10 else float("inf")
 
         print(

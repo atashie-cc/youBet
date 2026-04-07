@@ -27,8 +27,18 @@ class CombinedBlend(BaseStrategy):
         blend_weights: list[float] | None = None,
         variant_name: str = "combined",
     ):
+        if not members:
+            raise ValueError("CombinedBlend requires at least one member strategy")
+        weights = blend_weights or [1.0 / len(members)] * len(members)
+        if len(weights) != len(members):
+            raise ValueError(
+                f"blend_weights length ({len(weights)}) must match "
+                f"members length ({len(members)})"
+            )
+        if any(w < 0 for w in weights):
+            raise ValueError("blend_weights must be non-negative")
         self._members = members
-        self._blend_weights = blend_weights or [1.0 / len(members)] * len(members)
+        self._blend_weights = weights
         self._variant_name = variant_name
 
     def fit(self, prices: pd.DataFrame, as_of_date: pd.Timestamp) -> None:

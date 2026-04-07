@@ -10,15 +10,22 @@ correction, and 2 rounds of Codex adversarial review (11 bugs found and fixed).
 (ExSharpe > 0.20, Holm p < 0.05, CI lower > 0). Trend following comes closest
 at +0.210 but CI spans zero.
 
-**On drawdown**: VTI is NOT efficient. Three strategies provide statistically
-significant drawdown reduction with bootstrap CIs excluding zero:
+**On drawdown**: VTI shows materially higher realized drawdowns. Three strategies
+showed substantially lower max drawdown in this sample, with bootstrap CIs
+suggesting the reduction is unlikely to be pure noise:
 - Trend following: -20.1% vs -55.5% (64% reduction, P(better) = 98%)
 - Risk parity: -22.3% vs -55.5% (60% reduction, P(better) = 100%)
 - Asset class rotation: -33.9% vs -55.5% (39% reduction, P(better) = 100%)
 
-**Recommendation**: 40% trend following + 60% risk parity blend. Sharpe 0.798
-(higher than VTI's ~0.52), MaxDD -22.3% (60% reduction), insurance premium
-3.22%/yr for crisis protection.
+**Caveat**: Max drawdown is a single-path extremum driven primarily by one crisis
+(2008). The bootstrap CIs are exploratory, not pre-committed like the Sharpe gate.
+No Holm-equivalent correction was applied for testing multiple strategies on
+multiple drawdown metrics.
+
+**Recommendation**: 30-50% trend following + 50-70% risk parity blend (a plateau
+of near-identical Sharpe ~0.79-0.80 and MaxDD ~-22%). The 40/60 split is the
+Sharpe-optimal point but the range is flat enough that any allocation in this
+band performs similarly.
 
 ---
 
@@ -47,17 +54,20 @@ The original objective was: "optimize returns AND minimize likelihood of reachin
 | 3 | asset_class_rotation | -33.9% | 39% | [+0.085, +0.232] | 100% |
 | — | VTI (benchmark) | -55.5% | — | — | — |
 
-**Conclusion**: Three strategies provide statistically significant drawdown
-reduction. VTI is drawdown-INefficient.
+**Conclusion**: Three strategies showed materially lower realized max drawdown
+in this sample, at lower CAGR. Bootstrap CIs are exploratory (single-path
+extremum, no Holm correction for drawdown), but the magnitude is large and
+consistent with published trend-following literature.
 
 ---
 
-## Recommended Allocation: 40% Trend / 60% Risk Parity
+## Recommended Allocation: 30-50% Trend / 50-70% Risk Parity
 
-### Why this blend
+### Why this blend range
 
-Zakamulin's published research identifies 40% trend following as the
-Sharpe-optimal allocation. Our blend sweep confirms this exactly:
+Zakamulin's published research identifies ~40% trend following as the
+Sharpe-optimal allocation. Our blend sweep shows a plateau in the 30-50%
+trend range where Sharpe and MaxDD are nearly identical:
 
 | Blend | Sharpe | MaxDD | Calmar | Ann Return |
 |---|---|---|---|---|
@@ -196,8 +206,13 @@ floor — ML cannot extract signal from this amount of data.
 | MMA/UFC | Yes (model LL 0.66 vs close 0.61) | N/A |
 | **Vanguard ETFs** | **Yes** (no strategy beats VTI on Sharpe) | **No** (trend following, risk parity significantly reduce drawdowns) |
 
-The ETF market is unique: while it's Sharpe-efficient (like sports markets),
-there IS a free lunch on drawdown reduction via trend following and risk parity.
-This is because drawdown risk is not priced the same way as Sharpe — the equity
-risk premium compensates for average volatility, not for catastrophic path-dependent
-losses.
+The ETF market shows a different pattern from sports: while Sharpe-efficient
+(like sports markets), there appear to be opportunities for drawdown reduction
+via trend following and risk parity, at the cost of lower absolute returns.
+This is consistent with published literature (Faber, AQR, Zakamulin) showing
+trend following provides crisis alpha with bull-market drag.
+
+**Caveat**: This finding rests heavily on one major crisis (2008-2009) in a
+20-year sample. The drawdown CIs are exploratory, not confirmatory. The
+pattern is supported by 100+ years of trend-following evidence in the
+literature, but out-of-sample validation on future crises is the real test.
