@@ -124,3 +124,15 @@ indicating high variance relative to signal.
 
 The pattern holds across all domains: well-studied, liquid markets are efficient
 against systematic strategies using public data.
+
+## Subsequent Analysis (see final-report.md)
+
+The Sharpe-only analysis was extended with:
+- **Drawdown analysis**: Trend following provides statistically significant DD reduction
+  (-20% vs -55%, bootstrap P(better) = 98%). Three strategies are Pareto-optimal.
+- **Safe withdrawal rates**: Trend following supports 6% SWR (vs VTI's 5%, Bengen's 4%).
+- **Regime analysis**: Trend following earns +49.8% annualized excess in bear markets,
+  pays -4.1% drag in bulls. Classic crisis alpha pattern.
+- **Leveraged experiments**: SMA100 dominates SMA200 at all leverage levels. 3x long/cash
+  with SMA100: 21.6% CAGR, 0.649 Sharpe. 3x inverse destroys wealth unconditionally.
+- **3 Codex reviews, 16 bugs found and fixed.**

@@ -84,7 +84,7 @@ comparison = compare_to_market(result, data, "market_prob_a", "team_a_win")
 - `workflows/mlb/` — MLB COMPLETE (Phases 1-6) — market efficient, ensemble betting not viable, p=0.869
 - `workflows/mma/` — MMA/UFC COMPLETE (Phases 1-2) — model LL 0.6608 vs opening 0.6318, closing 0.6130. Both opening and closing lines efficient. 3 Codex review rounds, 7 fixes applied.
 - `workflows/pga/` — PGA Golf H2H matchup prediction (Phase 1 — Screen). Individual sport with SG decomposition, course-player fit, 140+ player fields. Data Golf API primary source.
-- `workflows/etf/` — Vanguard ETF strategy evaluation COMPLETE. 17 strategies, dual-objective analysis. Sharpe: VTI efficient (none pass gate). Drawdown: VTI INefficient — trend following, risk parity, asset class rotation all provide statistically significant DD reduction. Recommended: 40% trend / 60% risk parity (Sharpe 0.798, MaxDD -22.3% vs VTI -55.5%). ML destroyed value. 2 Codex reviews, 11 fixes.
+- `workflows/etf/` — Vanguard ETF strategy evaluation COMPLETE. 17 unleveraged + 8 leveraged experiments. Sharpe: VTI efficient. Drawdown: trend following -20% vs VTI -55%, supports 6% SWR (vs 5% for VTI). SMA100 > SMA200 at all leverage levels. 3x long/cash SMA100: 21.6% CAGR, 0.649 Sharpe. 3x inverse destroys wealth. ML destroyed value. 3 Codex reviews, 16 fixes.
 
 ## Key Research Documents
 - `docs/research/betting-market-efficiency.md` — Lessons on model vs market efficiency, market entry framework, and market prioritization
@@ -93,5 +93,6 @@ comparison = compare_to_market(result, data, "market_prob_a", "team_a_win")
 - `workflows/mlb/research/log.md` — MLB experiment log (Phases 1-6, complete)
 - `workflows/mma/research/log.md` — MMA experiment log (Phases 1-2, complete)
 - `workflows/pga/research/log.md` — PGA Golf experiment log (Phase 1, active)
+- `workflows/etf/research/final-report.md` — Comprehensive ETF findings: dual-objective, SWR, leveraged, regime analysis
 - `workflows/etf/research/etf-market-efficiency.md` — Phase 0 ETF market efficiency findings
 - `workflows/etf/research/strategy-catalog.md` — Feature taxonomy and Phase 1-5 strategy roadmap

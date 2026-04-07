@@ -23,12 +23,12 @@
 18. **Locked thresholds** — gate criteria (excess Sharpe ≥ 0.20, p < 0.05, CI lower > 0), block-bootstrap block length (22 days), walk-forward parameters (36/12/12), and the benchmark (VTI) are LOCKED. Any change requires explicit re-commitment documented here with rationale BEFORE re-running any tests. Drifting these values post-hoc is the same failure mode as optimizing a model on test data.
 
 ## Current Status — COMPLETE
-17 strategies tested. On Sharpe: VTI is efficient (no strategy passes strict gate). On drawdown: VTI is NOT efficient — trend following (-20% vs -55% DD, P(better)=98%), risk parity (P=100%), and asset class rotation (P=100%) provide statistically significant drawdown reduction. Recommended allocation: 40% trend following + 60% risk parity (Sharpe 0.798, MaxDD -22.3%). All ML models destroyed value. 2 Codex reviews, 11 fixes. See `research/final-report.md`.
+17 unleveraged strategies + 8 leveraged experiments tested. On Sharpe: VTI efficient (no strategy passes strict gate). On drawdown: trend following provides statistically significant DD reduction (-20% vs -55%, P=98%) and supports 6% safe withdrawal rate (vs VTI's 5%). SMA100 dominates SMA200 at all leverage levels. 3x long/cash with SMA100: 21.6% CAGR, 0.649 Sharpe. 3x inverse products destroy wealth unconditionally. Practical blend: 50% 3x-switch + 50% VTI (15.6% CAGR, 0.649 Sharpe). All ML models destroyed value. 3 Codex reviews, 16 fixes. See `research/final-report.md`.
 
 ## Architecture
 - `src/youbet/etf/` — ETF backtesting engine (backtester, risk, stats, PIT, costs, allocation, transforms, macro fetchers)
-- `workflows/etf/strategies/` — 17 strategy implementations across rule-based, macro, momentum, ML, and multi-asset categories
-- `workflows/etf/experiments/` — efficiency_test.py (walk-forward), global_holdout_cv.py (85/15 split), power_analysis, CI calibration
+- `workflows/etf/strategies/` — 17+ strategy implementations across rule-based, macro, momentum, ML, multi-asset, and blended categories
+- `workflows/etf/experiments/` — efficiency_test.py (walk-forward), global_holdout_cv.py (85/15 split), drawdown_deep_dive.py (ruin/drawdown/SWR), leveraged_strategies.py (synthetic 3x/-3x), regime_analysis.py, ruin_analysis.py, power_analysis, CI calibration
 - `workflows/etf/data/` — price snapshots (gitignored), reference files (vanguard_universe.csv), macro cache
 - `workflows/etf/research/` — research findings and strategy catalog
 

@@ -216,3 +216,94 @@ trend following provides crisis alpha with bull-market drag.
 20-year sample. The drawdown CIs are exploratory, not confirmatory. The
 pattern is supported by 100+ years of trend-following evidence in the
 literature, but out-of-sample validation on future crises is the real test.
+
+---
+
+## Safe Withdrawal Rates (Bengen-Style Fixed-Dollar)
+
+30-year horizon, 5,000 block-bootstrap simulations, fixed-dollar withdrawal:
+
+| Strategy | 4% | 5% | 6% | 7% | 8% | Max Safe Rate (>95%) |
+|---|---|---|---|---|---|---|
+| **trend_following** | 100% | 100% | **97%** | 91% | 80% | **6%** |
+| asset_class_rotation | 99% | 97% | 88% | 74% | 56% | 5% |
+| full_universe_momentum | 99% | 97% | 92% | 82% | 66% | 5% |
+| VTI (benchmark) | 99% | 95% | 90% | 82% | 73% | 5% |
+| risk_parity | 97% | 90% | 60% | 23% | 5% | 4% |
+| vol_targeting | 95% | 89% | 80% | 68% | 54% | 4% |
+
+**Trend following supports 6% SWR** — 50% above Bengen's 4% rule, 20% above
+VTI's 5%. Lower drawdowns reduce sequence-of-returns risk. Risk parity's
+lower absolute returns make it WORSE for withdrawals despite better Sharpe.
+
+---
+
+## Leveraged Strategy Experiments (Synthetic 3x/-3x)
+
+Synthesized leveraged daily returns from VTI (2003-2026). 8 experiments.
+
+### Key Results
+
+| Strategy | CAGR | Sharpe | MaxDD | Terminal |
+|---|---|---|---|---|
+| VTI 1x buy-hold | 11.1% | 0.592 | -55.5% | 11.6x |
+| 3x buy-hold (no signal) | 22.0% | 0.391 | **-95.2%** | 101.9x |
+| 3x long/cash SMA200 | 17.9% | 0.525 | -55.7% | 46.2x |
+| **3x long/cash SMA100** | **21.6%** | **0.649** | -53.2% | **93.3x** |
+| 3x long/-3x short | **-8.1%** | -0.144 | **-96.5%** | 0.1x |
+| 50% 3x-switch + 50% VTI | 15.6% | 0.649 | -49.7% | 28.8x |
+
+### Critical Findings
+
+1. **SMA100 dominates SMA200** at all leverage levels (Sharpe 0.710 vs 0.594
+   at 1x). The faster signal catches downtrends earlier.
+
+2. **3x inverse products destroy wealth unconditionally**. Even capped at 5
+   days: 15.1% CAGR but 0.395 Sharpe. Uncapped: -8.1% CAGR. Never hold.
+
+3. **Leverage hurts Sharpe but helps CAGR and Calmar**. The optimal leverage
+   depends on the objective: 1x for Sharpe, 3x for terminal wealth.
+
+4. **VIX filter adds nothing** on top of SMA — the trend signal already
+   captures volatility regime shifts.
+
+5. **Practical sweet spot**: 50% 3x-switch + 50% VTI (15.6% CAGR, 0.649
+   Sharpe, -49.7% MaxDD). Captures most CAGR uplift at the highest Sharpe
+   of any leveraged strategy.
+
+### The Leverage-Sharpe Paradox
+
+| Leverage | CAGR | Sharpe | MaxDD |
+|---|---|---|---|
+| 1.0x | 6.8% | 0.594 | -22.9% |
+| 1.5x | 10.0% | 0.585 | -32.6% |
+| 2.0x | 13.0% | 0.569 | -41.2% |
+| 2.5x | 15.6% | 0.548 | -48.9% |
+| 3.0x | 17.9% | 0.525 | -55.7% |
+
+Sharpe monotonically decreases with leverage (volatility grows faster than
+return), but CAGR and terminal wealth increase. The Kelly-optimal leverage
+for the S&P 500 is ~1.17x (Thorp), confirming that 3x is above Kelly.
+
+---
+
+## Codex Review Summary (3 rounds, 16 fixes)
+
+| # | Severity | Issue | Status |
+|---|---|---|---|
+| 1 | HIGH | ML fold boundary leak (shift(-1) into test) | Fixed |
+| 2 | HIGH | NaN return corruption + benchmark survivorship | Fixed |
+| 3 | HIGH | hierarchical_ml PIT leak (inclusive loc) | Fixed |
+| 4 | HIGH | global_holdout_cv scaler leaks into CV folds | Fixed |
+| 5 | HIGH | Drawdown CI point estimate used bootstrap mean not sample diff | Fixed |
+| 6 | HIGH | Report overstated: "significant" and "free lunch" too strong | Fixed |
+| 7 | MED | factor_timing pre-inception ETF allocation | Fixed |
+| 8 | MED | Early-fold survivorship fallbacks | Fixed |
+| 9 | MED | Missing macro z-scores silent default | Fixed |
+| 10 | MED | Empty weights silently become 100% cash | Fixed (warning) |
+| 11 | MED | ML scaler leaks across inner CV folds | Fixed (Pipeline) |
+| 12 | MED | Insurance premium accounting used simple returns | Fixed (log) |
+| 13 | MED | 40/60 recommendation was post-hoc point, not range | Fixed (30-50%) |
+| 14 | MED | CombinedBlend lacked input validation | Fixed |
+| 15 | LOW | 1-month val slices → high-variance ranking | Acknowledged |
+| 16 | LOW | HP grids too expressive for 24 samples | Acknowledged |
