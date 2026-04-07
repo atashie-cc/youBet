@@ -15,8 +15,15 @@ For each market, follow the validated 5-stage pipeline:
 |--------|--------|--------|-------------|
 | **NBA moneylines** | 12 phases | Market wins by 0.030 LL | Closing lines unbeatable; 0/18 seasons profitable |
 | **MLB moneylines** | 6 phases | Market wins by 0.000 LL | Model ties market but p=0.869; 2022-2025 = -0.3% ROI |
+| **MMA/UFC moneylines** | 2 phases | Market wins by 0.050 LL | Both opening and closing lines efficient |
 
-Both confirm: **major-sport moneyline closing lines are approximately efficient against public statistical models.** Ensemble disagreement helps bet selection in NBA but not MLB.
+All three confirm: **major-sport moneyline closing lines are approximately efficient against public statistical models.** Ensemble disagreement helps bet selection in NBA but not MLB.
+
+## Active Markets
+
+| Market | Phase | Status | Next Step |
+|--------|-------|--------|-----------|
+| **PGA Golf H2H matchups** | Phase 1 (Screen) | Data acquisition | Download data, compute market LL benchmark |
 
 ## Revised Market Prioritization
 
@@ -29,7 +36,8 @@ Based on lessons learned: avoid deep-liquidity moneyline markets. Target markets
 | **3** | **NCAA Basketball** | High (5,500/yr) | Moderate | 350+ teams = information asymmetry; existing workflow |
 | **4** | **NHL** | High (1,312/yr) | Moderate | Goaltender-driven variance; less liquid than NBA/MLB |
 | **5** | **Soccer (niche/national)** | Low-moderate | Low | Less sharp money; data scarcity is the challenge |
-| **6** | **Esports** | Moderate | Low | Immature market but rapid meta-changes |
+| **6** | **PGA Golf H2H Matchups** | Moderate (~50 events/yr) | Unknown | Individual sport, SG decomposition, course-player fit, lower liquidity |
+| **7** | **Esports** | Moderate | Low | Immature market but rapid meta-changes |
 | ~~7~~ | ~~NBA moneylines~~ | ~~High~~ | ~~Very high~~ | ~~KILLED: market too efficient (Phase 12)~~ |
 | ~~8~~ | ~~MLB moneylines~~ | ~~Very high~~ | ~~Very high~~ | ~~KILLED: market too efficient (Phase 6)~~ |
 | ~~9~~ | ~~Soccer (top leagues)~~ | ~~High~~ | ~~Very high~~ | ~~Deprioritized: massive global liquidity = very sharp~~ |
@@ -83,7 +91,18 @@ Based on lessons learned: avoid deep-liquidity moneyline markets. Target markets
 **Challenge**: Rapid meta-changes, roster instability, patch updates invalidate historical patterns
 **Opportunity**: Market still maturing; fewer sophisticated models in play
 
-### Market 8: MMA
+### Market 8: PGA Golf H2H Matchups (ACTIVE — Phase 1)
+**What**: Head-to-head matchup outcomes (did player A finish ahead of player B in a tournament?)
+**Data sources**:
+- Data Golf API (Scratch Plus ~$30/mo) — round-level SG, scoring, skill ratings, 2004-present
+- Data Golf odds archives — H2H + outright odds from 2019-present, multi-book
+- Kaggle PGA datasets — free fallback
+**Key features**: Strokes Gained (total, OTT, approach, ARG, putting, tee-to-green), course-player fit, Elo, recent form, days since last event, field strength
+**Why golf may beat the efficiency pattern**: Individual sport with 140+ player fields (combinatorial matchup explosion), uniquely granular SG decomposition, strong course-player fit effects, putting volatility creates potential overreaction, lower liquidity than major team sports
+**Workflow**: `workflows/pga/` — follows MMA pattern (individual sport, no seasons, continuous Elo)
+**Status**: Phase 1 (Screen) — data acquisition scripts implemented, awaiting DATAGOLF_API_KEY for download
+
+### Market 9: MMA
 **What**: Fight outcomes for UFC and major promotions
 **Data**: UFCStats.com (official stats), Tapology, Sherdog
 **Key features**: Style matchups (striker vs grappler), reach/height differentials, weight cuts, age curves

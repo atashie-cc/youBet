@@ -1,0 +1,107 @@
+# PGA Golf Tournament Prediction
+# All parameters tunable here — no magic numbers in code.
+
+workflow:
+  name: "pga"
+  description: "PGA Tour golf tournament prediction (H2H matchups)"
+
+data:
+  sources:
+    - name: "datagolf_api"
+      type: "api"
+      description: "Data Golf API — round-level scoring, strokes gained, skill ratings"
+      coverage: "2004-present (22 tours)"
+      requires: "DATAGOLF_API_KEY env var"
+    - name: "datagolf_odds"
+      type: "csv_download"
+      description: "Data Golf historical odds archives — H2H + outright"
+      coverage: "2019-present"
+    - name: "kaggle_pga"
+      type: "csv_download"
+      description: "Kaggle PGA Tour dataset — fallback for prototyping"
+      coverage: "2015-present"
+    - name: "open_meteo"
+      type: "api"
+      description: "Open-Meteo historical weather API"
+      coverage: "2000-present"
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  reference_dir: "data/reference"
+  min_year: 2010  # ShotLink strokes-gained data becomes reliable ~2004, odds from 2019
+
+elo:
+  k_factor: 16.0               # Lower than MMA (80) — golfers play 20-25 events/year
+  home_advantage: 0.0           # Golf is always neutral venue
+  initial_rating: 1500.0
+  time_decay_rate: 0.08         # Annual decay for inactivity
+  win_bonus: 1.3                # 30% K bonus for tournament wins
+  top10_bonus: 1.1              # 10% K bonus for top-10 finishes
+  k_schedule:
+    first_n_events: 10          # Higher K for players with few PGA events
+    early_k_multiplier: 1.5
+  mean_reversion:
+    rate: 0.05                  # Annual reversion toward initial_rating
+    anchor: 1500.0
+
+features:
+  differentials:
+    # Strokes Gained
+    - sg_total
+    - sg_ott
+    - sg_app
+    - sg_arg
+    - sg_putt
+    - sg_t2g
+    # Course Fit
+    - course_fit_score
+    - course_history
+    # Skill Rating
+    - elo
+    # Recent Form
+    - form_5
+    - form_10
+    - cuts_made_5
+    - sg_trend
+    # Context
+    - days_since_last
+    - events_90d
+  context:
+    - major_flag
+    - field_strength
+  ewma_span: 8                 # ~8 tournaments = ~2 months of form
+  min_events: 5                # Minimum events to compute rolling stats
+  normalize: true
+  normalize_method: "standard"
+
+model:
+  backend: "xgboost"
+  params:
+    max_depth: 4
+    learning_rate: 0.05
+    n_estimators: 500
+    subsample: 0.8
+    colsample_bytree: 0.8
+    min_child_weight: 5
+    reg_alpha: 0.1
+    reg_lambda: 1.0
+    random_state: 42
+
+split:
+  method: "walk_forward_year"
+  season_col: "year"
+  min_train_years: 5
+  cal_fraction: 0.2             # Last 20% of pre-eval window for calibration
+
+calibration:
+  method: "platt"
+  clip_min: 0.05
+  clip_max: 0.95
+
+evaluation:
+  primary_metric: "log_loss"
+  metrics: ["log_loss", "accuracy", "brier_score"]
+
+bankroll:
+  kelly_fraction: 0.125         # Conservative — eighth Kelly to start
+  min_edge: 0.03
+  max_bet_fraction: 0.05
