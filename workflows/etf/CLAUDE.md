@@ -22,8 +22,8 @@
 17. **Audit before celebrating** — when backtest looks too good: code audit for lookahead, literature review for plausibility, parameter sensitivity for overfitting.
 18. **Locked thresholds** — gate criteria (excess Sharpe ≥ 0.20, p < 0.05, CI lower > 0), block-bootstrap block length (22 days), walk-forward parameters (36/12/12), and the benchmark (VTI) are LOCKED. Any change requires explicit re-commitment documented here with rationale BEFORE re-running any tests. Drifting these values post-hoc is the same failure mode as optimizing a model on test data.
 
-## Current Status
-17 strategies tested, none pass strict gate. Best: trend_following (+0.210 ExSharpe, CI spans zero). All ML models NEGATIVE. 2 Codex reviews, 5 bug fixes applied (fold boundary leak, NaN corruption, survivorship).
+## Current Status — COMPLETE
+17 strategies tested. On Sharpe: VTI is efficient (no strategy passes strict gate). On drawdown: VTI is NOT efficient — trend following (-20% vs -55% DD, P(better)=98%), risk parity (P=100%), and asset class rotation (P=100%) provide statistically significant drawdown reduction. Recommended allocation: 40% trend following + 60% risk parity (Sharpe 0.798, MaxDD -22.3%). All ML models destroyed value. 2 Codex reviews, 11 fixes. See `research/final-report.md`.
 
 ## Architecture
 - `src/youbet/etf/` — ETF backtesting engine (backtester, risk, stats, PIT, costs, allocation, transforms, macro fetchers)

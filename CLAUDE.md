@@ -84,7 +84,7 @@ comparison = compare_to_market(result, data, "market_prob_a", "team_a_win")
 - `workflows/mlb/` — MLB COMPLETE (Phases 1-6) — market efficient, ensemble betting not viable, p=0.869
 - `workflows/mma/` — MMA/UFC COMPLETE (Phases 1-2) — model LL 0.6608 vs opening 0.6318, closing 0.6130. Both opening and closing lines efficient. 3 Codex review rounds, 7 fixes applied.
 - `workflows/pga/` — PGA Golf H2H matchup prediction (Phase 1 — Screen). Individual sport with SG decomposition, course-player fit, 140+ player fields. Data Golf API primary source.
-- `workflows/etf/` — Vanguard ETF strategy evaluation COMPLETE. 17 strategies tested (rule-based, macro, momentum, ML, multi-asset) — none pass strict gate vs VTI. Trend-following best at +0.210 ExSharpe but CI spans zero. ML models consistently destroy value. 52-ETF universe, 20yr data, block bootstrap + Holm correction. 2 Codex review rounds, 5 fixes applied.
+- `workflows/etf/` — Vanguard ETF strategy evaluation COMPLETE. 17 strategies, dual-objective analysis. Sharpe: VTI efficient (none pass gate). Drawdown: VTI INefficient — trend following, risk parity, asset class rotation all provide statistically significant DD reduction. Recommended: 40% trend / 60% risk parity (Sharpe 0.798, MaxDD -22.3% vs VTI -55.5%). ML destroyed value. 2 Codex reviews, 11 fixes.
 
 ## Key Research Documents
 - `docs/research/betting-market-efficiency.md` — Lessons on model vs market efficiency, market entry framework, and market prioritization
