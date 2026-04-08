@@ -1,0 +1,23 @@
+strategy:
+  name: concentrated_momentum
+  description: >
+    Top-K momentum from high-CAGR universe. No absolute momentum filter,
+    no risk-off, equal-weight. Stays fully invested at all times.
+
+signal:
+  lookback_months: 6
+  top_k: 3
+  absolute_momentum: false     # Key difference from etf/ workflow
+  weighting: equal              # Equal weight, not inverse-vol
+  risk_off: false               # Never go to cash
+
+universe:
+  # Pre-committed high-CAGR subset (set after Phase 1 results)
+  tickers: []  # Populated before Phase 2 run
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: monthly
+  initial_capital: 100000

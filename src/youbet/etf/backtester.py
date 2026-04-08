@@ -293,6 +293,7 @@ class Backtester:
                 )
 
             # Transaction costs
+            rebal_cost_drag = 0.0
             if len(current_weights) > 0:
                 cost = self.cost_model.rebalance_cost(
                     current_weights, new_weights, self.config.initial_capital
@@ -300,6 +301,9 @@ class Backtester:
                 turn = self.cost_model.turnover(current_weights, new_weights)
                 total_cost += cost
                 total_turnover += turn
+                # Convert dollar cost to return drag, applied on first day
+                # after rebalancing (T+1 execution)
+                rebal_cost_drag = cost / self.config.initial_capital
 
             weights_history.append((rebal_date, new_weights.copy()))
             current_weights = new_weights
@@ -315,6 +319,7 @@ class Backtester:
                 (dates > rebal_date) & (dates <= next_rebal)
             ]
 
+            first_day = True
             for d in hold_dates:
                 if d not in self.returns.index:
                     continue
@@ -340,6 +345,10 @@ class Backtester:
                     strat_ret += cash_weight * self.tbill_daily.get(d, 0.0)
                 # Expense ratio drag
                 strat_ret -= self.cost_model.daily_expense_drag(new_weights)
+                # Rebalance cost drag (applied once on first day after rebalance)
+                if first_day and rebal_cost_drag > 0:
+                    strat_ret -= rebal_cost_drag
+                    first_day = False
 
                 portfolio_returns.append((d, strat_ret))
 

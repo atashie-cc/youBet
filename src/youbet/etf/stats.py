@@ -252,6 +252,199 @@ def excess_sharpe_ci(
     }
 
 
+def block_bootstrap_cagr_test(
+    strategy_returns: pd.Series,
+    benchmark_returns: pd.Series,
+    n_bootstrap: int = 10_000,
+    expected_block_length: int = 22,
+    seed: int = 42,
+) -> dict:
+    """Test if strategy's excess CAGR is statistically significant.
+
+    Uses paired stationary block bootstrap on LOG returns to correctly
+    handle the nonlinear relationship between arithmetic and geometric
+    returns (Jensen's inequality). The test statistic is the difference
+    in average log returns (proportional to log-terminal-wealth difference),
+    which is linear and avoids the mean-shifting bias of simple returns.
+
+    Args:
+        strategy_returns: Daily simple returns of the strategy.
+        benchmark_returns: Daily simple returns of the benchmark.
+        n_bootstrap: Number of bootstrap replicates.
+        expected_block_length: Expected block length for stationary bootstrap.
+        seed: Random seed.
+
+    Returns:
+        Dict with observed_excess_cagr, p_value, null distribution stats.
+    """
+    common = strategy_returns.index.intersection(benchmark_returns.index)
+    strat = strategy_returns[common].values
+    bench = benchmark_returns[common].values
+    n = len(strat)
+    n_years = n / 252
+
+    # Convert to log returns for correct geometric null
+    log_strat = np.log1p(strat)
+    log_bench = np.log1p(bench)
+    log_excess = log_strat - log_bench
+
+    # Observed CAGR difference (computed from simple returns for reporting)
+    def cagr(r):
+        cum = np.prod(1 + r)
+        if cum <= 0:
+            return -1.0
+        return cum ** (1 / max(n_years, 1e-6)) - 1
+
+    observed_cagr_diff = cagr(strat) - cagr(bench)
+
+    # Test statistic: annualized mean log-excess-return
+    # Under null of equal geometric growth, mean(log_excess) = 0
+    obs_stat = float(log_excess.mean() * 252)
+
+    # Null: center log-excess returns at zero, then bootstrap
+    centered = log_excess - log_excess.mean()
+
+    rng = np.random.default_rng(seed)
+    p_jump = 1.0 / expected_block_length
+
+    jump_draws = rng.random((n_bootstrap, n))
+    jump_targets = rng.integers(0, n, size=(n_bootstrap, n))
+    start_indices = rng.integers(0, n, size=n_bootstrap)
+
+    indices = np.empty((n_bootstrap, n), dtype=np.int64)
+    indices[:, 0] = start_indices
+    for i in range(1, n):
+        continued = (indices[:, i - 1] + 1) % n
+        jumped = jump_targets[:, i]
+        do_jump = jump_draws[:, i] < p_jump
+        indices[:, i] = np.where(do_jump, jumped, continued)
+
+    # Bootstrap the centered log-excess returns
+    boot_centered = centered[indices]  # (n_bootstrap, n)
+    null_stats = boot_centered.mean(axis=1) * 252
+
+    # p-value: fraction of null replicates >= observed (one-sided)
+    count_ge = int(np.sum(null_stats >= obs_stat))
+    p_value = (1 + count_ge) / (n_bootstrap + 1)
+    p_mc_se = float(np.sqrt(p_value * (1 - p_value) / n_bootstrap))
+
+    return {
+        "observed_excess_cagr": float(observed_cagr_diff),
+        "p_value": p_value,
+        "p_mc_se": p_mc_se,
+        "null_mean": float(null_stats.mean()),
+        "null_std": float(null_stats.std()),
+        "null_95th": float(np.percentile(null_stats, 95)),
+        "null_99th": float(np.percentile(null_stats, 99)),
+        "significant_at_05": p_value < 0.05,
+        "significant_at_01": p_value < 0.01,
+        "n_bootstrap": n_bootstrap,
+        "block_length": expected_block_length,
+    }
+
+
+def excess_cagr_ci(
+    strategy_returns: pd.Series,
+    benchmark_returns: pd.Series,
+    n_bootstrap: int = 10_000,
+    confidence: float = 0.90,
+    expected_block_length: int = 22,
+    seed: int = 42,
+) -> dict:
+    """Bootstrap confidence intervals for CAGR difference (strategy vs benchmark).
+
+    Paired block bootstrap on LOG returns: same block indices for both
+    strategy and benchmark. Uses log-return differences to correctly
+    handle the nonlinear arithmetic-to-geometric return relationship
+    (Jensen's inequality). CIs are computed on the CAGR difference
+    reconstructed from bootstrapped log returns.
+
+    Args:
+        strategy_returns: Daily simple returns of the strategy.
+        benchmark_returns: Daily simple returns of the benchmark.
+        n_bootstrap: Number of bootstrap replicates.
+        confidence: Confidence level (default 90%).
+        expected_block_length: Block length for stationary bootstrap.
+        seed: Random seed.
+
+    Returns:
+        Dict with point estimate, CI bounds, and diagnostic verdict.
+    """
+    rng = np.random.default_rng(seed)
+    common = strategy_returns.index.intersection(benchmark_returns.index)
+    strat = strategy_returns[common].values
+    bench = benchmark_returns[common].values
+    n = len(strat)
+    n_years = n / 252
+    p_jump = 1.0 / expected_block_length
+
+    # Convert to log returns for correct geometric handling
+    log_strat = np.log1p(strat)
+    log_bench = np.log1p(bench)
+
+    def cagr(r):
+        cum = np.prod(1 + r)
+        if cum <= 0:
+            return -1.0
+        return cum ** (1 / max(n_years, 1e-6)) - 1
+
+    obs_cagr_strat = cagr(strat)
+    obs_cagr_bench = cagr(bench)
+    obs_cagr_diff = obs_cagr_strat - obs_cagr_bench
+
+    # Paired block bootstrap
+    jump_draws = rng.random((n_bootstrap, n))
+    jump_targets = rng.integers(0, n, size=(n_bootstrap, n))
+    start_indices = rng.integers(0, n, size=n_bootstrap)
+
+    indices = np.empty((n_bootstrap, n), dtype=np.int64)
+    indices[:, 0] = start_indices
+    for i in range(1, n):
+        continued = (indices[:, i - 1] + 1) % n
+        jumped = jump_targets[:, i]
+        do_jump = jump_draws[:, i] < p_jump
+        indices[:, i] = np.where(do_jump, jumped, continued)
+
+    # Bootstrap log returns with SAME indices (paired)
+    boot_log_strat = log_strat[indices]
+    boot_log_bench = log_bench[indices]
+
+    # CAGR from bootstrapped log returns: exp(mean_log * 252) - 1
+    boot_cagr_strat = np.expm1(boot_log_strat.mean(axis=1) * 252)
+    boot_cagr_bench = np.expm1(boot_log_bench.mean(axis=1) * 252)
+    boot_cagr_diff = boot_cagr_strat - boot_cagr_bench
+
+    alpha = 1 - confidence
+    ci_lo = float(np.percentile(boot_cagr_diff, 100 * alpha / 2))
+    ci_hi = float(np.percentile(boot_cagr_diff, 100 * (1 - alpha / 2)))
+
+    # Diagnostic verdict for CAGR
+    if ci_lo > 0.02:
+        diagnostic_verdict = "STRONG_EDGE"
+    elif ci_lo > 0:
+        diagnostic_verdict = "WEAK_EDGE"
+    elif ci_hi > 0.02:
+        diagnostic_verdict = "INCONCLUSIVE_POSITIVE"
+    elif ci_hi > 0:
+        diagnostic_verdict = "INCONCLUSIVE"
+    else:
+        diagnostic_verdict = "NEGATIVE"
+
+    return {
+        "point_estimate": float(obs_cagr_diff),
+        "ci_lower": ci_lo,
+        "ci_upper": ci_hi,
+        "ci_excludes_zero": ci_lo > 0 or ci_hi < 0,
+        "ci_width": ci_hi - ci_lo,
+        "strategy_cagr": float(obs_cagr_strat),
+        "benchmark_cagr": float(obs_cagr_bench),
+        "confidence": confidence,
+        "diagnostic_verdict": diagnostic_verdict,
+        "n_bootstrap": n_bootstrap,
+        "block_length": expected_block_length,
+    }
+
+
 def simultaneous_sharpe_diff_ci(
     strategies: dict[str, pd.Series],
     benchmark_returns: pd.Series,

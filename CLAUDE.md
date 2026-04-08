@@ -85,6 +85,7 @@ comparison = compare_to_market(result, data, "market_prob_a", "team_a_win")
 - `workflows/mma/` — MMA/UFC COMPLETE (Phases 1-2) — model LL 0.6608 vs opening 0.6318, closing 0.6130. Both opening and closing lines efficient. 3 Codex review rounds, 7 fixes applied.
 - `workflows/pga/` — PGA Golf H2H matchup prediction (Phase 1 — Screen). Individual sport with SG decomposition, course-player fit, 140+ player fields. Data Golf API primary source.
 - `workflows/etf/` — Vanguard ETF strategy evaluation COMPLETE. 17 unleveraged + 8 leveraged experiments. Sharpe: VTI efficient. Drawdown: trend following -20% vs VTI -55%, supports 6% SWR (vs 5% for VTI). SMA100 > SMA200 at all leverage levels. 3x long/cash SMA100: 21.6% CAGR, 0.649 Sharpe. 3x inverse destroys wealth. ML destroyed value. 3 Codex reviews, 16 fixes.
+- `workflows/etflab-max/` — Vanguard ETF CAGR maximization COMPLETE. 158 strategies tested across 5 phases. CAGR gate: 0/158 pass (VTI CAGR-efficient). Best unleveraged: VGT 13.8%, MGK 12.8%. Best leveraged: MGK @ 2.3x SMA100 = 20.6% CAGR, 0.645 Sharpe. Active momentum adds no value over static holds. 2 Codex reviews, 26 fixes.
 
 ## Key Research Documents
 - `docs/research/betting-market-efficiency.md` — Lessons on model vs market efficiency, market entry framework, and market prioritization
@@ -96,3 +97,4 @@ comparison = compare_to_market(result, data, "market_prob_a", "team_a_win")
 - `workflows/etf/research/final-report.md` — Comprehensive ETF findings: dual-objective, SWR, leveraged, regime analysis
 - `workflows/etf/research/etf-market-efficiency.md` — Phase 0 ETF market efficiency findings
 - `workflows/etf/research/strategy-catalog.md` — Feature taxonomy and Phase 1-5 strategy roadmap
+- `workflows/etflab-max/research/log.md` — ETF CAGR maximization experiment log (158 strategies, 5 phases, 2 Codex reviews)

@@ -1,0 +1,27 @@
+strategy:
+  name: growth_value_timer
+  description: >
+    Macro-signal-driven growth/value rotation. Growth in low-rate
+    environments, value in high-rate/stress. Stays fully invested.
+
+signal:
+  # Yield curve: positive = growth, inverted = value
+  yield_curve_threshold: 0.0
+  # Credit spread z-score: low = growth, high = value
+  credit_z_growth_max: 0.5
+  credit_z_value_min: 1.0
+
+universe:
+  growth_tickers:
+    - VUG   # Growth
+    - MGK   # Mega-cap Growth
+  value_tickers:
+    - VTV   # Value
+    - MGV   # Mega-cap Value
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: monthly
+  initial_capital: 100000

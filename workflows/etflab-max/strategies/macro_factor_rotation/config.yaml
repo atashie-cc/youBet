@@ -1,0 +1,34 @@
+strategy:
+  name: macro_factor_rotation
+  description: >
+    Macro-enhanced factor rotation. Expansion -> growth+small,
+    late cycle -> quality+large, recession -> small-value recovery.
+    Stays fully invested (no defensive bond rotation).
+
+signal:
+  # PMI threshold for expansion/contraction
+  pmi_expansion: 50
+  # Yield curve for recession detection
+  yield_curve_recession: 0.0
+  # Credit spread z-score for stress detection
+  credit_z_stress: 1.0
+
+universe:
+  expansion:
+    - VUG   # Growth
+    - VBK   # Small-cap Growth
+    - MGK   # Mega-cap Growth
+  late_cycle:
+    - VIG   # Dividend/Quality
+    - VV    # Large-cap
+  recession_recovery:
+    - VBR   # Small-cap Value
+    - VB    # Small-cap
+    - VTV   # Value
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: monthly
+  initial_capital: 100000

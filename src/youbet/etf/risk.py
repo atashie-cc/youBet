@@ -208,6 +208,58 @@ def kelly_optimal_weight(
     return float(min(max(full_kelly * fraction, 0.0), max_position))
 
 
+def cagr_from_returns(returns: pd.Series | np.ndarray) -> float:
+    """Compute CAGR (Compound Annual Growth Rate) from daily returns.
+
+    CAGR = (terminal_value / initial_value) ^ (1 / n_years) - 1
+
+    Args:
+        returns: Daily simple returns.
+
+    Returns:
+        Annualized CAGR as a float.
+    """
+    r = returns.values if isinstance(returns, pd.Series) else returns
+    r = r[~np.isnan(r)]
+    n = len(r)
+    if n == 0:
+        return 0.0
+    cum = np.prod(1 + r)
+    if cum <= 0:
+        return -1.0
+    n_years = n / TRADING_DAYS
+    return float(cum ** (1 / max(n_years, 1e-6)) - 1)
+
+
+def kelly_optimal_leverage(
+    mu_arithmetic: float,
+    sigma2: float,
+    rf: float = 0.0,
+) -> float:
+    """Kelly-optimal leverage for geometric growth rate maximization.
+
+    The Kelly criterion for leverage: f* = (mu - rf) / sigma^2
+    where mu is the expected ARITHMETIC annualized return (not CAGR/
+    geometric return) and sigma^2 is the annualized variance.
+
+    IMPORTANT: Do not pass CAGR (geometric return) as mu. CAGR already
+    incorporates the volatility drag (Jensen's inequality), so using it
+    would underestimate optimal leverage. Use annualized arithmetic mean
+    return: daily_mean * 252.
+
+    Args:
+        mu_arithmetic: Expected annualized ARITHMETIC return.
+        sigma2: Annualized return variance.
+        rf: Risk-free rate (annualized).
+
+    Returns:
+        Kelly-optimal leverage ratio (e.g., 2.5 means 2.5x leverage).
+    """
+    if sigma2 < 1e-10:
+        return 0.0
+    return float((mu_arithmetic - rf) / sigma2)
+
+
 def risk_of_ruin(
     sharpe: float,
     max_drawdown_tolerance: float,

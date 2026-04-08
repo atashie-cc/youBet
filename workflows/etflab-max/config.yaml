@@ -1,0 +1,38 @@
+# ETF-Lab Max — Global Configuration
+# LOCKED: Do not change post-hoc. Changes require re-commitment in CLAUDE.md.
+
+benchmark:
+  ticker: VTI
+  name: "Vanguard Total Stock Market"
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: monthly
+  initial_capital: 100000
+
+gate:
+  # Primary: excess CAGR (annualized)
+  min_excess_cagr: 0.01       # 1.0% annualized
+  significance: 0.05           # After Holm correction
+  ci_lower_threshold: 0.0      # CI must exclude zero
+
+bootstrap:
+  n_replicates: 10000
+  block_length: 22             # ~1 month (Politis-Romano)
+  confidence: 0.90
+  seed: 42
+
+power_analysis:
+  kill_gate: 0.05              # If min detectable CAGR > 5%, stop
+  n_simulations: 500
+  n_strategies: 12
+  target_cagr_diffs: [0.005, 0.01, 0.015, 0.02, 0.03, 0.05, 0.07, 0.10]
+
+data:
+  # Shared with workflows/etf/data/
+  price_dir: "../etf/data/snapshots"
+  reference_dir: "../etf/data/reference"
+  macro_dir: "../etf/data/snapshots/macro"
+  universe_file: "../etf/data/reference/vanguard_universe.csv"

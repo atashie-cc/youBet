@@ -1,0 +1,32 @@
+strategy:
+  name: factor_momentum
+  description: >
+    Rank factor-representative ETFs by trailing return, hold top K.
+    No absolute momentum filter, no risk-off. Stays fully invested.
+    Factors exhibit momentum (Arnott et al.).
+
+signal:
+  lookback_months: 6
+  top_k: 2
+  absolute_momentum: false
+  weighting: equal
+  risk_off: false
+
+universe:
+  # Factor-representative ETFs
+  tickers:
+    - VUG   # Growth
+    - VTV   # Value
+    - VB    # Small-cap
+    - VV    # Large-cap
+    - VIG   # Dividend/Quality
+    - VBR   # Small-cap Value
+    - VBK   # Small-cap Growth
+    - MGK   # Mega-cap Growth
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: monthly
+  initial_capital: 100000
