@@ -1,0 +1,51 @@
+# Commodity workflow global configuration
+# All thresholds are LOCKED before seeing any backtest results.
+
+benchmarks:
+  futures: DBC           # Broadest liquid futures ETP, optimum-yield
+  physical: GLD          # Longest-history physical commodity ETP
+  miners: GDX            # Largest, most liquid miner ETF
+  portfolio_inclusion:   # "Should I add commodities at all?"
+    equities: VTI
+    bonds: BND
+    equity_weight: 0.60
+    bond_weight: 0.40
+
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: monthly
+  initial_capital: 100000
+
+gate:
+  metric: sharpe
+  min_excess: 0.20
+  significance: 0.05
+  ci_lower_threshold: 0.0
+
+bootstrap:
+  n_replicates: 10000
+  block_length: 22       # ~1 month, Politis-Romano
+  confidence: 0.90
+  seed: 42
+
+regime_windows:
+  - start: "2007-07-01"
+    end: "2014-12-31"
+    label: "post-GFC recovery + commodity bust"
+  - start: "2015-01-01"
+    end: "2019-12-31"
+    label: "low-vol, dollar strength"
+  - start: "2020-01-01"
+    end: "2022-12-31"
+    label: "COVID + inflation + unprecedented backwardation (OUTLIER)"
+  - start: "2023-01-01"
+    end: "2026-04-08"
+    label: "normalization"
+
+universe:
+  core_start: "2007-07-01"       # 12 tickers, 19yr
+  extended_start: "2010-09-01"   # 20 tickers, 15yr
+  full_start: "2012-02-01"       # 22 tickers, 14yr
+  file: "data/reference/commodity_universe.csv"

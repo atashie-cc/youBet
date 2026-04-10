@@ -13,6 +13,7 @@ data/reference/
 
 # Allow committed reference CSVs
 !workflows/etf/data/reference/vanguard_universe.csv
+!workflows/commodity/data/reference/commodity_universe.csv
 
 # Models
 *.pkl
