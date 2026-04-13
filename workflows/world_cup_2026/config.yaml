@@ -1,0 +1,107 @@
+# 2026 FIFA World Cup Bracket Prediction Configuration
+# See plan at C:\Users\18033\.claude\plans\linear-greeting-turing.md
+
+workflow:
+  name: "world_cup_2026"
+  description: "2026 FIFA World Cup bracket prediction (48-team format)"
+  year: 2026
+
+data:
+  sources:
+    - name: "kaggle_international_results"
+      dataset: "martj42/international-football-results-from-1872-to-2017"
+      files:
+        - "results.csv"
+      status: "pending_phase_0_verification"
+    - name: "fbref_international_xg"
+      url: "https://fbref.com"
+      status: "feasibility_spike"
+      deferred_to: "phase_6"
+    - name: "transfermarkt_squads"
+      url: "https://transfermarkt.com"
+      status: "feasibility_spike"
+      deferred_to: "phase_6"
+    - name: "oddsportal_wc_closing"
+      url: "https://oddsportal.com"
+      status: "feasibility_spike"
+      years: [2010, 2014, 2018, 2022]
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  reference_dir: "data/reference"
+  tournament_format:
+    n_teams: 48
+    n_groups: 12
+    teams_per_group: 4
+    advance_from_group: 2
+    best_third_placed: 8
+    knockout_rounds: ["R32", "R16", "QF", "SF", "Final"]
+  cycles:
+    train_start: 1998
+    val_cycles: [2014, 2018, 2022]  # leave-one-out test folds
+    test_cycle: 2026
+
+elo:
+  # Phase 6 recalibration: eloratings-inspired parameter set.
+  # Match-type-specific K: K_BASE * multiplier = effective K per match.
+  # Validated on WC 2010 held-out: LL 0.9812 (vs Phase 1 v2 winner 1.0049).
+  k_factor: 20.0                     # base K, multiplied by tier weight
+  home_advantage: 100.0              # eloratings.net standard (was 60)
+  initial_rating: 1500.0
+  mean_reversion_factor: 1.0         # 1.0 = no annual reversion (was 0.90)
+  competition_weights:
+    world_cup: 3.0                   # 20*3.0 = K=60
+    continental: 2.5                 # 20*2.5 = K=50
+    nations_league: 1.75             # 20*1.75 = K=35
+    qualifier: 2.0                   # 20*2.0 = K=40
+    friendly: 1.0                    # 20*1.0 = K=20
+  taxonomy: "data/reference/tournament_weights.yaml"
+
+features:
+  # 5 Team A minus Team B differentials + 1 match-level flag.
+  # "is_neutral" is not a diff; renamed from diff_is_neutral in Phase 1 v2.
+  differentials:
+    - elo
+    - elo_trend_12mo
+    - win_rate_l10
+    - goal_diff_per_match_l10
+    - rest_days
+  match_level:
+    - is_neutral
+  normalize: true
+  normalize_method: "standard"
+
+model:
+  group_and_knockout_base:
+    backend: "xgboost"
+    multiclass: true                # blocked on Phase A core infra decision
+    params:
+      max_depth: 4
+      learning_rate: 0.05
+      n_estimators: 400
+      subsample: 0.8
+      colsample_bytree: 0.9
+      objective: "multi:softprob"
+      num_class: 3
+    early_stopping_rounds: 50
+  knockout_tails:
+    et_win_given_draw_prior: 0.5
+    et_win_elo_shrinkage: 0.02
+    penalty_win_given_draw_prior: 0.5
+    penalty_win_elo_shrinkage: 0.02
+
+calibration:
+  method: "temperature"             # per-class; fallback isotonic if cal_set > 2000
+  clip_min: 0.02
+  clip_max: 0.98
+
+evaluation:
+  primary_metric: "log_loss"
+  metrics: ["multiclass_log_loss", "accuracy", "brier_score"]
+
+bracket:
+  simulations: 10000
+  goal_diff_sampler: "empirical_histogram"
+  strategies:
+    - {name: "chalk"}
+    - {name: "balanced"}
+    - {name: "contrarian", upset_boost: 0.08}

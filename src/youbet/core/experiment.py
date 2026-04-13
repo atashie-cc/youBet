@@ -36,7 +36,11 @@ import numpy as np
 import pandas as pd
 
 from youbet.core.calibration import get_calibrator
-from youbet.core.evaluation import EvaluationResult, evaluate_predictions
+from youbet.core.evaluation import (
+    EvaluationResult,
+    evaluate_multiclass_predictions,
+    evaluate_predictions,
+)
 from youbet.core.pit import (
     PITViolation,
     audit_fold,
@@ -118,6 +122,7 @@ class Experiment:
     calibration_method: str = "platt"
     clip_range: tuple[float, float] = (0.05, 0.95)
     early_stopping_rounds: int = 50
+    n_classes: int = 2  # 2 = binary (default); >= 3 = multi-class target
 
     def _validate_config(self) -> None:
         """Fail fast on configuration errors."""
@@ -235,23 +240,57 @@ class Experiment:
             )
 
             # Predict (raw probabilities)
+            # Binary: 1D shape (N,). Multi-class: 2D shape (N, K).
             raw_probs = model.predict_proba(X_test)
+
+            # Consistency check: the model's output shape must match the
+            # Experiment's configured n_classes. Catches the footgun where
+            # Experiment(n_classes=2) is combined with a multi-class factory
+            # (or vice versa) — both directions would silently go down the
+            # wrong evaluator/calibrator path without this guard.
+            if self.n_classes > 2:
+                if raw_probs.ndim != 2 or raw_probs.shape[1] != self.n_classes:
+                    raise ValueError(
+                        f"Experiment(n_classes={self.n_classes}) expected "
+                        f"model.predict_proba to return shape (N, {self.n_classes}), "
+                        f"got shape {raw_probs.shape}. Check that the model_factory "
+                        f"returns a multi-class model with matching n_classes."
+                    )
+            else:
+                if raw_probs.ndim != 1:
+                    raise ValueError(
+                        f"Experiment(n_classes=2) expected model.predict_proba "
+                        f"to return a 1D array of class-1 probabilities, got "
+                        f"shape {raw_probs.shape}. If the model is multi-class, "
+                        f"set Experiment(n_classes=K) to match."
+                    )
 
             # Calibrate on held-out cal set
             calibrator = get_calibrator(
                 self.calibration_method,
                 clip_range=self.clip_range,
+                n_classes=self.n_classes,
             )
             if len(X_cal) > 10:
                 cal_raw = model.predict_proba(X_cal)
                 calibrator.fit(cal_raw, np.array(y_cal))
                 cal_probs = calibrator.calibrate(raw_probs)
             else:
-                cal_probs = np.clip(raw_probs, *self.clip_range)
+                if self.n_classes > 2:
+                    # For multi-class with tiny cal set, clip then renormalize.
+                    clipped = np.clip(raw_probs, *self.clip_range)
+                    cal_probs = clipped / clipped.sum(axis=1, keepdims=True)
+                else:
+                    cal_probs = np.clip(raw_probs, *self.clip_range)
 
-            # Evaluate
+            # Evaluate (dispatch on target arity)
             y_test_arr = np.array(y_test)
-            evaluation = evaluate_predictions(y_test_arr, cal_probs)
+            if self.n_classes > 2:
+                evaluation = evaluate_multiclass_predictions(
+                    y_test_arr, cal_probs, labels=list(range(self.n_classes))
+                )
+            else:
+                evaluation = evaluate_predictions(y_test_arr, cal_probs)
 
             # Feature importances
             try:
@@ -290,7 +329,12 @@ class Experiment:
         # Aggregate
         all_preds = np.concatenate([f.predictions for f in fold_results])
         all_actuals = np.concatenate([f.actuals for f in fold_results])
-        overall = evaluate_predictions(all_actuals, all_preds)
+        if self.n_classes > 2:
+            overall = evaluate_multiclass_predictions(
+                all_actuals, all_preds, labels=list(range(self.n_classes))
+            )
+        else:
+            overall = evaluate_predictions(all_actuals, all_preds)
 
         per_fold_summary = [
             {
@@ -323,7 +367,21 @@ def compare_to_market(
 
     Aligns experiment predictions (which cover only evaluation folds)
     with the market probabilities using the experiment's indices.
+
+    Binary-only. Raises NotImplementedError if called on a multi-class
+    experiment result. Multi-class market comparison requires a different
+    input shape for market probabilities (per-class instead of scalar)
+    and is out of scope for Phase A — add a dedicated helper if needed.
     """
+    if experiment_result.overall.n_classes > 2:
+        raise NotImplementedError(
+            f"compare_to_market is binary-only; got experiment with "
+            f"n_classes={experiment_result.overall.n_classes}. "
+            f"Multi-class market comparison is not yet supported — add "
+            f"`compare_to_market_multiclass` with per-class market probs "
+            f"if this is needed."
+        )
+
     # Get rows that were evaluated
     eval_idx = experiment_result.indices
     eval_data = data.loc[eval_idx].copy()

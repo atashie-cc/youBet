@@ -1,0 +1,184 @@
+# League strength scores (0-100) for computing squad-quality features.
+#
+# Based on UEFA club coefficients (2024-25 cycle) + global league reputation.
+# Used to map player club → league → strength, then average per national team.
+#
+# Tier 1 (90-100): Top 5 European leagues
+# Tier 2 (75-89): Strong European + top South American
+# Tier 3 (55-74): Mid-European + MLS/Liga MX/Saudi + top Asian
+# Tier 4 (35-54): Smaller European + African/Asian leagues
+# Tier 5 (15-34): Minor leagues
+
+# Partial league names are matched via substring (case-insensitive).
+# A club is assigned to the FIRST matching league in this list.
+# Clubs with no match get default_score.
+
+default_score: 50
+
+leagues:
+  # Tier 1: Top 5 European
+  - name: "Premier League"
+    country: "England"
+    score: 98
+    clubs: ["Arsenal", "Aston Villa", "Bournemouth", "Brentford", "Brighton",
+            "Burnley", "Chelsea", "Crystal Palace", "Everton", "Fulham",
+            "Leeds", "Leicester", "Liverpool", "Luton", "Manchester City",
+            "Manchester United", "Newcastle", "Nottingham Forest", "Sheffield United",
+            "Tottenham", "West Ham", "Wolverhampton", "Wolves"]
+  - name: "La Liga"
+    country: "Spain"
+    score: 95
+    clubs: ["Real Madrid", "Barcelona", "Atletico Madrid", "Atl\u00e9tico Madrid",
+            "Sevilla", "Real Sociedad", "Real Betis", "Villarreal", "Athletic",
+            "Valencia", "Getafe", "Celta", "Osasuna", "Girona", "Mallorca",
+            "Rayo Vallecano", "Cadiz", "Almeria", "Las Palmas", "Alaves",
+            "Espanyol", "Elche"]
+  - name: "Bundesliga"
+    country: "Germany"
+    score: 93
+    clubs: ["Bayern Munich", "Borussia Dortmund", "RB Leipzig", "Bayer Leverkusen",
+            "Eintracht Frankfurt", "Union Berlin", "Freiburg", "Mainz",
+            "Wolfsburg", "Hoffenheim", "Augsburg", "Werder Bremen",
+            "Borussia Monchengladbach", "VfB Stuttgart", "Stuttgart",
+            "Koln", "Hertha", "Schalke", "Darmstadt", "Heidenheim"]
+  - name: "Serie A"
+    country: "Italy"
+    score: 92
+    clubs: ["Juventus", "Inter Milan", "AC Milan", "Napoli", "Roma", "Lazio",
+            "Atalanta", "Fiorentina", "Torino", "Bologna", "Sassuolo",
+            "Monza", "Udinese", "Empoli", "Cagliari", "Verona", "Lecce",
+            "Salernitana", "Frosinone", "Genoa", "Sampdoria"]
+  - name: "Ligue 1"
+    country: "France"
+    score: 88
+    clubs: ["Paris Saint-Germain", "PSG", "Marseille", "Monaco", "Lyon",
+            "Lille", "Nice", "Rennes", "Lens", "Strasbourg", "Montpellier",
+            "Nantes", "Toulouse", "Brest", "Reims", "Le Havre", "Lorient",
+            "Metz", "Clermont"]
+
+  # Tier 2: Strong European + top South American
+  - name: "Eredivisie"
+    country: "Netherlands"
+    score: 78
+    clubs: ["Ajax", "PSV", "Feyenoord", "AZ Alkmaar", "Twente"]
+  - name: "Liga Portugal"
+    country: "Portugal"
+    score: 80
+    clubs: ["Benfica", "Porto", "Sporting CP", "Braga", "Vitoria"]
+  - name: "Belgian Pro League"
+    country: "Belgium"
+    score: 72
+    clubs: ["Club Brugge", "Genk", "Anderlecht", "Antwerp", "Standard Liege", "Gent"]
+  - name: "Scottish Premiership"
+    country: "Scotland"
+    score: 65
+    clubs: ["Celtic", "Rangers"]
+  - name: "Super Lig"
+    country: "Turkey"
+    score: 68
+    clubs: ["Galatasaray", "Fenerbahce", "Besiktas", "Trabzonspor"]
+  - name: "Austrian Bundesliga"
+    country: "Austria"
+    score: 62
+    clubs: ["Red Bull Salzburg", "Salzburg", "Sturm Graz", "Rapid Wien"]
+  - name: "Brazilian Serie A"
+    country: "Brazil"
+    score: 72
+    clubs: ["Flamengo", "Palmeiras", "Corinthians", "Sao Paulo", "Santos",
+            "Internacional", "Gremio", "Atletico Mineiro", "Fluminense",
+            "Botafogo", "Cruzeiro", "Vasco da Gama"]
+  - name: "Argentine Liga"
+    country: "Argentina"
+    score: 68
+    clubs: ["Boca Juniors", "River Plate", "Racing Club", "Independiente",
+            "San Lorenzo", "Estudiantes", "Velez"]
+
+  # Tier 3: Mid-European + Americas + Saudi + Asian
+  - name: "MLS"
+    country: "USA"
+    score: 60
+    clubs: ["Los Angeles FC", "LAFC", "LA Galaxy", "Inter Miami", "Atlanta United",
+            "Seattle Sounders", "Nashville", "Columbus Crew", "Cincinnati",
+            "New York Red Bulls", "New York City", "Portland Timbers",
+            "Toronto FC", "CF Montreal", "Vancouver Whitecaps", "Charlotte FC"]
+  - name: "Liga MX"
+    country: "Mexico"
+    score: 62
+    clubs: ["Club America", "Monterrey", "Tigres", "Cruz Azul", "Guadalajara",
+            "Chivas", "Santos Laguna", "Pachuca", "Toluca", "Leon", "Pumas"]
+  - name: "Saudi Pro League"
+    country: "Saudi Arabia"
+    score: 55
+    clubs: ["Al-Hilal", "Al-Nassr", "Al-Ahli", "Al-Ittihad", "Al-Shabab",
+            "Al-Ettifaq", "Al-Fateh", "Al-Sadd", "Al-Duhail", "Al-Rayyan"]
+  - name: "J1 League"
+    country: "Japan"
+    score: 58
+    clubs: ["Yokohama F. Marinos", "Vissel Kobe", "Kawasaki Frontale",
+            "Urawa Red Diamonds", "Kashima Antlers", "FC Tokyo"]
+  - name: "K League"
+    country: "South Korea"
+    score: 55
+    clubs: ["Jeonbuk", "Ulsan", "Suwon", "Seoul"]
+  - name: "Swiss Super League"
+    country: "Switzerland"
+    score: 60
+    clubs: ["Young Boys", "Basel", "Zurich", "Servette", "Lugano"]
+  - name: "Croatian SuperSport HNL"
+    country: "Croatia"
+    score: 55
+    clubs: ["Dinamo Zagreb", "Hajduk Split", "Rijeka", "Osijek"]
+  - name: "Danish Superliga"
+    country: "Denmark"
+    score: 58
+    clubs: ["Copenhagen", "Midtjylland", "Brondby", "Nordsjaelland"]
+  - name: "Greek Super League"
+    country: "Greece"
+    score: 55
+    clubs: ["Olympiacos", "PAOK", "AEK Athens", "Panathinaikos"]
+
+  # Tier 4: African + other Asian + smaller
+  - name: "Egyptian Premier"
+    country: "Egypt"
+    score: 42
+    clubs: ["Al Ahly", "Zamalek", "Pyramids"]
+  - name: "Botola Pro"
+    country: "Morocco"
+    score: 40
+    clubs: ["Wydad", "Raja Casablanca", "Berkane", "FAR Rabat"]
+  - name: "NPFL"
+    country: "Nigeria"
+    score: 35
+    clubs: ["Enyimba", "Rivers United"]
+  - name: "Qatar Stars League"
+    country: "Qatar"
+    score: 48
+    clubs: ["Al-Sadd", "Al-Duhail", "Al-Rayyan", "Al-Gharafa", "Al-Arabi", "Al-Wakrah"]
+  - name: "Tunisian Ligue 1"
+    country: "Tunisia"
+    score: 38
+    clubs: ["Esperance", "Club Africain", "Etoile du Sahel"]
+  - name: "Ecuadorian Serie A"
+    country: "Ecuador"
+    score: 45
+    clubs: ["Barcelona SC", "Independiente del Valle", "LDU Quito", "Emelec", "Aucas"]
+  - name: "Persian Gulf Pro"
+    country: "Iran"
+    score: 42
+    clubs: ["Persepolis", "Esteghlal", "Sepahan", "Tractor"]
+  - name: "Uzbek Super League"
+    country: "Uzbekistan"
+    score: 35
+    clubs: ["Pakhtakor", "Bunyodkor", "Nasaf"]
+  - name: "Algerian Ligue 1"
+    country: "Algeria"
+    score: 35
+    clubs: ["USM Alger", "MC Alger", "JS Kabylie", "CR Belouizdad"]
+  - name: "Iraqi Premier"
+    country: "Iraq"
+    score: 32
+    clubs: ["Al-Shorta", "Al-Zawraa"]
+  - name: "Senegalese Ligue 1"
+    country: "Senegal"
+    score: 30
+    clubs: ["Casa Sports", "Jaraaf"]

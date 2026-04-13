@@ -82,15 +82,38 @@ class GradientBoostModel:
     Args:
         backend: "xgboost" or "lightgbm".
         params: Model hyperparameters.
+        n_classes: Number of target classes. 2 (default) = binary classification;
+            >= 3 = multi-class (e.g. soccer W/D/L). Binary defaults preserve the
+            original 1D predict_proba return shape for backward compatibility.
     """
 
     backend: str = "xgboost"
     params: dict[str, Any] = field(default_factory=dict)
+    n_classes: int = 2
     model: Any = None
     feature_names: list[str] = field(default_factory=list)
 
+    @property
+    def is_multiclass(self) -> bool:
+        return self.n_classes > 2
+
     def _default_params(self) -> dict[str, Any]:
         if self.backend == "xgboost":
+            if self.is_multiclass:
+                return {
+                    "objective": "multi:softprob",
+                    "eval_metric": "mlogloss",
+                    "num_class": self.n_classes,
+                    "max_depth": 6,
+                    "learning_rate": 0.05,
+                    "n_estimators": 500,
+                    "subsample": 0.8,
+                    "colsample_bytree": 0.8,
+                    "min_child_weight": 3,
+                    "reg_alpha": 0.1,
+                    "reg_lambda": 1.0,
+                    "random_state": 42,
+                }
             return {
                 "objective": "binary:logistic",
                 "eval_metric": "logloss",
@@ -105,6 +128,22 @@ class GradientBoostModel:
                 "random_state": 42,
             }
         else:  # lightgbm
+            if self.is_multiclass:
+                return {
+                    "objective": "multiclass",
+                    "metric": "multi_logloss",
+                    "num_class": self.n_classes,
+                    "max_depth": 6,
+                    "learning_rate": 0.05,
+                    "n_estimators": 500,
+                    "subsample": 0.8,
+                    "colsample_bytree": 0.8,
+                    "min_child_weight": 3,
+                    "reg_alpha": 0.1,
+                    "reg_lambda": 1.0,
+                    "random_state": 42,
+                    "verbose": -1,
+                }
             return {
                 "objective": "binary",
                 "metric": "binary_logloss",
@@ -174,8 +213,16 @@ class GradientBoostModel:
         logger.info("Trained %s model on %d samples", self.backend, len(X_train))
 
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        """Return probability of class 1 (team A wins)."""
-        return self.model.predict_proba(X)[:, 1]
+        """Return predicted probabilities.
+
+        - Binary (n_classes == 2): 1D array of class-1 probabilities, shape (N,).
+          Preserved for backward compatibility with all existing workflow call sites.
+        - Multi-class (n_classes >= 3): 2D array of class probabilities, shape (N, K).
+        """
+        probs = self.model.predict_proba(X)
+        if self.is_multiclass:
+            return probs
+        return probs[:, 1]
 
     def feature_importances(self) -> dict[str, float]:
         """Return feature importance scores."""

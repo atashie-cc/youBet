@@ -1,0 +1,433 @@
+fixtures:
+- away_team: South Africa
+  city: Mexico City
+  country: Mexico
+  date: '2026-06-11'
+  home_team: Mexico
+  neutral: 'False'
+- away_team: Czech Republic
+  city: Zapopan
+  country: Mexico
+  date: '2026-06-11'
+  home_team: South Korea
+  neutral: 'True'
+- away_team: Bosnia and Herzegovina
+  city: Toronto
+  country: Canada
+  date: '2026-06-12'
+  home_team: Canada
+  neutral: 'False'
+- away_team: Paraguay
+  city: Inglewood
+  country: United States
+  date: '2026-06-12'
+  home_team: United States
+  neutral: 'False'
+- away_team: Switzerland
+  city: Santa Clara
+  country: United States
+  date: '2026-06-13'
+  home_team: Qatar
+  neutral: 'True'
+- away_team: Morocco
+  city: East Rutherford
+  country: United States
+  date: '2026-06-13'
+  home_team: Brazil
+  neutral: 'True'
+- away_team: Scotland
+  city: Foxborough
+  country: United States
+  date: '2026-06-13'
+  home_team: Haiti
+  neutral: 'True'
+- away_team: Turkey
+  city: Vancouver
+  country: Canada
+  date: '2026-06-13'
+  home_team: Australia
+  neutral: 'True'
+- away_team: Curaçao
+  city: Houston
+  country: United States
+  date: '2026-06-14'
+  home_team: Germany
+  neutral: 'True'
+- away_team: Ecuador
+  city: Philadelphia
+  country: United States
+  date: '2026-06-14'
+  home_team: Ivory Coast
+  neutral: 'True'
+- away_team: Japan
+  city: Arlington
+  country: United States
+  date: '2026-06-14'
+  home_team: Netherlands
+  neutral: 'True'
+- away_team: Tunisia
+  city: Guadalupe
+  country: Mexico
+  date: '2026-06-14'
+  home_team: Sweden
+  neutral: 'True'
+- away_team: Egypt
+  city: Seattle
+  country: United States
+  date: '2026-06-15'
+  home_team: Belgium
+  neutral: 'True'
+- away_team: New Zealand
+  city: Inglewood
+  country: United States
+  date: '2026-06-15'
+  home_team: Iran
+  neutral: 'True'
+- away_team: Cape Verde
+  city: Atlanta
+  country: United States
+  date: '2026-06-15'
+  home_team: Spain
+  neutral: 'True'
+- away_team: Uruguay
+  city: Miami Gardens
+  country: United States
+  date: '2026-06-15'
+  home_team: Saudi Arabia
+  neutral: 'True'
+- away_team: Senegal
+  city: East Rutherford
+  country: United States
+  date: '2026-06-16'
+  home_team: France
+  neutral: 'True'
+- away_team: Norway
+  city: Foxborough
+  country: United States
+  date: '2026-06-16'
+  home_team: Iraq
+  neutral: 'True'
+- away_team: Algeria
+  city: Kansas City
+  country: United States
+  date: '2026-06-16'
+  home_team: Argentina
+  neutral: 'True'
+- away_team: Jordan
+  city: Santa Clara
+  country: United States
+  date: '2026-06-16'
+  home_team: Austria
+  neutral: 'True'
+- away_team: DR Congo
+  city: Houston
+  country: United States
+  date: '2026-06-17'
+  home_team: Portugal
+  neutral: 'True'
+- away_team: Colombia
+  city: Mexico City
+  country: Mexico
+  date: '2026-06-17'
+  home_team: Uzbekistan
+  neutral: 'True'
+- away_team: Croatia
+  city: Arlington
+  country: United States
+  date: '2026-06-17'
+  home_team: England
+  neutral: 'True'
+- away_team: Panama
+  city: Toronto
+  country: Canada
+  date: '2026-06-17'
+  home_team: Ghana
+  neutral: 'True'
+- away_team: South Africa
+  city: Atlanta
+  country: United States
+  date: '2026-06-18'
+  home_team: Czech Republic
+  neutral: 'True'
+- away_team: South Korea
+  city: Zapopan
+  country: Mexico
+  date: '2026-06-18'
+  home_team: Mexico
+  neutral: 'False'
+- away_team: Bosnia and Herzegovina
+  city: Inglewood
+  country: United States
+  date: '2026-06-18'
+  home_team: Switzerland
+  neutral: 'True'
+- away_team: Qatar
+  city: Vancouver
+  country: Canada
+  date: '2026-06-18'
+  home_team: Canada
+  neutral: 'False'
+- away_team: Morocco
+  city: Foxborough
+  country: United States
+  date: '2026-06-19'
+  home_team: Scotland
+  neutral: 'True'
+- away_team: Haiti
+  city: Philadelphia
+  country: United States
+  date: '2026-06-19'
+  home_team: Brazil
+  neutral: 'True'
+- away_team: Australia
+  city: Seattle
+  country: United States
+  date: '2026-06-19'
+  home_team: United States
+  neutral: 'False'
+- away_team: Paraguay
+  city: Santa Clara
+  country: United States
+  date: '2026-06-19'
+  home_team: Turkey
+  neutral: 'True'
+- away_team: Ivory Coast
+  city: Toronto
+  country: Canada
+  date: '2026-06-20'
+  home_team: Germany
+  neutral: 'True'
+- away_team: Curaçao
+  city: Kansas City
+  country: United States
+  date: '2026-06-20'
+  home_team: Ecuador
+  neutral: 'True'
+- away_team: Sweden
+  city: Houston
+  country: United States
+  date: '2026-06-20'
+  home_team: Netherlands
+  neutral: 'True'
+- away_team: Japan
+  city: Guadalupe
+  country: Mexico
+  date: '2026-06-20'
+  home_team: Tunisia
+  neutral: 'True'
+- away_team: Iran
+  city: Inglewood
+  country: United States
+  date: '2026-06-21'
+  home_team: Belgium
+  neutral: 'True'
+- away_team: Egypt
+  city: Vancouver
+  country: Canada
+  date: '2026-06-21'
+  home_team: New Zealand
+  neutral: 'True'
+- away_team: Saudi Arabia
+  city: Atlanta
+  country: United States
+  date: '2026-06-21'
+  home_team: Spain
+  neutral: 'True'
+- away_team: Cape Verde
+  city: Miami Gardens
+  country: United States
+  date: '2026-06-21'
+  home_team: Uruguay
+  neutral: 'True'
+- away_team: Iraq
+  city: Philadelphia
+  country: United States
+  date: '2026-06-22'
+  home_team: France
+  neutral: 'True'
+- away_team: Senegal
+  city: East Rutherford
+  country: United States
+  date: '2026-06-22'
+  home_team: Norway
+  neutral: 'True'
+- away_team: Austria
+  city: Arlington
+  country: United States
+  date: '2026-06-22'
+  home_team: Argentina
+  neutral: 'True'
+- away_team: Algeria
+  city: Santa Clara
+  country: United States
+  date: '2026-06-22'
+  home_team: Jordan
+  neutral: 'True'
+- away_team: Uzbekistan
+  city: Houston
+  country: United States
+  date: '2026-06-23'
+  home_team: Portugal
+  neutral: 'True'
+- away_team: DR Congo
+  city: Zapopan
+  country: Mexico
+  date: '2026-06-23'
+  home_team: Colombia
+  neutral: 'True'
+- away_team: Ghana
+  city: Foxborough
+  country: United States
+  date: '2026-06-23'
+  home_team: England
+  neutral: 'True'
+- away_team: Croatia
+  city: Toronto
+  country: Canada
+  date: '2026-06-23'
+  home_team: Panama
+  neutral: 'True'
+- away_team: Czech Republic
+  city: Mexico City
+  country: Mexico
+  date: '2026-06-24'
+  home_team: Mexico
+  neutral: 'False'
+- away_team: South Korea
+  city: Guadalupe
+  country: Mexico
+  date: '2026-06-24'
+  home_team: South Africa
+  neutral: 'True'
+- away_team: Switzerland
+  city: Vancouver
+  country: Canada
+  date: '2026-06-24'
+  home_team: Canada
+  neutral: 'False'
+- away_team: Qatar
+  city: Seattle
+  country: United States
+  date: '2026-06-24'
+  home_team: Bosnia and Herzegovina
+  neutral: 'True'
+- away_team: Brazil
+  city: Miami Gardens
+  country: United States
+  date: '2026-06-24'
+  home_team: Scotland
+  neutral: 'True'
+- away_team: Haiti
+  city: Atlanta
+  country: United States
+  date: '2026-06-24'
+  home_team: Morocco
+  neutral: 'True'
+- away_team: Turkey
+  city: Inglewood
+  country: United States
+  date: '2026-06-25'
+  home_team: United States
+  neutral: 'False'
+- away_team: Australia
+  city: Santa Clara
+  country: United States
+  date: '2026-06-25'
+  home_team: Paraguay
+  neutral: 'True'
+- away_team: Ivory Coast
+  city: Philadelphia
+  country: United States
+  date: '2026-06-25'
+  home_team: Curaçao
+  neutral: 'True'
+- away_team: Germany
+  city: East Rutherford
+  country: United States
+  date: '2026-06-25'
+  home_team: Ecuador
+  neutral: 'True'
+- away_team: Sweden
+  city: Arlington
+  country: United States
+  date: '2026-06-25'
+  home_team: Japan
+  neutral: 'True'
+- away_team: Netherlands
+  city: Kansas City
+  country: United States
+  date: '2026-06-25'
+  home_team: Tunisia
+  neutral: 'True'
+- away_team: Iran
+  city: Seattle
+  country: United States
+  date: '2026-06-26'
+  home_team: Egypt
+  neutral: 'True'
+- away_team: Belgium
+  city: Vancouver
+  country: Canada
+  date: '2026-06-26'
+  home_team: New Zealand
+  neutral: 'True'
+- away_team: Saudi Arabia
+  city: Houston
+  country: United States
+  date: '2026-06-26'
+  home_team: Cape Verde
+  neutral: 'True'
+- away_team: Spain
+  city: Zapopan
+  country: Mexico
+  date: '2026-06-26'
+  home_team: Uruguay
+  neutral: 'True'
+- away_team: France
+  city: Foxborough
+  country: United States
+  date: '2026-06-26'
+  home_team: Norway
+  neutral: 'True'
+- away_team: Iraq
+  city: Toronto
+  country: Canada
+  date: '2026-06-26'
+  home_team: Senegal
+  neutral: 'True'
+- away_team: Austria
+  city: Kansas City
+  country: United States
+  date: '2026-06-27'
+  home_team: Algeria
+  neutral: 'True'
+- away_team: Argentina
+  city: Arlington
+  country: United States
+  date: '2026-06-27'
+  home_team: Jordan
+  neutral: 'True'
+- away_team: Portugal
+  city: Miami Gardens
+  country: United States
+  date: '2026-06-27'
+  home_team: Colombia
+  neutral: 'True'
+- away_team: Uzbekistan
+  city: Atlanta
+  country: United States
+  date: '2026-06-27'
+  home_team: DR Congo
+  neutral: 'True'
+- away_team: England
+  city: East Rutherford
+  country: United States
+  date: '2026-06-27'
+  home_team: Panama
+  neutral: 'True'
+- away_team: Ghana
+  city: Philadelphia
+  country: United States
+  date: '2026-06-27'
+  home_team: Croatia
+  neutral: 'True'

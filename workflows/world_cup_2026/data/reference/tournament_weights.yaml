@@ -1,0 +1,251 @@
+# Tournament taxonomy for international Elo weighting
+#
+# Maps every tournament string in data/raw/results.csv to one of 5 tiers.
+# Tiers are applied as K multipliers in compute_elo.py:
+#   world_cup = 2.0
+#   continental = 1.5
+#   nations_league = 1.4
+#   qualifier = 1.2
+#   friendly = 0.8
+#
+# Principles for classification:
+#   world_cup      - FIFA World Cup only (highest-stakes senior competition)
+#   continental    - senior national team competitions at confederation or
+#                    regional level with competitive stakes (Euro, Copa America,
+#                    AFCON, Asian Cup, Gold Cup, ONC, plus sub-confederation
+#                    championships that are recognized competitive tournaments)
+#   nations_league - UEFA and CONCACAF Nations League only (novel format,
+#                    formally structured league competition)
+#   qualifier      - any tournament name ending in "qualification"
+#   friendly       - genuine friendlies, invitational cups, multi-sport games
+#                    (Olympics, Asian Games, Pan American Games, etc. are U-23
+#                    or amateur and should NOT count as senior competition),
+#                    CONIFA (non-FIFA), and rare one-off tournaments
+#
+# Rationale for multi-sport games as friendlies: since 1984 the Olympics have
+# been U-23 with three overage players, and earlier editions were amateur.
+# Same for Asian Games, Pan American Games, and most regional Games events.
+# These are not senior international competition in the FIFA sense.
+#
+# Rationale for British Home Championship as continental: it ran 1884-1984 as
+# the primary competitive tournament between England, Scotland, Wales, and
+# Northern Ireland, with national-team stakes.
+#
+# Updated 2026-04-11 during Phase 1 v2 to fix Codex-flagged systematic
+# friendly-default bias that underweighted 175 of 193 tournaments.
+
+world_cup:
+  - FIFA World Cup
+
+continental:
+  # Top senior confederation championships
+  - UEFA Euro
+  - Copa América
+  - African Cup of Nations
+  - AFC Asian Cup
+  - Gold Cup
+  - CONCACAF Championship
+  - Oceania Nations Cup
+  - Confederations Cup  # discontinued 2017 but was WC-like warm-up
+
+  # Sub-regional and historical senior competitions
+  - British Home Championship
+  - Nordic Championship
+  - Baltic Cup
+  - Central European International Cup
+  - Balkan Cup
+  - CECAFA Cup
+  - COSAFA Cup
+  - UDEAC Cup
+  - UNIFFAC Cup
+  - Amílcar Cabral Cup
+  - West African Cup
+  - Nile Basin Tournament
+  - Arab Cup
+  - Gulf Cup
+  - WAFF Championship
+  - CAFA Nations Cup
+  - SAFF Cup
+  - AFF Championship
+  - ASEAN Championship
+  - EAFF Championship
+  - AFC Challenge Cup
+  - CFU Caribbean Cup
+  - CCCF Championship
+  - UNCAF Cup
+  - NAFC Championship
+  - Pan American Championship
+
+  # Rivalries and trophies with senior competitive stakes
+  - Copa Chevallier Boutell
+  - Copa Lipton
+  - Copa Newton
+  - Copa Roca
+  - Copa Oswaldo Cruz
+  - Copa Rio Branco
+  - Copa Paz del Chaco
+  - Copa Bernardo O'Higgins
+  - Copa Artigas
+  - Copa Juan Pinto Durán
+  - Copa Carlos Dittborn
+  - Copa Félix Bogado
+  - Copa Ramón Castilla
+  - Copa Premio Honor Uruguayo
+  - Copa Premio Honor Argentino
+  - Copa del Pacífico
+  - Superclásico de las Américas
+  - Soccer Ashes  # Australia vs New Zealand historical trophy
+  - Rous Cup  # England-Scotland-South America trophy
+  - Dynasty Cup  # East Asian senior competition pre-EAFF
+
+nations_league:
+  - UEFA Nations League
+  - CONCACAF Nations League
+
+qualifier:
+  - FIFA World Cup qualification
+  - UEFA Euro qualification
+  - African Cup of Nations qualification
+  - AFC Asian Cup qualification
+  - Copa América qualification
+  - Gold Cup qualification
+  - CONCACAF Championship qualification
+  - CONCACAF Nations League qualification
+  - CFU Caribbean Cup qualification
+  - Oceania Nations Cup qualification
+  - AFC Challenge Cup qualification
+  - COSAFA Cup qualification
+  - AFF Championship qualification
+  - Arab Cup qualification
+  - EAFF Championship qualification
+  - ASEAN Championship qualification
+  - CONIFA World Football Cup qualification
+
+friendly:
+  - Friendly
+
+  # Multi-sport games (U-23 / amateur / historical)
+  - Olympic Games
+  - Asian Games
+  - All-African Games
+  - Pan American Games
+  - South Pacific Games
+  - South Pacific Mini Games
+  - Pacific Games
+  - Pacific Mini Games
+  - Southeast Asian Games
+  - Southeast Asian Peninsular Games
+  - South Asian Games
+  - Island Games
+  - Indian Ocean Island Games
+  - Central American and Caribbean Games
+  - Bolivarian Games
+  - Far Eastern Championship Games
+  - East Asian Games
+  - Inter Games
+  - Inter-Allied Games
+  - GaNEFo
+  - Afro-Asian Games
+  - Mediterranean Games  # not in data but safe
+  - African Friendship Games
+  - Melanesia Cup
+
+  # Invitational tournaments and one-off cups
+  - Merdeka Tournament
+  - King's Cup
+  - Kirin Cup
+  - Kirin Challenge Cup
+  - Nehru Cup
+  - Korea Cup
+  - FIFA Series
+  - CONCACAF Series
+  - Muratti Vase  # amateur regional cup
+  - Intercontinental Cup
+  - Morocco, Capital of African Football
+  - Mukuru 4 Nations
+  - Windward Islands Tournament
+  - Cyprus International Tournament
+  - Jordan International Tournament
+  - Malta International Tournament
+  - King Hassan II Tournament
+  - Indonesia Tournament
+  - Vietnam Independence Cup
+  - Brazil Independence Cup
+  - Palestine Cup
+  - Four Nations Tournament
+  - Four Nations' Cup
+  - Tri Nation Tournament
+  - Tri-Nations Series
+  - Three Nations Cup
+  - Nations Cup
+  - Mauritius Four Nations Cup
+  - United Arab Emirates Friendship Tournament
+  - Simba Tournament
+  - Tournament Burkina Faso
+  - Tournoi de France
+  - USA Cup
+  - FIFI Wild Cup
+  - ELF Cup
+  - OSN Cup
+  - Dakar Tournament
+  - Dragon Cup
+  - Corsica Cup
+  - Dunhill Cup
+  - Al Ain International Cup
+  - Atlantic Cup
+  - Atlantic Heritage Cup
+  - Scania 100 Tournament
+  - Joe Robbie Cup
+  - Miami Cup
+  - Navruz Cup
+  - Kuneitra Cup
+  - Great Wall Cup
+  - Marlboro Cup
+  - Unity Cup
+  - Peace Cup
+  - Guangzhou International Friendship Tournament
+  - Beijing International Friendship Tournament
+  - Lunar New Year Cup
+  - Mapinduzi Cup
+  - Mahinda Rajapaksa Cup
+  - ABCS Tournament
+  - Melanesian Cup
+  - MSG Prime Minister's Cup
+  - "Prime Minister's Cup"  # two distinct tournaments
+  - VFF Cup
+  - Merlion Cup
+  - Mundialito
+  - Canadian Shield
+  - Trans-Tasman Cup
+  - NAFU Championship
+  - Matthews Cup
+  - Marianas Cup
+  - Zambian Independence Tournament
+  - Phillip Seaga Cup
+  - Niamh Challenge Cup
+  - Outrigger Challenge Cup
+  - Tynwald Hill Tournament
+  - SKN Football Festival
+  - Coupe de l'Outre-Mer
+  - Millennium Cup
+  - FIFA 75th Anniversary Cup
+  - Real Madrid 75th Anniversary Cup
+  - ConIFA Challenger Cup  # typo variant of CONIFA
+  - CONIFA World Football Cup
+  - CONIFA European Football Cup
+  - CONIFA Asia Cup
+  - CONIFA Africa Football Cup
+  - CONIFA South America Football Cup
+  - Viva World Cup  # non-FIFA
+  - TIFOCO Tournament
+  - Copa Confraternidad
+  - Cup of Ancient Civilizations
+  - South Asian Super Cup
+  - Avence Coppée Trophy
+  - Évence Coppée Trophy  # Unicode variant
+  - Open International Championship
+  - Benedikt Fontana Cup
+  - The Other Final  # notorious one-off 2002 Bhutan-Montserrat
+  - CONMEBOL–UEFA Cup of Champions  # 2022 one-off Finalissima
+  - Hungary Heritage Cup
+  - World Unity Cup
