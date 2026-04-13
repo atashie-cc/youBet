@@ -43,6 +43,9 @@
   - `data.py` — Commodity data loading with workflow-specific snapshot paths
   - `pit.py` — Commodity publication lags (breakeven inflation, dollar index) with registration
   - `macro/fetchers.py` — Breakeven inflation (FRED T10YIE), dollar index (DXY)
+- `src/youbet/factor/` — Factor portfolio analysis:
+  - `data.py` — Ken French Data Library fetcher with snapshot caching (6 factors, daily/monthly, 1963-present)
+  - `simulator.py` — Walk-forward return-series simulator with timing strategies (SMA, vol-target, buy-and-hold)
 - `src/youbet/utils/` — I/O and visualization helpers
 - `workflows/` — domain-specific prediction workflows (NCAA March Madness, ETF strategies, etc.)
 - `docs/` — research findings, architectural decisions, runbooks
@@ -92,6 +95,7 @@ comparison = compare_to_market(result, data, "market_prob_a", "team_a_win")
 - `workflows/etf/` — Vanguard ETF strategy evaluation COMPLETE. 17 unleveraged + 8 leveraged experiments. Sharpe: VTI efficient. Drawdown: trend following -20% vs VTI -55%, supports 6% SWR (vs 5% for VTI). SMA100 > SMA200 at all leverage levels. 3x long/cash SMA100: 21.6% CAGR, 0.649 Sharpe. 3x inverse destroys wealth. ML destroyed value. 3 Codex reviews, 16 fixes.
 - `workflows/etflab-max/` — Vanguard ETF CAGR maximization COMPLETE. 158 strategies tested across 5 phases. CAGR gate: 0/158 pass (VTI CAGR-efficient). Best unleveraged: VGT 13.8%, MGK 12.8%. Best leveraged: MGK @ 2.3x SMA100 = 20.6% CAGR, 0.645 Sharpe. Active momentum adds no value over static holds. 2 Codex reviews, 26 fixes.
 - `workflows/commodity/` — Commodity/futures strategy evaluation COMPLETE. 31 walk-forward tests across 6 phases + 300 null simulations. **0/31 pass strict gate**. Best finding: static 10% IAU in 60/40 (Sharpe-of-excess +0.118, CI lower +0.019). Strongest exploratory finding: macro-gated DBC (+0.456 Sharpe diff, stationary bootstrap null rejected at p=0.035, but primary p=0.174 fails gate; zero portfolio value at 10% sleeve). Physical gold is the only commodity instrument with walk-forward support; DBC/USCI/miners/timing all fail. Multiple Codex adversarial review rounds with iterative bug fixes (PIT leakage in macro signals, rebalance calendar bug, VGSH pre-inception, Sharpe estimand mismatch).
+- `workflows/factor-timing/` — Ken French factor portfolio timing COMPLETE (Phase A+B, 3 Codex rounds). 62yr daily data, 60 folds. **Phase A: 8/18 PASS** strict gate on paper factors (SMA100 on SMB/HML/RMW/CMA). Robustness: random null p<0.002, sub-period consistent, all SMA windows 50-250 positive, 100% bear-driven. Vol-targeting destroys value except UMD. Decay: avg 77%. **Phase B: hedged VLUE (long VLUE / short VTI) passes gate (ExSh +0.739, Holm p=0.045, 78% DD reduction)**. Unhedged factor ETFs fail (market beta dominates). Calendar effects: 0/4 pass Sharpe gate but all have significant CAPM alpha (4.5-6.9%). Codex reviews found/fixed 7 bugs including fold overlap, wrong proxy methodology, premature bridge conclusion.
 - `workflows/world_cup_2026/` — 2026 FIFA World Cup bracket prediction COMPLETE (Phases 0-6 + market efficiency assessment). 48-team Monte Carlo simulator with real FIFA R32 bracket, constraint-based third-place assignment, H2H tiebreakers. Phase 6 eloratings-inspired Elo (K: WC=60/Cont=50/Qual=40/Fr=20, home=100, no mean reversion). Walk-forward LL 0.995 (Elo-only, 192 WC matches). Champion pick: Spain 22.8%, Argentina 20.9%, France 12.1%. Market efficiency confirmed: Pinnacle ~0.99 LL vs model 0.995; outright odds beat Elo by 0.028 LL; blending degrades monotonically; 5-feature XGBoost adds zero lift. Model captures ~60% of random-to-market signal. Genuine value: structural bracket-path simulation + pool-play strategy optimization (not match prediction). 10 Codex rounds, 15 blockers found and fixed. Core infra extended for multi-class (n_classes=3).
 
 ## Key Research Documents
@@ -109,3 +113,4 @@ comparison = compare_to_market(result, data, "market_prob_a", "team_a_win")
 - `workflows/commodity/research/final-report.md` — Final report: 31 walk-forward tests, macro-gated DBC deconstruction, practical implications
 - `workflows/world_cup_2026/research/final-report.md` — WC 2026 bracket prediction final report: 6 phases, 15 Codex blockers fixed, Elo-based Monte Carlo simulator
 - `workflows/world_cup_2026/research/log.md` — Complete WC 2026 experiment log (Phases 0-5, 8 Codex review rounds)
+- `workflows/factor-timing/research/log.md` — Factor timing experiment log (Phases 0-4, 8/18 paper pass, hedged VLUE passes, 3 Codex rounds, 7 bugs fixed)

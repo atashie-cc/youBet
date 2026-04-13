@@ -1,0 +1,55 @@
+# Factor Timing Workflow Configuration
+# LOCKED: All parameters set before seeing results. Changes require
+# explicit re-commitment documented in research/log.md with rationale.
+
+# Primary metric: Sharpe ratio (risk-adjusted, appropriate for paper portfolios)
+# Secondary: CAGR, MaxDD (reported but not gated)
+
+benchmark:
+  type: "buy_and_hold"  # Static factor exposure (no timing)
+  description: "Buy-and-hold factor portfolio"
+
+simulation:
+  train_months: 36      # Walk-forward training window
+  test_months: 12       # Walk-forward test window
+  step_months: 12       # Walk-forward step size
+
+gate:
+  min_excess_sharpe: 0.20   # Minimum economic significance
+  significance: 0.05        # Holm-corrected p-value threshold
+  ci_lower_threshold: 0.0   # CI must exclude zero
+
+bootstrap:
+  n_replicates: 10000   # Block bootstrap replicates
+  block_length: 22      # ~1 month (Politis-Romano)
+  confidence: 0.90      # 90% CIs for financial time series
+  seed: 42
+
+power_analysis:
+  kill_gate: 0.50       # Stop if MDE > 0.50 excess Sharpe
+  n_simulations: 500
+  target_sharpe_diffs: [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50]
+
+factors:
+  - "Mkt-RF"
+  - "SMB"
+  - "HML"
+  - "RMW"
+  - "CMA"
+  - "UMD"
+
+strategies:
+  sma_windows: [100, 200]
+  vol_target_pct: 12
+  vol_target_lookback: 126
+  vol_target_max_leverage: 2.0
+
+data:
+  snapshot_dir: "data/snapshots"
+  frequency: "daily"
+
+# Paper portfolio caveat: Results are on hypothetical long-short
+# factor portfolios from Ken French / CRSP. They do NOT include
+# transaction costs, shorting costs, or margin requirements.
+# Any positive findings must be labeled "paper portfolio" and
+# cannot be directly used as actionable strategy recommendations.
