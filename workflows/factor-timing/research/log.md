@@ -372,37 +372,257 @@ is NOT a calendar effect — it is a genuine trend-following signal.
 
 ---
 
-## Cross-Workflow Implications (Final, After Codex R2 Corrections)
+---
 
-1. **SMA timing on paper factor portfolios is genuine and well-characterized.**
-   8/18 pass strict gate. Random null (p<0.002), sub-period consistent, parameter-robust
-   (all 32 windows positive), 100% bear-driven. The mechanism is crash avoidance.
+## Phase 6: Rebalancing Frequency Sensitivity
 
-2. **The bridge to practice requires hedging out market beta.** Unhedged factor ETFs are
-   dominated by market beta (b_mkt ~0.95) and SMA on them is just SMA on the market.
-   But hedged VLUE (long VLUE / short VTI) passes the Holm gate (ExSharpe +0.739,
-   p=0.045) with 78% drawdown reduction. The value timing signal transmits when isolated.
+### Bug Fix: Hedged Return PIT Violation (Pre-Phase 6)
 
-3. **Calendar effects have genuine CAPM alpha but negative excess Sharpe.** Turn-of-month
-   has +6.9% annualized alpha (t=7.56). The metric choice matters: Sharpe-of-excess
-   penalizes low-exposure strategies. However, per-decade stability shows the alpha is
-   declining, consistent with arbitrage.
+Codex R3 identified that `compute_hedged_returns()` used same-day rolling beta to
+hedge same-day return. Fixed: `rolling_beta.shift(1)`. Rerun Phase 3 Stage C:
+hedged VLUE ExSharpe IMPROVED from +0.739 to **+0.795** (Holm p 0.045 → **0.030**).
+The PIT fix strengthened the result.
 
-4. **Drawdown reduction remains the most robust cross-workflow finding.** SMA reduces MaxDD
-   on paper factors (30-68%), unhedged ETFs (31-45%), and hedged value (78%).
+### Test 1: Paper Factor Signal-Frequency Sensitivity
 
-5. **Two potentially implementable strategies emerge from the full workflow:**
-   a. **Hedged value timing:** Long VLUE / short VTI, SMA100 timed. Passes strict gate.
-      Requires margin/shorting. 78% DD reduction on value spread.
-   b. **VTI SMA drawdown overlay:** From ETF workflow. Reduces MaxDD from -55% to -20%.
-      No shorting required. Costs ~3.5% annual return.
+**Pre-committed hypothesis REJECTED:** monthly-checked ExSharpe is NOT within +/-0.10
+of daily-checked. The degradation is 0.16-0.46.
 
-6. **The metric matters as much as the strategy.** Sharpe-of-excess, Sharpe-difference,
-   and CAPM alpha give opposite conclusions for calendar strategies. The framework should
-   report all three going forward.
+| Frequency | Avg ExSharpe (SMA100, 4 factors) | Delta vs Daily |
+|---|---|---|
+| Daily | +0.611 | baseline |
+| Weekly | +0.541 | -0.070 |
+| Monthly | +0.404 | **-0.207** |
 
-7. **Codex adversarial review is essential.** Three rounds of Codex review found: fold overlap
-   bug, estimand mismatch, double-RF subtraction, wrong proxy qualification method (raw corr
-   vs regression), premature "bridge doesn't exist" conclusion, calendar off-by-one, and
-   missing beta-adjusted alpha. The Phase 3 conclusion REVERSED from "bridge doesn't exist"
-   to "bridge exists for value when hedged" — a materially different finding.
+Key patterns:
+- Degradation is monotonic: daily > weekly > monthly
+- Shorter SMA windows degrade more (SMA50: -0.26 avg, SMA100: -0.19 avg)
+- **All 24 variants remain positive** — monthly still produces meaningful ExSharpe (+0.37 to +0.57)
+- Signal concordance: weekly agrees with daily 93-95%, monthly 79-87%
+
+### Test 2: Hedged VLUE Spread Frequency Sensitivity
+
+| SMA | Freq | ExSharpe | MaxDD | DD Reduction | Sw/Yr |
+|---|---|---|---|---|---|
+| 100 | daily | **+0.795** | -6.3% | 84% | 10.5 |
+| 100 | weekly | +0.690 | -13.0% | 66% | 4.3 |
+| 100 | monthly | +0.531 | -12.5% | 67% | 3.3 |
+| 50 | daily | +0.609 | -10.5% | 73% | 17.5 |
+| 50 | weekly | +0.632 | -10.6% | 72% | 8.5 |
+| 50 | monthly | +0.383 | -20.7% | 46% | 4.5 |
+
+All 6 hedged VLUE variants are positive. Weekly SMA50 (+0.632) beats daily SMA50 (+0.609),
+suggesting shorter windows benefit from whipsaw reduction at weekly frequency.
+
+### Test 3: Cost Impact
+
+Transaction costs (3 bps one-way) are negligible relative to timing alpha:
+- Daily SMA100: ~9 switches/yr = 0.54% annual cost = ~0.07 Sharpe drag
+- Weekly SMA100: ~4.5 switches/yr = 0.27% annual cost
+- Monthly SMA100: ~2.4 switches/yr = 0.14% annual cost
+
+**Costs are NOT the binding constraint — signal freshness is.** The net-of-cost
+ranking is the same as gross: daily > weekly > monthly.
+
+### Key Takeaway
+
+**Weekly is the implementation sweet spot.** It captures 85-90% of the daily signal
+quality with half the turnover and slightly better whipsaw management for shorter SMAs.
+Monthly checking loses 20-40% of the timing alpha — more than the literature predicted.
+
+---
+
+---
+
+## Phase 7: International Out-of-Sample Replication
+
+### The Critical Test
+
+If SMA value timing only works in the US, it's likely a data-mining artifact.
+If it replicates internationally, the mechanism (crash avoidance on factor drawdowns)
+is structural and market-independent.
+
+### HML (Value) Timing Across 5 Regions
+
+| Region | Folds | Years | B&H Sharpe | SMA Sharpe | ExSharpe | Raw p | DD Reduction |
+|---|---|---|---|---|---|---|---|
+| US | 60 | 59.6 | 0.380 | 1.009 | **+0.535** | 0.0005 | 55% |
+| Developed ex-US | 33 | 33.5 | 0.859 | 1.582 | **+0.600** | 0.0095 | 72% |
+| Europe | 33 | 33.5 | 0.528 | 1.251 | **+0.567** | 0.0060 | 79% |
+| Japan | 33 | 33.5 | 0.528 | 0.916 | +0.241 | 0.0915 | 60% |
+| Asia-Pacific ex-Japan | 33 | 33.5 | 0.746 | 0.766 | -0.212 | 0.8931 | 31% |
+
+**4 of 5 regions show positive excess Sharpe.** 3 of 4 international regions positive.
+Developed ex-US and Europe both statistically significant (p < 0.01).
+Japan positive but borderline (p = 0.09). Asia-Pacific is the sole failure.
+
+### All 4 Factors Across Regions
+
+| Factor | US | Dev ex-US | Europe | Japan | Asia-Pac | Positive |
+|---|---|---|---|---|---|---|
+| HML | +0.535 | +0.600 | +0.567 | +0.241 | -0.212 | 4/5 |
+| SMB | +0.641 | +0.084 | +0.055 | +0.317 | +0.689 | **5/5** |
+| RMW | +0.582 | +0.433 | +0.304 | +0.512 | -0.167 | 4/5 |
+| CMA | +0.687 | +0.841 | +0.801 | +0.482 | -0.049 | 4/5 |
+
+**SMB timing is positive in ALL 5 regions** — the most internationally robust finding.
+HML, RMW, and CMA are positive in 4/5 (Asia-Pacific is the consistent exception).
+
+### Drawdown Reduction: Universal
+
+SMA100 reduces MaxDD in ALL 5 regions, ALL 4 factors, regardless of timing alpha sign:
+
+| Region | HML DD Red | SMB DD Red | RMW DD Red | CMA DD Red |
+|---|---|---|---|---|
+| US | 55% | 58% | 68% | 61% |
+| Dev ex-US | 72% | 33% | 52% | 56% |
+| Europe | 79% | 31% | 47% | 61% |
+| Japan | 60% | 48% | 38% | 56% |
+| Asia-Pac | 31% | 34% | 4% | 2% |
+
+### Interpretation
+
+The finding replicates. SMA factor timing is NOT a US-specific artifact. The mechanism
+(avoiding prolonged factor drawdowns) operates in developed markets globally. The
+exception — Asia-Pacific ex-Japan — is the smallest and most heterogeneous region,
+covering Australia, Hong Kong, Singapore, New Zealand, and others with diverse market
+microstructures.
+
+Key nuances:
+- Europe shows the strongest replication: ExSharpe +0.567 with 79% drawdown reduction on HML
+- Developed ex-US is the broadest test and shows ExSharpe +0.600 (EXCEEDS the US result)
+- Japan shows positive direction but weaker magnitude and borderline significance
+- CMA timing is surprisingly strong internationally (+0.801 Europe, +0.841 Dev ex-US)
+
+---
+
+---
+
+## Phase 8: Regime-Conditional International Analysis
+
+### VIX Regime Decomposition (HML, all regions)
+
+| Region | ExSharpe | Low VIX | Normal VIX | High VIX | Crisis VIX |
+|---|---|---|---|---|---|
+| US | +0.535 | +0.7% | **+2.1%** | -0.8% | +0.9% |
+| Dev ex-US | +0.600 | +0.5% | +1.1% | +0.2% | +0.5% |
+| Europe | +0.567 | +0.4% | **+1.5%** | +0.2% | +0.8% |
+| Japan | +0.241 | -0.0% | +1.2% | +0.2% | +0.2% |
+| Asia-Pac | -0.212 | +0.2% | -1.6% | +0.3% | -0.0% |
+
+**Timing alpha is NOT crisis-concentrated.** Normal VIX (15-25) contributes the most
+for US and Europe. The effect is distributed across market regimes.
+
+### Time Period Decomposition (HML)
+
+| Region | Pre-GFC | GFC | Post-GFC | COVID+ |
+|---|---|---|---|---|
+| US | **+2.6%** | +0.2% | +0.5% | +0.1% |
+| Dev ex-US | +1.2% | +0.1% | +0.7% | +0.3% |
+| Europe | +1.1% | +0.0% | **+1.5%** | +0.4% |
+
+**Not era-dependent.** Positive contributions across all periods for US, Dev ex-US, Europe.
+Europe's strongest era is post-GFC, not pre-GFC — the effect is not just historical.
+
+### Bear/Bull Regime (All factors, all regions)
+
+**Bear-driven mechanism confirmed internationally.** 16 of 20 factor×region combinations
+are bear-driven. The 4 exceptions are all Asia-Pacific (HML, RMW, CMA) where bull-regime
+drag (-2.1 to -2.6%) exceeds bear-regime benefit (+1.0 to +2.0%).
+
+---
+
+## Phase 9: Asia-Pacific Exception + Multi-Region Diversification
+
+### Part A: Why Asia-Pacific Fails
+
+| Metric | US | Dev ex-US | Europe | Japan | Asia-Pac |
+|---|---|---|---|---|---|
+| HML avg DD duration | 76d | 53d | 90d | 56d | **31d** |
+| HML signal switches/yr | 8.3 | 7.4 | 6.6 | 10.4 | **12.8** |
+| HML mean-reversion corr | +0.075 | +0.203 | +0.251 | +0.104 | +0.069 |
+
+Asia-Pacific HML drawdowns are **shortest** (31 days vs 76-90 for US/Europe), causing
+SMA100 to whipsaw (12.8 switches/yr vs 6.6-8.3 elsewhere). The factor recovers before
+SMA can profitably exit and re-enter. This explains the high bull-regime drag.
+
+### Part B: Multi-Region Diversification
+
+Equal-weight SMA100 timing across US + Europe + Japan:
+
+| Factor | US ExSh | Europe ExSh | Japan ExSh | **Combined ExSh** | Cross-Region Corr |
+|---|---|---|---|---|---|
+| CMA | +0.448 | +0.765 | +0.452 | **+0.847** | 0.099 |
+| RMW | +0.197 | +0.299 | +0.549 | **+0.569** | 0.055 |
+| HML | +0.310 | +0.532 | +0.200 | **+0.493** | 0.181 |
+| SMB | +0.312 | +0.035 | +0.365 | **+0.405** | 0.044 |
+
+Cross-region correlations are very low (0.04-0.18), meaning regional factor timing
+signals are genuinely independent. CMA combined ExSharpe (+0.847) exceeds any
+individual region. Diversification is real and substantial.
+
+---
+
+## Phase 10: Implementation Cost Analysis
+
+### Cost Breakdown (Base Case: 35 bps borrow, 3 bps trading, 5% margin)
+
+| Cost Component | Daily | Weekly |
+|---|---|---|
+| VTI borrow | 0.34% | 0.34% |
+| Signal switching | **1.27%** | 0.52% |
+| Hedge rebalancing | 0.03% | 0.03% |
+| Margin drag | **0.99%** | 0.99% |
+| **Total (ex-tax)** | **2.63%** | **1.88%** |
+
+Dominant costs: signal switching and margin drag. Borrow and hedge rebalancing are small.
+
+### After-Cost Performance
+
+| Frequency | Gross ExSharpe | Annual Cost | Net ExSharpe | Break-Even Cost |
+|---|---|---|---|---|
+| Daily | +0.795 | 2.63% | **+0.354** | 4.74% |
+| Weekly | +0.690 | 1.88% | **+0.372** | 4.07% |
+
+**Weekly produces higher net ExSharpe** (+0.372 vs +0.354) because the lower switching
+cost more than compensates for the lower gross signal quality.
+
+Under pessimistic assumptions (50 bps borrow, 5 bps trading, 6% margin):
+- Daily: net ExSharpe = -0.098 (goes negative)
+- Weekly: net ExSharpe = +0.023 (barely positive)
+
+The strategy has ~4% annual cost headroom before breaking even.
+
+---
+
+## Cross-Workflow Implications (Final, After Phase 10)
+
+1. **SMA factor timing replicates internationally.** HML positive 4/5 regions, SMB 5/5.
+   Timing alpha distributed across VIX regimes and time periods — not crisis-driven.
+
+2. **Asia-Pacific exception explained.** Factor drawdowns too short (31d avg vs 76-90d),
+   causing excessive whipsaw (12.8 switches/yr vs 6.6-8.3).
+
+3. **Cross-region diversification is genuinely additive.** Regional timing signals have
+   0.04-0.18 correlation. Combined CMA: ExSharpe +0.847 (exceeds any individual region).
+
+4. **Implementation costs reduce but do not eliminate timing alpha.** Weekly hedged VLUE:
+   gross +0.690, net +0.372 (after 1.88% annual costs). Break-even at ~4% annual costs.
+
+5. **Weekly confirmed optimal after costs.** Net ExSharpe +0.372 weekly vs +0.354 daily.
+   Lower switching cost (0.52% vs 1.27%) more than compensates for lower gross signal.
+
+6. **Dominant costs: switching (0.52%) and margin drag (0.99%).** Borrow (0.34%) and
+   hedge rebalancing (0.03%) are minor. Reducing signal switches is the key cost lever.
+
+7. **Under pessimistic assumptions, the strategy barely survives.** Weekly net ExSharpe
+   drops to +0.023 at worst-case costs. Not robust to extreme friction.
+
+8. **Drawdown reduction remains the most universal finding.** Works across all regions,
+   factors, frequencies, and cost scenarios.
+
+9. **The honest bottom line:** The hedged value timing strategy has positive net ExSharpe
+   under base-case costs (+0.372 weekly) but only ~4% annual cost headroom. It is a
+   genuine but fragile edge requiring margin account, weekly monitoring, and favorable
+   borrow rates. Most retail investors are better served by VTI SMA drawdown overlay
+   (no shorting, no factor tilts, robust drawdown reduction).

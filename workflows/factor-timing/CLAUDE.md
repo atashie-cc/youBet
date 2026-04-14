@@ -13,7 +13,7 @@
 10. **Config-driven** — all parameters in config.yaml. Locked before Phase 1.
 11. **Report multiple metrics** — Sharpe-of-excess for gate, plus CAPM alpha for low-exposure strategies.
 
-## Current Status — COMPLETE (Phase A + Phase B, 3 Codex review rounds)
+## Current Status — COMPLETE (Phase A + B + C, 3 Codex review rounds, 8 bugs fixed)
 
 **Phase A (Paper Portfolios):**
 - Phase 0: Power analysis PASSED (MDE +0.46)
@@ -25,16 +25,30 @@
 **Phase B (Implementation Bridge):**
 - Phase 3 Stage A: All 3 factor ETFs qualify as proxies (multi-factor regression, t>17)
 - Phase 3 Stage B: Unhedged timing 0/3 pass (market beta overwhelms)
-- Phase 3 Stage C: **Hedged VLUE passes (ExSh +0.739, Holm p=0.045, 78% DD reduction)**
-- Phase 4: Calendar 0/4 pass Sharpe gate, but all have significant CAPM alpha (4.5-6.9% ann, t>4)
+- Phase 3 Stage C: **Hedged VLUE passes (ExSh +0.795, Holm p=0.030, 84% DD reduction, PIT-fixed)**
+- Phase 4: Calendar 0/4 pass Sharpe gate, but all have significant CAPM alpha (4.5-6.9% ann)
+
+**Phase C (Frequency Sensitivity):**
+- Phase 6: Monthly checking loses 20-40% of timing alpha vs daily. Weekly captures 85-90%.
+  All variants remain positive. Costs negligible (~0.07 Sharpe drag at daily). Weekly is sweet spot.
+
+**Phase D (International OOS + Deep Dive):**
+- Phase 7: **HML positive 4/5 regions**, SMB 5/5. Replicates internationally.
+- Phase 8: Timing alpha distributed across VIX regimes/eras — not crisis-concentrated.
+- Phase 9: Asia-Pac fails due to short drawdowns (31d avg → 12.8 switches/yr). Multi-region
+  diversification is additive (cross-region corr 0.04-0.18; combined CMA ExSh +0.847).
+- Phase 10: After implementation costs (1.88%/yr base case), weekly net ExSharpe = **+0.372**.
+  Break-even at ~4% costs. Under pessimistic costs, barely positive (+0.023).
 
 **Key findings:**
 1. SMA timing works on paper long-short factors (bear-driven crash avoidance)
-2. Value timing transmits to practice via hedged ETF (long VLUE / short VTI)
-3. Calendar effects have real CAPM alpha but fail Sharpe-of-excess (metric sensitivity)
-4. Drawdown reduction is the most robust cross-instrument finding (30-78%)
+2. Value timing transmits via hedged ETF (long VLUE / short VTI, ExSh +0.795, p=0.030)
+3. **Finding replicates internationally** — HML positive in 4/5 regions, SMB in 5/5
+4. Weekly signal checking is the implementation sweet spot (85-90% of daily alpha)
+5. Drawdown reduction is universal (all 5 regions, all 4 factors)
+6. Transaction costs are NOT the binding constraint — signal freshness is
 
-**Codex reviews found and fixed:** fold overlap, estimand mismatch, double-RF, wrong proxy qualification (raw corr → regression), premature bridge conclusion, calendar off-by-one, missing CAPM alpha. Phase 3 conclusion REVERSED from "bridge doesn't exist" to "bridge exists for value."
+**Codex reviews (3 rounds) found and fixed 8 bugs.** Phase 3 conclusion REVERSED from "bridge doesn't exist" to "bridge exists for value." Phase 3C result STRENGTHENED after PIT fix.
 
 ## Architecture
 - `src/youbet/factor/` — Factor data fetcher and simulation engine
@@ -48,6 +62,11 @@
   - `phase2_decay.py` — Pre/post-publication Sharpe decay per factor
   - `phase3_etf_bridge.py` — Regression qualification + unhedged/hedged ETF timing
   - `phase4_calendar.py` — Sell-in-May, January, Turn-of-Month, Year-End Rally
+  - `phase6_rebalance_freq.py` — Signal-check frequency sweep (daily/weekly/monthly × SMA50/100)
+  - `phase7_international.py` — International OOS replication (4 regions × 4 factors)
+  - `phase8_regime_intl.py` — VIX regime, time period, bear/bull decomposition across regions
+  - `phase9_regional.py` — Asia-Pac exception analysis + multi-region diversification
+  - `phase10_implementation.py` — Borrow costs, hedge maintenance, margin, tax, break-even
   - `_shared.py` — Metrics, bootstrap, Holm, precommitment
 - `workflows/factor-timing/data/snapshots/` — Cached French + ETF data
 - `workflows/factor-timing/research/log.md` — Complete research log

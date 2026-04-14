@@ -36,7 +36,7 @@ _DATASETS = {
     },
     "momentum_daily": {
         "url": f"{_BASE_URL}/F-F_Momentum_Factor_daily_CSV.zip",
-        "factors": ["Mom"],  # labeled "Mom   " in the file
+        "factors": ["Mom"],
     },
     "ff5_monthly": {
         "url": f"{_BASE_URL}/F-F_Research_Data_5_Factors_2x3_CSV.zip",
@@ -47,6 +47,28 @@ _DATASETS = {
         "factors": ["Mom"],
     },
 }
+
+# International datasets (daily only)
+_INTL_REGIONS = {
+    "developed_ex_us": {
+        "ff5_url": f"{_BASE_URL}/Developed_ex_US_5_Factors_Daily_CSV.zip",
+        "mom_url": f"{_BASE_URL}/Developed_ex_US_Mom_Factor_Daily_CSV.zip",
+    },
+    "europe": {
+        "ff5_url": f"{_BASE_URL}/Europe_5_Factors_Daily_CSV.zip",
+        "mom_url": f"{_BASE_URL}/Europe_Mom_Factor_Daily_CSV.zip",
+    },
+    "japan": {
+        "ff5_url": f"{_BASE_URL}/Japan_5_Factors_Daily_CSV.zip",
+        "mom_url": f"{_BASE_URL}/Japan_Mom_Factor_Daily_CSV.zip",
+    },
+    "asia_pacific_ex_japan": {
+        "ff5_url": f"{_BASE_URL}/Asia_Pacific_ex_Japan_5_Factors_Daily_CSV.zip",
+        "mom_url": f"{_BASE_URL}/Asia_Pacific_ex_Japan_Mom_Factor_Daily_CSV.zip",
+    },
+}
+
+INTL_REGION_NAMES = list(_INTL_REGIONS.keys())
 
 # Canonical factor names used throughout the codebase
 FACTOR_NAMES = ["Mkt-RF", "SMB", "HML", "RMW", "CMA", "UMD"]
@@ -282,6 +304,80 @@ def load_french_snapshot(
     latest = existing[-1]
     logger.info("Loading French factors from %s", latest)
     return pd.read_parquet(latest)
+
+
+def fetch_international_factors(
+    region: str,
+    snapshot_dir: Path | None = None,
+) -> pd.DataFrame:
+    """Fetch Ken French international factor data (daily).
+
+    Args:
+        region: One of "developed_ex_us", "europe", "japan", "asia_pacific_ex_japan".
+        snapshot_dir: Directory for cached snapshots.
+
+    Returns:
+        DataFrame with columns [Mkt-RF, SMB, HML, RMW, CMA, UMD, RF].
+    """
+    if region not in _INTL_REGIONS:
+        raise ValueError(f"Unknown region: {region}. Available: {INTL_REGION_NAMES}")
+
+    # Check snapshot
+    if snapshot_dir is not None:
+        snapshot_dir = Path(snapshot_dir)
+        snapshot_dir.mkdir(parents=True, exist_ok=True)
+        pattern = f"french_factors_{region}_*.parquet"
+        existing = sorted(snapshot_dir.glob(pattern))
+        if existing:
+            logger.info("Loading cached %s factors from %s", region, existing[-1])
+            return pd.read_parquet(existing[-1])
+
+    info = _INTL_REGIONS[region]
+
+    # Download FF5
+    logger.info("Downloading %s FF5 factors...", region)
+    resp = requests.get(info["ff5_url"], timeout=60)
+    resp.raise_for_status()
+    with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
+        csv_names = [n for n in zf.namelist() if n.lower().endswith(".csv")]
+        content = zf.read(csv_names[0]).decode("utf-8", errors="replace")
+    ff5 = _parse_french_csv(content, ["Mkt-RF", "SMB", "HML", "RMW", "CMA", "RF"])
+
+    # Download momentum
+    logger.info("Downloading %s momentum factor...", region)
+    resp = requests.get(info["mom_url"], timeout=60)
+    resp.raise_for_status()
+    with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
+        csv_names = [n for n in zf.namelist() if n.lower().endswith(".csv")]
+        content = zf.read(csv_names[0]).decode("utf-8", errors="replace")
+    mom = _parse_french_csv(content, ["Mom"])
+
+    # Rename momentum
+    mom_col = [c for c in mom.columns if "mom" in c.lower() or "umd" in c.lower() or "wml" in c.lower()]
+    if mom_col:
+        mom = mom.rename(columns={mom_col[0]: "UMD"})
+    elif len(mom.columns) == 1:
+        mom.columns = ["UMD"]
+    mom = mom[["UMD"]]
+
+    combined = ff5.join(mom, how="inner")
+    available = [c for c in FACTOR_NAMES + ["RF"] if c in combined.columns]
+    combined = combined[available].dropna(how="all").sort_index()
+
+    logger.info(
+        "Loaded %s: %d observations from %s to %s",
+        region, len(combined),
+        combined.index[0].strftime("%Y-%m-%d"),
+        combined.index[-1].strftime("%Y-%m-%d"),
+    )
+
+    if snapshot_dir is not None:
+        today_str = date.today().strftime("%Y-%m-%d")
+        path = snapshot_dir / f"french_factors_{region}_{today_str}.parquet"
+        combined.to_parquet(path)
+        logger.info("Saved snapshot to %s", path)
+
+    return combined
 
 
 def factor_cumulative_returns(

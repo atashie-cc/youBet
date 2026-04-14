@@ -201,10 +201,11 @@ def compute_hedged_returns(
     etf_r = etf_ret[common]
     vti_r = vti_ret[common]
 
-    # Rolling beta (252-day)
+    # Rolling beta (252-day), lagged by 1 day for PIT safety.
+    # Beta estimated from days [t-252, t-1] is used to hedge day t's return.
     rolling_cov = etf_r.rolling(252).cov(vti_r)
     rolling_var = vti_r.rolling(252).var()
-    rolling_beta = (rolling_cov / rolling_var.clip(lower=1e-10)).fillna(1.0)
+    rolling_beta = (rolling_cov / rolling_var.clip(lower=1e-10)).fillna(1.0).shift(1)
 
     hedged = etf_r - rolling_beta * vti_r
     return hedged
