@@ -773,12 +773,26 @@ diagnostic — understanding when timing is most valuable, not building a better
 
 ---
 
-## Cross-Workflow Implications (Final, After Phase 15)
+## Codex R7 Assessment (Phase 14-15)
 
-1. **CMA (investment factor) timing is the most internationally robust finding.**
-   Passes Holm/6 in ALL 3 international regions (Dev ex-US p=0.020, Europe p=0.020,
-   Japan p=0.033). Source: 87% of alpha from normal periods (not crash-dependent).
-   Factor breadth gate concentrates alpha further (+5.4% active vs +1.7% inactive).
+Phase 14 CMA "significance" is at the bootstrap resolution floor (300 replicates,
+min Holm p = 6/301 = 0.020). At least 3 of 6 "significant" results are floor-limited.
+Phase 14 reuses Phase 7 data (not new evidence) and omits Asia-Pacific (where CMA was
+negative). Phase 15 breadth gate is a valid diagnostic decomposition but was only tested
+internationally on one region. The +16.1% "both active" alpha is ~2 SE on 1028 days.
+
+Cross-phase multiplicity across 15 phases on 62-year US data is the critical unaddressed
+issue. The workflow is exploratory, not confirmatory in aggregate.
+
+---
+
+## Cross-Workflow Implications (Final, After Phase 15 + Codex R7)
+
+1. **CMA timing is directionally the most internationally consistent factor.**
+   Positive ExSharpe in Dev ex-US, Europe, and Japan. However, the formal significance
+   (Holm p = 0.020) is at the bootstrap resolution floor and should not be treated as
+   precise. The Phase 14 international tests reuse Phase 7 data with added inference,
+   not new evidence.
 
 2. **Partial international transportability.** HML positive in 4/5 regions, SMB 5/5.
    Descriptive transport test, not cross-region Holm-corrected.
@@ -807,10 +821,25 @@ diagnostic — understanding when timing is most valuable, not building a better
    SMA overlay and hedged factor timing are genuinely diversifying — the blend has
    real portfolio construction value.
 
-9. **The honest bottom line (calibrated per Codex R5+R6 + Phase 13):**
-   - Paper-factor independent timing: STRONG (Sharpe 1.709, beats all alternatives)
-   - The mechanism is cash optionality during factor drawdowns
-   - Cross-factor rotation is dominated — don't rotate, just exit to cash
-   - Composite signals are operationally useful but don't improve alpha
-   - Implementation via hedged VLUE: positive net-of-cost but uses approximations
-   - VTI SMA drawdown overlay: most broadly applicable practical finding
+9. **Factor breadth is diagnostically informative but not actionable.**
+   Timing alpha is 2-3x higher when breadth >= 3 (random null p=0.005 on US HML/CMA).
+   But the p-value is at the simulation floor (200 sims, min p = 1/201), the international
+   "replication" covers only Dev ex-US, and inactive periods still have positive alpha.
+   Keep timing always-on.
+
+10. **Cross-phase multiplicity is the critical unaddressed limitation.** 15 phases on
+    62-year US data with hundreds of strategy/factor/region/signal combinations. Within-phase
+    Holm correction exists but no across-phase control. The workflow is EXPLORATORY in
+    aggregate, not confirmatory. A genuinely confirmatory test would require: a frozen
+    hypothesis set, a truly untouched holdout, and higher-resolution bootstrap inference.
+
+11. **The honest bottom line (calibrated per Codex R5+R6+R7):**
+    - Paper-factor independent timing: DIRECTIONALLY ROBUST (positive in 19/24 transfer
+      tests across 4 regions, mechanism well-characterized as cash optionality)
+    - CMA and HML are the most internationally consistent factors
+    - Cross-factor rotation is dominated — exit to cash, don't rotate
+    - Implementation via hedged VLUE: positive net-of-cost under base assumptions
+    - All formal "significance" claims are limited by bootstrap resolution (300-2000 reps)
+    - VTI SMA drawdown overlay: most broadly applicable practical finding
+    - The workflow is EXPLORATORY — no single result should be treated as confirmed
+      without a genuinely independent holdout test
