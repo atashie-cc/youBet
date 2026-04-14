@@ -113,4 +113,4 @@ comparison = compare_to_market(result, data, "market_prob_a", "team_a_win")
 - `workflows/commodity/research/final-report.md` — Final report: 31 walk-forward tests, macro-gated DBC deconstruction, practical implications
 - `workflows/world_cup_2026/research/final-report.md` — WC 2026 bracket prediction final report: 6 phases, 15 Codex blockers fixed, Elo-based Monte Carlo simulator
 - `workflows/world_cup_2026/research/log.md` — Complete WC 2026 experiment log (Phases 0-5, 8 Codex review rounds)
-- `workflows/factor-timing/research/log.md` — Factor timing experiment log (Phases 0-4, 8/18 paper pass, hedged VLUE passes, 3 Codex rounds, 7 bugs fixed)
+- `workflows/factor-timing/research/log.md` — Factor timing experiment log (10 phases, 5 regions, 3 Codex rounds, 8 bugs fixed)

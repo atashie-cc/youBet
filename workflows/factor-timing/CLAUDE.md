@@ -13,7 +13,7 @@
 10. **Config-driven** — all parameters in config.yaml. Locked before Phase 1.
 11. **Report multiple metrics** — Sharpe-of-excess for gate, plus CAPM alpha for low-exposure strategies.
 
-## Current Status — COMPLETE (Phase A + B + C, 3 Codex review rounds, 8 bugs fixed)
+## Current Status — COMPLETE (10 phases, 5 regions, 3 Codex rounds, 8 bugs fixed)
 
 **Phase A (Paper Portfolios):**
 - Phase 0: Power analysis PASSED (MDE +0.46)
@@ -73,6 +73,8 @@
 - `workflows/factor-timing/research/log.md` — Complete research log
 
 ## Data
-- Ken French Library: 6 factors, daily 1963-2026 (~62.6 years, 15,770 obs, 60 folds)
+- Ken French Library (US): 6 factors, daily 1963-2026 (~62.6 years, 15,770 obs, 60 folds)
+- Ken French Library (International): 4 regions (Dev ex-US, Europe, Japan, Asia-Pac), daily 1990-2026 (~35 years, 33 folds)
 - Factor ETFs: VLUE, QUAL, SIZE (2011-2026, ~13 years, 10-13 folds)
 - Total market return: Mkt-RF + RF (62.6 years)
+- VIX: ^VIX from yfinance (1990-2026, used for regime decomposition)
