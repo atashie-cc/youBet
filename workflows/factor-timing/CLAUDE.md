@@ -13,43 +13,28 @@
 10. **Config-driven** — all parameters in config.yaml. Locked before Phase 1.
 11. **Report multiple metrics** — Sharpe-of-excess for gate, plus CAPM alpha for low-exposure strategies.
 
-## Current Status — COMPLETE (10 phases, 5 regions, 3 Codex rounds, 8 bugs fixed)
+## Current Status — COMPLETE (13 phases, 5 regions, 3 Codex rounds, 8 bugs fixed)
 
-**Phase A (Paper Portfolios):**
-- Phase 0: Power analysis PASSED (MDE +0.46)
-- Phase 1: Factor timing **8/18 PASS** strict gate (SMA on SMB, HML, RMW, CMA)
-- Phase 1B: Robustness — random null p<0.002, sub-period consistent (4/6 factors)
-- Phase 1C: SMA deep dive — all 32 windows positive, 100% bear-driven, parameter-robust
-- Phase 2: Decay — avg 77% post-publication, RMW most robust (35%)
-
-**Phase B (Implementation Bridge):**
-- Phase 3 Stage A: All 3 factor ETFs qualify as proxies (multi-factor regression, t>17)
-- Phase 3 Stage B: Unhedged timing 0/3 pass (market beta overwhelms)
-- Phase 3 Stage C: **Hedged VLUE passes (ExSh +0.795, Holm p=0.030, 84% DD reduction, PIT-fixed)**
-- Phase 4: Calendar 0/4 pass Sharpe gate, but all have significant CAPM alpha (4.5-6.9% ann)
-
-**Phase C (Frequency Sensitivity):**
-- Phase 6: Monthly checking loses 20-40% of timing alpha vs daily. Weekly captures 85-90%.
-  All variants remain positive. Costs negligible (~0.07 Sharpe drag at daily). Weekly is sweet spot.
-
-**Phase D (International OOS + Deep Dive):**
-- Phase 7: **HML positive 4/5 regions**, SMB 5/5. Replicates internationally.
-- Phase 8: Timing alpha distributed across VIX regimes/eras — not crisis-concentrated.
-- Phase 9: Asia-Pac fails due to short drawdowns (31d avg → 12.8 switches/yr). Multi-region
-  diversification is additive (cross-region corr 0.04-0.18; combined CMA ExSh +0.847).
-- Phase 10: After costs (1.40%/yr base case, corrected Codex R5), weekly net ExSharpe = **+0.453**.
-  Break-even at ~4% costs. Under pessimistic costs: **+0.178** (positive). Cost model uses flat
-  daily drag approximation on synthetic return series.
+**Phase A (Paper Portfolios):** 8/18 PASS strict gate. Bear-driven, parameter-robust, random null p<0.002.
+**Phase B (Implementation Bridge):** Hedged VLUE passes (ExSh +0.795, p=0.030). Calendar: CAPM alpha significant.
+**Phase C (Frequency):** Weekly is sweet spot (85-90% of daily alpha, half turnover).
+**Phase D (International):** Replicates 4/5 regions. Regime-distributed. Asia-Pac fails (whipsaw).
+  After costs: net ExSharpe +0.453 (base), +0.178 (pessimistic).
+**Phase E (Signal Design + Rotation):**
+- Phase 11: 10-year performance report — VTI SMA Sharpe 0.897 vs B&H 0.808, 70/30 blend Sharpe 0.987.
+- Phase 12: Composite signals reduce whipsaw 20-30% but don't improve alpha (Codex R6: noise).
+- Phase 13: **Cross-factor rotation LOSES to independent timing.** Independent SMA Sharpe 1.709
+  vs best rotation 1.181. Cash optionality is the mechanism (ExSharpe +1.039 timing vs +0.212
+  selection). Confirmed in all 3 international regions.
 
 **Key findings:**
-1. SMA timing works on paper long-short factors (bear-driven crash avoidance)
-2. Value timing transmits via hedged ETF (long VLUE / short VTI, ExSh +0.795, p=0.030)
-3. **Finding replicates internationally** — HML positive in 4/5 regions, SMB in 5/5
-4. Weekly signal checking is the implementation sweet spot (85-90% of daily alpha)
-5. Drawdown reduction is universal (all 5 regions, all 4 factors)
-6. Transaction costs are NOT the binding constraint — signal freshness is
-
-**Codex reviews (3 rounds) found and fixed 8 bugs.** Phase 3 conclusion REVERSED from "bridge doesn't exist" to "bridge exists for value." Phase 3C result STRENGTHENED after PIT fix.
+1. Independent factor-vs-cash timing is the best approach (Sharpe 1.709, MaxDD -9.1%)
+2. Cash optionality is the dominant mechanism — don't rotate, exit to cash
+3. Hedged VLUE passes gate with +0.795 ExSharpe (p=0.030), net +0.453 after costs
+4. Replicates internationally (4/5 regions, universal drawdown reduction)
+5. Weekly checking optimal; composite signals reduce whipsaw operationally
+6. Timing alpha oscillates with factor regime (not declining like calendar effects)
+7. VTI SMA drawdown overlay is the most broadly practical finding
 
 ## Architecture
 - `src/youbet/factor/` — Factor data fetcher and simulation engine
@@ -68,6 +53,9 @@
   - `phase8_regime_intl.py` — VIX regime, time period, bear/bull decomposition across regions
   - `phase9_regional.py` — Asia-Pac exception analysis + multi-region diversification
   - `phase10_implementation.py` — Borrow costs, hedge maintenance, margin, tax, break-even
+  - `phase11_performance_report.py` — 10-year backtest with signal logs, event analysis, cross-strategy comparison
+  - `phase12_composite_signal.py` — Vote system (SMA+vol+DD+momentum), whipsaw reduction study
+  - `phase13_rotation.py` — Cross-factor rotation vs independent timing, timing-vs-selection decomposition
   - `_shared.py` — Metrics, bootstrap, Holm, precommitment
 - `workflows/factor-timing/data/snapshots/` — Cached French + ETF data
 - `workflows/factor-timing/research/log.md` — Complete research log

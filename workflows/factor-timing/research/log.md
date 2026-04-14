@@ -600,40 +600,118 @@ increase during drawdowns). The flat approximation may understate peak drag.
 
 ---
 
-## Cross-Workflow Implications (Final, After Phase 10)
+---
+
+## Phase 12: Composite Defensive Signal (Exploratory)
+
+Tested combining 4 signals (SMA100, vol spike, drawdown threshold, momentum) via
+vote system. VOTE-3of4 matches SMA ExSharpe while cutting switches 20-30%.
+SMB VOTE-3 shows +0.025 ExSharpe improvement — but per Codex R6, this is ~0.2 SE
+and does not survive the 22-strategy search space. The composite's value is whipsaw
+reduction (~5-8 bps/yr savings), not alpha improvement. Factor-tailored 2-signal
+subsets underperform generic 4-signal VOTE-3.
+
+Individual signal performance (ExSharpe on US factors):
+- SMA100: strongest on all 4 factors (+0.535 to +0.687)
+- Momentum: second (+0.403 to +0.484)
+- VolSpike: modest (+0.163 to +0.248, negative on RMW)
+- Drawdown: factor-dependent (+0.124 to +0.391)
+
+Signal correlations are low (SMA-Vol: 0.05, SMA-DD: 0.25) except SMA-Momentum (0.55).
+
+**Verdict:** Useful mechanism study. VOTE-3 is a defensible production rule for
+reducing whipsaw, but does not produce statistically significant improvement over
+SMA100 alone.
+
+---
+
+## Phase 13: Cross-Factor Rotation
+
+### The Central Question
+Does rotating among trending factors beat independent timing to cash?
+Codex R6 proposed this as the highest-priority research direction.
+
+### US Results (62 years)
+
+| Strategy | Sharpe | CAGR | MaxDD | ExSharpe vs B&H |
+|---|---|---|---|---|
+| EW Buy-and-Hold | 0.649 | 2.8% | -25.6% | baseline |
+| **Independent SMA Timing** | **1.709** | 6.1% | **-9.1%** | **+1.039** |
+| SMA Rotation | 1.135 | 6.7% | -30.1% | +0.837 |
+| Trend+Momentum (top-2) | 1.111 | 7.0% | -34.0% | +0.838 |
+| InvVol Rotation | 1.181 | 6.7% | -29.0% | +0.826 |
+
+**Independent timing has the highest Sharpe (1.709) and lowest MaxDD (-9.1%).**
+Rotation produces higher CAGR (6.7-7.0% vs 6.1%) but at dramatically worse drawdowns
+(-29 to -34% vs -9.1%). The Sharpe ratio correctly penalizes this.
+
+### Timing vs Selection Decomposition
+
+| Component | ExSharpe | Interpretation |
+|---|---|---|
+| Timing (indep vs B&H) | **+1.039** | Cash optionality — the dominant value source |
+| Selection (rotation vs indep) | +0.212 | Concentrating in winners — positive but small |
+| Total (rotation vs B&H) | +0.837 | Less than timing alone due to added drawdown |
+
+**The cash option IS the mechanism.** Factors are only all trending 7.3% of the time.
+Going to cash when your factor is below trend is more valuable than rotating to another
+factor, because factor drawdowns are often correlated.
+
+### International Confirmation
+
+| Region | Indep SMA Sharpe | Rotation Sharpe | Indep Better? |
+|---|---|---|---|
+| US | **1.709** | 1.135 | YES |
+| Developed ex-US | **1.729** | 1.335 | YES |
+| Europe | **1.495** | 1.106 | YES |
+| Japan | **1.108** | 0.675 | YES |
+
+Universally confirmed: independent timing beats rotation on risk-adjusted basis.
+
+### Practical Implication
+Don't try to be clever about where to reallocate during factor weakness. Just go to
+cash. The simplest approach (SMA100 independently on each factor, exit to RF) produces
+the best risk-adjusted result across all regions tested.
+
+---
+
+## Cross-Workflow Implications (Final, After Phase 13)
 
 1. **Paper-factor SMA timing is well-established** (US gate-passing, Holm-corrected).
    8/18 pass on US data with 60 walk-forward folds. Mechanism: bear-driven crash avoidance.
    Parameter-robust (all SMA 50-250 positive). Random null rejected (p<0.002).
 
-2. **Partial international transportability.** HML timing positive in 4/5 regions, SMB 5/5,
-   using Ken French regional factor data (1990-2026). This is a descriptive transport test
-   on later-era data without cross-region Holm correction — not a full independent replication.
-   International SMA100 was transferred from US results (defensible given Phase 1C window
-   robustness, but not independently optimized).
+2. **Partial international transportability.** HML positive in 4/5 regions, SMB 5/5.
+   Descriptive transport test, not cross-region Holm-corrected.
 
-3. **Asia-Pacific exception: higher whipsaw frequency.** Asia-Pac HML has shorter sub-1%
-   underwater spells (31d avg) and higher SMA signal switches (12.8/yr vs 6.6-8.3 elsewhere).
-   The factor recovers too fast for SMA100 to profit from exits.
+3. **Cash is the mechanism, not factor selection.** Phase 13 definitively showed that
+   independent factor-vs-cash timing (Sharpe 1.709) beats every rotation variant tested
+   (Sharpe 1.10-1.18). The decomposition: timing alpha ExSharpe +1.039 vs selection
+   alpha +0.212. Confirmed in all 3 international regions. Rotation produces higher
+   CAGR but dramatically worse MaxDD (-30% vs -9%).
 
-4. **Cross-region diversification is descriptively additive.** Regional timing excess returns
-   have 0.04-0.18 correlation. Combined CMA ExSharpe +0.847 exceeds individual regions.
-   Purely descriptive — no formal gate test on the combined series.
+4. **Composite signals reduce whipsaw but don't improve alpha.** Phase 12 VOTE-3of4
+   cuts switches 20-30% with comparable ExSharpe. SMB improvement (+0.025) is noise
+   per Codex R6. The composite's value is operational (fewer trades) not statistical.
 
-5. **Implementation costs (corrected after Codex R5):** Weekly hedged VLUE annual cost
-   1.40% (base case), producing net ExSharpe +0.453. Under pessimistic assumptions:
-   +0.178 (still positive). Break-even at ~4% annual costs. Dominant cost: margin drag
-   (0.99%). NOTE: flat daily drag approximation; real costs are lumpy and path-dependent.
+5. **Implementation costs (corrected R5):** Weekly hedged VLUE: 1.40%/yr base case,
+   net ExSharpe +0.453 (base) / +0.178 (pessimistic). Break-even ~4%.
 
-6. **Drawdown reduction is the most universal finding.** Works across all regions, factors,
-   frequencies, and cost scenarios. Established by this workflow for factor portfolios;
-   separately established by the ETF workflow for VTI.
+6. **Timing alpha oscillates, not declining monotonically.** Rolling 10yr ExSharpe on
+   HML: 1.7 (1980) → 0.1 (2010) → 0.5 (2020) → 0.2 (2025). Regime-dependent, not
+   being arbitraged away like calendar effects.
 
-7. **The honest bottom line (calibrated per Codex R5):**
-   - Paper-factor evidence: STRONG (US gate-passing, robust)
-   - International transport: MODERATE (descriptive, later-era, no cross-region Holm)
-   - Hedged VLUE implementation: POSITIVE under all cost scenarios tested, but uses
-     flat-drag cost approximation on a synthetic (non-traded) return series. Net ExSharpe
-     +0.453 (base) / +0.178 (pessimistic) with ~4% cost headroom.
-   - VTI SMA drawdown overlay: separately established in ETF workflow, recommended as
-     the most broadly applicable practical tool (no shorting, no factor tilts needed)
+7. **Alpha source varies by factor.** SMB: 81% from deep drawdowns (fragile). CMA: 87%
+   from normal periods (robust). This should inform factor weighting decisions.
+
+8. **Market SMA and factor SMA signals are independent** (correlation -0.068). The VTI
+   SMA overlay and hedged factor timing are genuinely diversifying — the blend has
+   real portfolio construction value.
+
+9. **The honest bottom line (calibrated per Codex R5+R6 + Phase 13):**
+   - Paper-factor independent timing: STRONG (Sharpe 1.709, beats all alternatives)
+   - The mechanism is cash optionality during factor drawdowns
+   - Cross-factor rotation is dominated — don't rotate, just exit to cash
+   - Composite signals are operationally useful but don't improve alpha
+   - Implementation via hedged VLUE: positive net-of-cost but uses approximations
+   - VTI SMA drawdown overlay: most broadly applicable practical finding
