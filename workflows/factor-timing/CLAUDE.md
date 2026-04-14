@@ -37,8 +37,9 @@
 - Phase 8: Timing alpha distributed across VIX regimes/eras — not crisis-concentrated.
 - Phase 9: Asia-Pac fails due to short drawdowns (31d avg → 12.8 switches/yr). Multi-region
   diversification is additive (cross-region corr 0.04-0.18; combined CMA ExSh +0.847).
-- Phase 10: After implementation costs (1.88%/yr base case), weekly net ExSharpe = **+0.372**.
-  Break-even at ~4% costs. Under pessimistic costs, barely positive (+0.023).
+- Phase 10: After costs (1.40%/yr base case, corrected Codex R5), weekly net ExSharpe = **+0.453**.
+  Break-even at ~4% costs. Under pessimistic costs: **+0.178** (positive). Cost model uses flat
+  daily drag approximation on synthetic return series.
 
 **Key findings:**
 1. SMA timing works on paper long-short factors (bear-driven crash avoidance)

@@ -59,37 +59,32 @@ def compute_implementation_costs(
     n = len(hedged_returns)
     n_years = n / TRADING_DAYS
 
-    # 1. Short borrow cost
-    # Applied daily on the short VTI leg value
-    # Short value = beta * portfolio_value (approximately)
+    # 1. Short borrow cost (exposure-weighted)
+    # Only charged when position is active (exposure > 0)
     avg_beta = float(hedge_beta.reindex(hedged_returns.index, method="ffill").mean())
-    annual_borrow_cost = borrow_rate_annual * abs(avg_beta)
+    exposure = sma_exposure.reindex(hedged_returns.index).fillna(0)
+    avg_exposure = float(exposure.mean())
+    annual_borrow_cost = borrow_rate_annual * abs(avg_beta) * avg_exposure
     daily_borrow = annual_borrow_cost / TRADING_DAYS
 
     # 2. SMA signal switching costs
-    # Each switch in/out requires trading both VLUE and VTI legs
-    exposure = sma_exposure.reindex(hedged_returns.index).fillna(0)
+    # Each switch = 2 one-way trades (open or close the VLUE+VTI pair)
     switches = (exposure.diff().abs() > 0.5).sum()
     switches_per_year = switches / max(n_years, 0.01)
-    # Each switch = round trip on both legs: 2 * 2 * one_way_bps
-    # (buy/sell VLUE + buy/sell VTI short)
-    switch_cost_annual = switches_per_year * 4 * trading_cost_bps / 10_000
+    # Cost per switch = 2 one-way trades * cost_bps (one for VLUE, one for VTI)
+    switch_cost_annual = switches_per_year * 2 * trading_cost_bps / 10_000
 
-    # 3. Hedge ratio rebalancing cost
-    # Beta drifts daily. Rebalance the VTI short leg to maintain target beta.
-    # Daily beta change requires trading VTI proportional to delta-beta.
+    # 3. Hedge ratio rebalancing cost (exposure-weighted)
+    # Beta drifts daily. Only rebalance when position is active.
     beta_aligned = hedge_beta.reindex(hedged_returns.index, method="ffill")
-    daily_beta_change = beta_aligned.diff().abs().mean()
-    # Each daily beta change requires trading (delta_beta * portfolio_value) of VTI
-    # Cost = daily_beta_change * 2 * trading_cost_bps (round trip estimate)
-    hedge_rebal_annual = float(daily_beta_change * TRADING_DAYS * 2 * trading_cost_bps / 10_000)
+    # Weight daily beta changes by exposure
+    daily_beta_change = (beta_aligned.diff().abs() * exposure).mean()
+    # Cost = daily_beta_change * one_way trade cost (single leg adjustment)
+    hedge_rebal_annual = float(daily_beta_change * TRADING_DAYS * trading_cost_bps / 10_000)
 
-    # 4. Margin/collateral cost
+    # 4. Margin/collateral cost (exposure-weighted)
     # Reg T: short position requires 150% margin (50% initial + 100% short proceeds)
-    # On the excess margin requirement, you earn short rebate (RF - borrow_rate)
-    # But the margin is locked up and has opportunity cost
-    # Simplified: margin drag = margin_rate * excess_collateral_fraction * avg_exposure
-    avg_exposure = float(exposure.mean())
+    # Opportunity cost on the excess collateral, only when position is active
     margin_drag_annual = margin_rate * 0.5 * abs(avg_beta) * avg_exposure
 
     # 5. Tax drag (simplified)

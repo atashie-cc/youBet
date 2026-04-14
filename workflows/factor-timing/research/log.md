@@ -567,62 +567,73 @@ individual region. Diversification is real and substantial.
 
 ### Cost Breakdown (Base Case: 35 bps borrow, 3 bps trading, 5% margin)
 
+Corrected after Codex R5: switch cost fixed (2x not 4x one-way), borrow/hedge
+costs now exposure-weighted (only charged when position is active).
+
 | Cost Component | Daily | Weekly |
 |---|---|---|
-| VTI borrow | 0.34% | 0.34% |
-| Signal switching | **1.27%** | 0.52% |
-| Hedge rebalancing | 0.03% | 0.03% |
-| Margin drag | **0.99%** | 0.99% |
-| **Total (ex-tax)** | **2.63%** | **1.88%** |
+| VTI borrow (exposure-weighted) | 0.14% | 0.14% |
+| Signal switching (2 one-way/switch) | 0.63% | 0.26% |
+| Hedge rebalancing (exposure-weighted) | 0.01% | 0.01% |
+| Margin drag (exposure-weighted) | **0.99%** | **0.99%** |
+| **Total (ex-tax)** | **1.77%** | **1.40%** |
 
-Dominant costs: signal switching and margin drag. Borrow and hedge rebalancing are small.
+Dominant cost: margin drag (0.99%). Switching is secondary (0.26-0.63%).
 
 ### After-Cost Performance
 
 | Frequency | Gross ExSharpe | Annual Cost | Net ExSharpe | Break-Even Cost |
 |---|---|---|---|---|
-| Daily | +0.795 | 2.63% | **+0.354** | 4.74% |
-| Weekly | +0.690 | 1.88% | **+0.372** | 4.07% |
-
-**Weekly produces higher net ExSharpe** (+0.372 vs +0.354) because the lower switching
-cost more than compensates for the lower gross signal quality.
+| Daily | +0.795 | 1.77% | **+0.498** | 4.74% |
+| Weekly | +0.690 | 1.40% | **+0.453** | 4.07% |
 
 Under pessimistic assumptions (50 bps borrow, 5 bps trading, 6% margin):
-- Daily: net ExSharpe = -0.098 (goes negative)
-- Weekly: net ExSharpe = +0.023 (barely positive)
+- Daily: net ExSharpe = **+0.189** (positive)
+- Weekly: net ExSharpe = **+0.178** (positive)
 
-The strategy has ~4% annual cost headroom before breaking even.
+**Both frequencies survive even pessimistic cost assumptions.** The strategy has
+~4% annual cost headroom before breaking even.
+
+NOTE: These costs use a flat daily drag approximation. Real costs are lumpy
+(concentrated on switch/rebalance days) and path-dependent (margin requirements
+increase during drawdowns). The flat approximation may understate peak drag.
 
 ---
 
 ## Cross-Workflow Implications (Final, After Phase 10)
 
-1. **SMA factor timing replicates internationally.** HML positive 4/5 regions, SMB 5/5.
-   Timing alpha distributed across VIX regimes and time periods — not crisis-driven.
+1. **Paper-factor SMA timing is well-established** (US gate-passing, Holm-corrected).
+   8/18 pass on US data with 60 walk-forward folds. Mechanism: bear-driven crash avoidance.
+   Parameter-robust (all SMA 50-250 positive). Random null rejected (p<0.002).
 
-2. **Asia-Pacific exception explained.** Factor drawdowns too short (31d avg vs 76-90d),
-   causing excessive whipsaw (12.8 switches/yr vs 6.6-8.3).
+2. **Partial international transportability.** HML timing positive in 4/5 regions, SMB 5/5,
+   using Ken French regional factor data (1990-2026). This is a descriptive transport test
+   on later-era data without cross-region Holm correction — not a full independent replication.
+   International SMA100 was transferred from US results (defensible given Phase 1C window
+   robustness, but not independently optimized).
 
-3. **Cross-region diversification is genuinely additive.** Regional timing signals have
-   0.04-0.18 correlation. Combined CMA: ExSharpe +0.847 (exceeds any individual region).
+3. **Asia-Pacific exception: higher whipsaw frequency.** Asia-Pac HML has shorter sub-1%
+   underwater spells (31d avg) and higher SMA signal switches (12.8/yr vs 6.6-8.3 elsewhere).
+   The factor recovers too fast for SMA100 to profit from exits.
 
-4. **Implementation costs reduce but do not eliminate timing alpha.** Weekly hedged VLUE:
-   gross +0.690, net +0.372 (after 1.88% annual costs). Break-even at ~4% annual costs.
+4. **Cross-region diversification is descriptively additive.** Regional timing excess returns
+   have 0.04-0.18 correlation. Combined CMA ExSharpe +0.847 exceeds individual regions.
+   Purely descriptive — no formal gate test on the combined series.
 
-5. **Weekly confirmed optimal after costs.** Net ExSharpe +0.372 weekly vs +0.354 daily.
-   Lower switching cost (0.52% vs 1.27%) more than compensates for lower gross signal.
+5. **Implementation costs (corrected after Codex R5):** Weekly hedged VLUE annual cost
+   1.40% (base case), producing net ExSharpe +0.453. Under pessimistic assumptions:
+   +0.178 (still positive). Break-even at ~4% annual costs. Dominant cost: margin drag
+   (0.99%). NOTE: flat daily drag approximation; real costs are lumpy and path-dependent.
 
-6. **Dominant costs: switching (0.52%) and margin drag (0.99%).** Borrow (0.34%) and
-   hedge rebalancing (0.03%) are minor. Reducing signal switches is the key cost lever.
+6. **Drawdown reduction is the most universal finding.** Works across all regions, factors,
+   frequencies, and cost scenarios. Established by this workflow for factor portfolios;
+   separately established by the ETF workflow for VTI.
 
-7. **Under pessimistic assumptions, the strategy barely survives.** Weekly net ExSharpe
-   drops to +0.023 at worst-case costs. Not robust to extreme friction.
-
-8. **Drawdown reduction remains the most universal finding.** Works across all regions,
-   factors, frequencies, and cost scenarios.
-
-9. **The honest bottom line:** The hedged value timing strategy has positive net ExSharpe
-   under base-case costs (+0.372 weekly) but only ~4% annual cost headroom. It is a
-   genuine but fragile edge requiring margin account, weekly monitoring, and favorable
-   borrow rates. Most retail investors are better served by VTI SMA drawdown overlay
-   (no shorting, no factor tilts, robust drawdown reduction).
+7. **The honest bottom line (calibrated per Codex R5):**
+   - Paper-factor evidence: STRONG (US gate-passing, robust)
+   - International transport: MODERATE (descriptive, later-era, no cross-region Holm)
+   - Hedged VLUE implementation: POSITIVE under all cost scenarios tested, but uses
+     flat-drag cost approximation on a synthetic (non-traded) return series. Net ExSharpe
+     +0.453 (base) / +0.178 (pessimistic) with ~4% cost headroom.
+   - VTI SMA drawdown overlay: separately established in ETF workflow, recommended as
+     the most broadly applicable practical tool (no shorting, no factor tilts needed)
