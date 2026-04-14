@@ -13,7 +13,7 @@
 10. **Config-driven** — all parameters in config.yaml. Locked before Phase 1.
 11. **Report multiple metrics** — Sharpe-of-excess for gate, plus CAPM alpha for low-exposure strategies.
 
-## Current Status — COMPLETE (13 phases, 5 regions, 3 Codex rounds, 8 bugs fixed)
+## Current Status — COMPLETE (15 phases, 5 regions, 3 Codex rounds, 8 bugs fixed)
 
 **Phase A (Paper Portfolios):** 8/18 PASS strict gate. Bear-driven, parameter-robust, random null p<0.002.
 **Phase B (Implementation Bridge):** Hedged VLUE passes (ExSh +0.795, p=0.030). Calendar: CAPM alpha significant.
@@ -23,9 +23,11 @@
 **Phase E (Signal Design + Rotation):**
 - Phase 11: 10-year performance report — VTI SMA Sharpe 0.897 vs B&H 0.808, 70/30 blend Sharpe 0.987.
 - Phase 12: Composite signals reduce whipsaw 20-30% but don't improve alpha (Codex R6: noise).
-- Phase 13: **Cross-factor rotation LOSES to independent timing.** Independent SMA Sharpe 1.709
-  vs best rotation 1.181. Cash optionality is the mechanism (ExSharpe +1.039 timing vs +0.212
-  selection). Confirmed in all 3 international regions.
+- Phase 13: **Cross-factor rotation LOSES to independent timing.** Cash optionality is the mechanism.
+- Phase 14: Transfer-inference consolidation. **CMA passes Holm/6 in ALL 3 international regions.**
+  19/24 transfer tests positive, 6/24 significant. US post-pub: 0/6 pass (underpowered).
+- Phase 15: Regime gate — factor breadth identifies favorable periods (HML/CMA alpha 2-3x higher
+  when breadth >= 3, null p=0.005, replicates internationally). But always-on timing still works.
 
 **Key findings:**
 1. Independent factor-vs-cash timing is the best approach (Sharpe 1.709, MaxDD -9.1%)
@@ -56,6 +58,8 @@
   - `phase11_performance_report.py` — 10-year backtest with signal logs, event analysis, cross-strategy comparison
   - `phase12_composite_signal.py` — Vote system (SMA+vol+DD+momentum), whipsaw reduction study
   - `phase13_rotation.py` — Cross-factor rotation vs independent timing, timing-vs-selection decomposition
+  - `phase14_transfer.py` — Transfer-inference consolidation (Holm/6 on post-pub US + international OOS)
+  - `phase15_regime_gate.py` — Regime-gated overlay (breadth, correlation, vol, market gate + random null)
   - `_shared.py` — Metrics, bootstrap, Holm, precommitment
 - `workflows/factor-timing/data/snapshots/` — Cached French + ETF data
 - `workflows/factor-timing/research/log.md` — Complete research log

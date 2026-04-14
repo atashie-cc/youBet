@@ -675,11 +675,110 @@ the best risk-adjusted result across all regions tested.
 
 ---
 
-## Cross-Workflow Implications (Final, After Phase 13)
+---
 
-1. **Paper-factor SMA timing is well-established** (US gate-passing, Holm-corrected).
-   8/18 pass on US data with 60 walk-forward folds. Mechanism: bear-driven crash avoidance.
-   Parameter-robust (all SMA 50-250 positive). Random null rejected (p<0.002).
+## Phase 14: Transfer-Inference Consolidation
+
+Formal bootstrap inference on post-discovery data, Holm/6 across ALL 6 original factors.
+
+### Unified Summary Table
+
+| Factor | US Discovery | US Transfer | Dev ex-US | Europe | Japan |
+|---|---|---|---|---|---|
+| Mkt-RF | N/A | +0.070 | +0.210 | -0.021 | -0.024 |
+| SMB | +1.264 | +0.282 | +0.084 | +0.055 | +0.317 |
+| HML | +1.289 | +0.287 | +0.600 ** | +0.567 ** | +0.241 |
+| RMW | +0.872 | -0.088 | +0.433 * | +0.304 | +0.512 ** |
+| CMA | +0.765 | +0.513 | **+0.841 *** | **+0.801 *** | **+0.482 ** |
+| UMD | +0.619 | -0.099 | +0.093 | -0.072 | +0.260 |
+
+Holm/6 significance: *** p<0.01, ** p<0.05, * p<0.10
+
+**19 of 24 transfer tests are positive** (79%). **6 of 24 pass Holm/6 at p < 0.05.**
+
+**CMA is the most internationally robust factor** — passes Holm/6 in ALL 3 international
+regions. Consistent with Phase 12 finding that CMA gets 87% of alpha from normal periods.
+
+**US post-publication: 0/6 pass Holm/6.** The 30-year post-pub sample is borderline for
+detection (SE ~0.18, need ExSh ~0.55+ to pass). SMB/HML/CMA are directionally positive.
+
+**Mkt-RF and UMD fail everywhere** — consistent across all phases.
+
+---
+
+## Phase 15: Regime-Gated Timing Overlay (Exploratory)
+
+### State-Conditional Alpha: Primary Results
+
+| Indicator | Active% | HML Diff | SMB Diff | RMW Diff | CMA Diff |
+|---|---|---|---|---|---|
+| Breadth >= 3 | 24% | **+4.4%** | -3.9% | +2.1% | **+3.8%** |
+| Cross-Factor Corr > p50 | 52% | +2.9% | +2.8% | +2.0% | +0.6% |
+| Factor Vol > 1.5x | 6% | +0.2% | -5.8% | -6.0% | -0.1% |
+| Market < SMA100 | 29% | +1.3% | **+14.5%** | -0.5% | -0.2% |
+
+"Diff" = annualized alpha in gate-active state minus gate-inactive state.
+
+**Factor breadth is the most informative indicator for HML and CMA.**
+- HML: +6.8% alpha when breadth >= 3, vs +2.3% when not (diff +4.4%, null p=0.005)
+- CMA: +5.4% active vs +1.7% inactive (diff +3.8%, null p=0.005)
+- Passes random null at p < 0.01 for both HML and CMA
+
+**Market gate captures a different signal.** Breadth and market gate are UNCORRELATED
+(corr = -0.008!). They identify different states. When both are active simultaneously
+(7% of days), HML timing alpha is +16.1% annualized.
+
+**Factor vol is NOT informative.** Active only 6% of time with negligible or negative
+alpha differences.
+
+### Horse Race: Breadth vs Market Gate (HML)
+
+| State | Alpha | Days | % Time |
+|---|---|---|---|
+| Both active | **+16.1%** | 1028 | 7% |
+| Breadth only | +3.2% | 2674 | 18% |
+| Market only | +0.9% | 3471 | 23% |
+| Neither | +3.0% | 7840 | 52% |
+
+The "both active" state concentrates timing alpha dramatically. But it only occurs
+7% of the time — too rare for a practical gate.
+
+### International OOS (Dev ex-US, Breadth Gate)
+
+| Factor | Alpha Active | Alpha Inactive | Diff |
+|---|---|---|---|
+| HML | +9.3% | +0.6% | **+8.7%** |
+| CMA | +8.6% | +1.0% | **+7.6%** |
+| SMB | -1.5% | +0.9% | -2.5% |
+| RMW | +1.6% | +0.8% | +0.8% |
+
+**Breadth gate replicates internationally for HML and CMA.** The timing alpha is
+dramatically concentrated in broad-distress periods in Dev ex-US data too.
+
+### Verdict
+
+Factor breadth IS informative: it identifies periods where HML and CMA timing alpha
+is 2-3x higher than baseline. This passes the random null (p=0.005) and replicates
+internationally. However:
+
+1. Always-on timing still works (alpha positive in inactive states too)
+2. The gate reduces the fraction of time deployed (from 100% to 24%)
+3. The practical complexity of maintaining a breadth monitor is non-trivial
+4. This is EXPLORATORY — no pre-registered primary hypothesis was formally tested
+
+**Practical recommendation: keep timing always-on.** The breadth gate identifies
+favorable periods but doesn't clearly improve the full-sample risk-adjusted result
+because the inactive periods also have positive alpha. The gate's value is mainly
+diagnostic — understanding when timing is most valuable, not building a better strategy.
+
+---
+
+## Cross-Workflow Implications (Final, After Phase 15)
+
+1. **CMA (investment factor) timing is the most internationally robust finding.**
+   Passes Holm/6 in ALL 3 international regions (Dev ex-US p=0.020, Europe p=0.020,
+   Japan p=0.033). Source: 87% of alpha from normal periods (not crash-dependent).
+   Factor breadth gate concentrates alpha further (+5.4% active vs +1.7% inactive).
 
 2. **Partial international transportability.** HML positive in 4/5 regions, SMB 5/5.
    Descriptive transport test, not cross-region Holm-corrected.
