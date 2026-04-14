@@ -13,30 +13,35 @@
 10. **Config-driven** — all parameters in config.yaml. Locked before Phase 1.
 11. **Report multiple metrics** — Sharpe-of-excess for gate, plus CAPM alpha for low-exposure strategies.
 
-## Current Status — COMPLETE (15 phases, 5 regions, 3 Codex rounds, 8 bugs fixed)
+## Current Status — COMPLETE (15 phases, 5 regions, 7 Codex reviews, 8 bugs fixed)
+
+**WORKFLOW IS EXPLORATORY IN AGGREGATE** — 15 phases on the same 62-year US dataset
+with no across-phase multiplicity control. Individual findings are well-characterized
+but the accumulated degrees of freedom mean no single result should be treated as
+confirmed without independent validation.
 
 **Phase A (Paper Portfolios):** 8/18 PASS strict gate. Bear-driven, parameter-robust, random null p<0.002.
 **Phase B (Implementation Bridge):** Hedged VLUE passes (ExSh +0.795, p=0.030). Calendar: CAPM alpha significant.
 **Phase C (Frequency):** Weekly is sweet spot (85-90% of daily alpha, half turnover).
-**Phase D (International):** Replicates 4/5 regions. Regime-distributed. Asia-Pac fails (whipsaw).
+**Phase D (International):** Directionally positive 4/5 regions. Asia-Pac fails (whipsaw).
   After costs: net ExSharpe +0.453 (base), +0.178 (pessimistic).
 **Phase E (Signal Design + Rotation):**
-- Phase 11: 10-year performance report — VTI SMA Sharpe 0.897 vs B&H 0.808, 70/30 blend Sharpe 0.987.
+- Phase 11: 10-year performance report — VTI SMA Sharpe 0.897 vs B&H 0.808, 70/30 blend 0.987.
 - Phase 12: Composite signals reduce whipsaw 20-30% but don't improve alpha (Codex R6: noise).
-- Phase 13: **Cross-factor rotation LOSES to independent timing.** Cash optionality is the mechanism.
-- Phase 14: Transfer-inference consolidation. **CMA passes Holm/6 in ALL 3 international regions.**
-  19/24 transfer tests positive, 6/24 significant. US post-pub: 0/6 pass (underpowered).
-- Phase 15: Regime gate — factor breadth identifies favorable periods (HML/CMA alpha 2-3x higher
-  when breadth >= 3, null p=0.005, replicates internationally). But always-on timing still works.
+- Phase 13: **Cross-factor rotation LOSES to independent timing.** Cash optionality is mechanism.
+- Phase 14: Transfer-inference consolidation. CMA directionally consistent in all 3 intl regions
+  (p-values at bootstrap floor — Codex R7). 19/24 transfer tests positive, 6/24 floor-significant.
+- Phase 15: Regime gate (exploratory) — factor breadth identifies favorable periods diagnostically.
+  Always-on timing still works; gate is informational not strategic.
 
-**Key findings:**
-1. Independent factor-vs-cash timing is the best approach (Sharpe 1.709, MaxDD -9.1%)
+**Key findings (calibrated per Codex R7):**
+1. Independent factor-vs-cash timing is directionally robust (positive 19/24 transfer tests)
 2. Cash optionality is the dominant mechanism — don't rotate, exit to cash
-3. Hedged VLUE passes gate with +0.795 ExSharpe (p=0.030), net +0.453 after costs
-4. Replicates internationally (4/5 regions, universal drawdown reduction)
-5. Weekly checking optimal; composite signals reduce whipsaw operationally
-6. Timing alpha oscillates with factor regime (not declining like calendar effects)
-7. VTI SMA drawdown overlay is the most broadly practical finding
+3. CMA and HML are the most internationally consistent factors
+4. Drawdown reduction is universal across all regions, factors, frequencies
+5. All formal p-values are resolution-limited (300-2000 bootstrap replicates)
+6. VTI SMA drawdown overlay is the most broadly applicable practical finding
+7. Genuine confirmation requires an untouched holdout or truly independent dataset
 
 ## Architecture
 - `src/youbet/factor/` — Factor data fetcher and simulation engine
