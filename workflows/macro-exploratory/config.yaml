@@ -127,13 +127,27 @@ pit_protocol:
     margin_rate: { method: "literature", value: 0.05, source: "Phase 10 base case (Reg T)" }
     hedge_window_days: { method: "literature", value: 60, source: "Phase 10 rolling beta" }
     decision_cadence: { method: "literature", value: "weekly", source: "Phase 6 frequency study" }
+  e17_unhedged_etf:
+    trading_cost_bps: { method: "literature", value: 3.0, source: "Phase 10 base case (one-way)" }
+    borrow_rate_annual: 0   # no short position, no borrow
+    margin_rate: 0           # no hedge, no margin requirement
+    decision_cadence: { method: "literature", value: "weekly", source: "Phase 6 frequency study" }
+  e18_monthly_oos:
+    sma_window: { method: "literature", value: 5, source: "100d daily / ~20d per month = 5 months" }
+    train_months: { method: "literature", value: 60, source: "5yr standard for monthly factor timing" }
+
+# E18 monthly sub-periods (within 1993-2026 intl monthly window)
+subperiods_e18_monthly:
+  - [ "1998-01-01", "2007-12-31" ]
+  - [ "2008-01-01", "2017-12-31" ]
+  - [ "2018-01-01", "2026-12-31" ]
 
 # Experiment roster (execution order matches plan's run order)
 # v2 (2026-04-14, post-E2 reassessment): dropped e6a/e11/e7, merged e1+e3 into e1merged.
 # See research/log.md "Roster prune and merge" entry for per-experiment reasoning.
 experiments:
-  # v3 (2026-04-16): added e12-e15 per Codex adversarial review proposals.
-  order: [ "e10", "e2", "e4", "e9", "e6b", "e1merged", "e12", "e13", "e14", "e15" ]
+  # v4 (2026-04-16): added e16-e18 round 3 (UMD pool, unhedged ETF, OOS).
+  order: [ "e10", "e2", "e4", "e9", "e6b", "e1merged", "e12", "e13", "e14", "e15", "e16", "e17", "e18" ]
   dropped:
     e6a: "duplicate of e10 (pure GEM baseline already run)"
     e11: "rotation mechanism fights factor-timing Phase 13/15 cash-optionality finding"

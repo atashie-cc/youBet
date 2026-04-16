@@ -48,23 +48,31 @@ _DATASETS = {
     },
 }
 
-# International datasets (daily only)
+# International datasets (daily + monthly)
 _INTL_REGIONS = {
     "developed_ex_us": {
         "ff5_url": f"{_BASE_URL}/Developed_ex_US_5_Factors_Daily_CSV.zip",
         "mom_url": f"{_BASE_URL}/Developed_ex_US_Mom_Factor_Daily_CSV.zip",
+        "ff5_monthly_url": f"{_BASE_URL}/Developed_ex_US_5_Factors_CSV.zip",
+        "mom_monthly_url": f"{_BASE_URL}/Developed_ex_US_Mom_Factor_CSV.zip",
     },
     "europe": {
         "ff5_url": f"{_BASE_URL}/Europe_5_Factors_Daily_CSV.zip",
         "mom_url": f"{_BASE_URL}/Europe_Mom_Factor_Daily_CSV.zip",
+        "ff5_monthly_url": f"{_BASE_URL}/Europe_5_Factors_CSV.zip",
+        "mom_monthly_url": f"{_BASE_URL}/Europe_Mom_Factor_CSV.zip",
     },
     "japan": {
         "ff5_url": f"{_BASE_URL}/Japan_5_Factors_Daily_CSV.zip",
         "mom_url": f"{_BASE_URL}/Japan_Mom_Factor_Daily_CSV.zip",
+        "ff5_monthly_url": f"{_BASE_URL}/Japan_5_Factors_CSV.zip",
+        "mom_monthly_url": f"{_BASE_URL}/Japan_Mom_Factor_CSV.zip",
     },
     "asia_pacific_ex_japan": {
         "ff5_url": f"{_BASE_URL}/Asia_Pacific_ex_Japan_5_Factors_Daily_CSV.zip",
         "mom_url": f"{_BASE_URL}/Asia_Pacific_ex_Japan_Mom_Factor_Daily_CSV.zip",
+        "ff5_monthly_url": f"{_BASE_URL}/Asia_Pacific_ex_Japan_5_Factors_CSV.zip",
+        "mom_monthly_url": f"{_BASE_URL}/Asia_Pacific_ex_Japan_Mom_Factor_CSV.zip",
     },
 }
 
@@ -309,12 +317,14 @@ def load_french_snapshot(
 def fetch_international_factors(
     region: str,
     snapshot_dir: Path | None = None,
+    frequency: str = "daily",
 ) -> pd.DataFrame:
-    """Fetch Ken French international factor data (daily).
+    """Fetch Ken French international factor data.
 
     Args:
         region: One of "developed_ex_us", "europe", "japan", "asia_pacific_ex_japan".
         snapshot_dir: Directory for cached snapshots.
+        frequency: "daily" or "monthly".
 
     Returns:
         DataFrame with columns [Mkt-RF, SMB, HML, RMW, CMA, UMD, RF].
@@ -322,21 +332,29 @@ def fetch_international_factors(
     if region not in _INTL_REGIONS:
         raise ValueError(f"Unknown region: {region}. Available: {INTL_REGION_NAMES}")
 
+    freq_suffix = f"_{frequency}" if frequency != "daily" else ""
+
     # Check snapshot
     if snapshot_dir is not None:
         snapshot_dir = Path(snapshot_dir)
         snapshot_dir.mkdir(parents=True, exist_ok=True)
-        pattern = f"french_factors_{region}_*.parquet"
-        existing = sorted(snapshot_dir.glob(pattern))
+        if frequency == "daily":
+            all_matches = sorted(snapshot_dir.glob(f"french_factors_{region}_*.parquet"))
+            existing = [p for p in all_matches if "_monthly_" not in p.name]
+        else:
+            existing = sorted(snapshot_dir.glob(f"french_factors_{region}{freq_suffix}_*.parquet"))
         if existing:
-            logger.info("Loading cached %s factors from %s", region, existing[-1])
+            logger.info("Loading cached %s %s factors from %s", region, frequency, existing[-1])
             return pd.read_parquet(existing[-1])
 
     info = _INTL_REGIONS[region]
 
+    ff5_key = "ff5_monthly_url" if frequency == "monthly" else "ff5_url"
+    mom_key = "mom_monthly_url" if frequency == "monthly" else "mom_url"
+
     # Download FF5
-    logger.info("Downloading %s FF5 factors...", region)
-    resp = requests.get(info["ff5_url"], timeout=60)
+    logger.info("Downloading %s %s FF5 factors...", region, frequency)
+    resp = requests.get(info[ff5_key], timeout=60)
     resp.raise_for_status()
     with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
         csv_names = [n for n in zf.namelist() if n.lower().endswith(".csv")]
@@ -344,8 +362,8 @@ def fetch_international_factors(
     ff5 = _parse_french_csv(content, ["Mkt-RF", "SMB", "HML", "RMW", "CMA", "RF"])
 
     # Download momentum
-    logger.info("Downloading %s momentum factor...", region)
-    resp = requests.get(info["mom_url"], timeout=60)
+    logger.info("Downloading %s %s momentum factor...", region, frequency)
+    resp = requests.get(info[mom_key], timeout=60)
     resp.raise_for_status()
     with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
         csv_names = [n for n in zf.namelist() if n.lower().endswith(".csv")]
@@ -373,7 +391,7 @@ def fetch_international_factors(
 
     if snapshot_dir is not None:
         today_str = date.today().strftime("%Y-%m-%d")
-        path = snapshot_dir / f"french_factors_{region}_{today_str}.parquet"
+        path = snapshot_dir / f"french_factors_{region}{freq_suffix}_{today_str}.parquet"
         combined.to_parquet(path)
         logger.info("Saved snapshot to %s", path)
 

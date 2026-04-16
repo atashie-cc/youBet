@@ -36,6 +36,11 @@ Runs in this order (E10 first as pipeline smoke test):
 | 12 | E13 | robustness | **PASS** | E4 frozen quasi-holdout — ExSh +0.845 on post-2016 |
 | 13 | E14 | investable | FAIL | E4 ETF bridge — costs destroy: net Sharpe **-0.316** (Codex R1 corrected) |
 | 14 | E15 | robustness | FAIL (0.54) | E4 weekly cadence — 19.4% collapse, fails gate + 15% threshold |
+| 15 | E16a | UMD pool | FAIL (-0.07) | UMD-only 4-sleeve pool — correlated signals, no diversification |
+| 16 | E16b | expanded pool | FAIL (0.45) | 16-sleeve with UMD — dilutes E4, 39% degradation |
+| 17 | E17 | investable | FAIL (-0.31) | Unhedged factor-signal ETF — reduces DD but misses upside |
+| 18 | E18a | monthly OOS | FAIL (0.55) | Monthly 12-sleeve — transfers but 24% degradation |
+| 19 | E18b | Asia-Pac OOS | FAIL (0.50) | 15-sleeve with Asia-Pac — absorbs partially, 27% degradation |
 
 ## Guiding Principles
 
@@ -846,5 +851,106 @@ Secondary (weekly pool vs weekly US CMA SMA): ExSharpe +0.055 [-0.300, +0.424]
 — essentially zero, same as E4's secondary finding.
 
 Result JSON: `results/e15_e4_weekly_cadence.json`. Zero elevations.
+
+### 2026-04-16 — E16 Pooled UMD momentum timing (4-region + expanded 16-sleeve)
+
+Two arms testing whether UMD (momentum) adds value to E4's pooled construction.
+
+**Arm A: UMD-only pool (4 sleeves, {US, Dev ex-US, Europe, Japan} x {UMD})**:
+- Pool Sharpe 0.680, CAGR 4.6%, MaxDD -17.9%
+- Benchmark Sharpe 0.549, CAGR 4.8%, MaxDD -45.5%
+- ExSharpe **-0.074 [-0.558, +0.392]** — essentially zero, CI massively straddles zero
+- **Elevation: FAIL** on all criteria except Sharpe-diff > 0
+
+**Cross-region signal correlation: 0.471.** UMD on/off signals across regions
+are moderately correlated — less diversification than E4's cross-factor pool
+(E4 had mean signal correlation 0.046). Momentum crashes are correlated across
+geographies, as expected. This explains why the 4-sleeve UMD pool doesn't work:
+the sleeves don't provide independent timing signals.
+
+**Arm B: Expanded 16-sleeve pool ({CMA, HML, RMW, UMD} x 4 regions)**:
+- Pool Sharpe 1.422, CAGR 4.0%, MaxDD -5.6%
+- ExSharpe **+0.448 [+0.006, +0.871]**, Sharpe-diff +0.387
+- **Elevation: FAIL** — ExSharpe 0.448 < 0.60 threshold
+- Signal correlation 0.046 (same as E4 — adding UMD doesn't change the cross-signal independence)
+
+**Adding UMD to E4 HURTS the pool**: E4's Sharpe-diff was +0.635; the expanded
+16-sleeve pool's Sharpe-diff is +0.387 (39% degradation). UMD's weak individual
+timing signal dilutes the strong CMA/HML/RMW signals.
+
+**Interpretation**: momentum's cross-region correlation makes UMD pooling ineffective
+(Arm A). Adding UMD to E4's pool dilutes it (Arm B). The mechanism that makes E4
+work — independent signals across factors — is absent when using a single factor
+across regions. This is the opposite of what we hypothesized: E4's diversification
+comes from cross-factor independence, not from cross-regional independence.
+
+Result JSON: `results/e16_pooled_umd.json`. Zero elevations.
+
+### 2026-04-16 — E17 Unhedged factor-signal ETF timing
+
+Paper-factor SMA100 (weekly) signal applied to unhedged VLUE/QUAL ETFs. When
+HML/RMW SMA is on, hold the ETF; when off, hold VGSH. 2-sleeve equal-weight
+pool. Costs: 3 bps one-way switching only (no borrow, no margin).
+
+**Signal concordance: 52%** — confirming this is a genuinely different signal
+path from Phase 3 Stage B (which used SMA on the ETF price). The paper-factor
+signal and ETF-price signal agree only at chance level.
+
+**Results**:
+- Timed net Sharpe **0.928**, CAGR 9.1%, MaxDD -18.2%
+- ETF B&H Sharpe 0.758, CAGR 12.4%, MaxDD -36.8%
+- ExSharpe **-0.306 [-0.839, +0.099]** — negative, CI straddles zero
+
+**Elevation: FAIL** on all criteria except Sharpe-diff > 0.
+
+**Interesting side-finding**: the timed strategy has higher Sharpe (0.928 vs 0.758)
+but lower CAGR (9.1% vs 12.4%). Timing with the paper-factor signal successfully
+reduces drawdowns (-18.2% vs -36.8% MaxDD) but at the cost of missing upside
+during the ~50% of days the signal is off. The CAGR drag from being in VGSH
+rather than the equity ETF dominates. The signal works for risk management but
+not for return enhancement.
+
+The timed strategy beats VGSH B&H (ExSharpe +0.763) and the Sharpe-diff vs VTI
+is only slightly negative (-0.370), but both comparisons are secondary.
+
+Result JSON: `results/e17_unhedged_factor_etf.json`. Zero elevations.
+
+### 2026-04-16 — E18 True OOS: monthly frequency + Asia-Pac absorption
+
+Two independent OOS dimensions for E4's mechanism.
+
+**Arm A: Monthly 12-sleeve pool (SMA5 on monthly, 60mo train)**:
+- Pool Sharpe **1.197**, CAGR 4.3%
+- Benchmark Sharpe 0.632, CAGR 2.7%
+- ExSharpe **+0.545 [+0.237, +0.838]**, Sharpe-diff +0.566
+- **Elevation: FAIL** — ExSharpe 0.545 < 0.60 threshold
+- Sub-periods: 3/3 positive, CI lower > 0
+
+The monthly OOS is positive and passes 3 of 4 gate criteria. The ExSharpe
+(0.545) is 24% lower than E4's daily result (0.716), consistent with the
+signal degradation pattern from E15 (daily→weekly lost 19%, daily→monthly
+loses 24%). The mechanism transfers to monthly data but at reduced strength.
+
+**Arm B: 15-sleeve pool with Asia-Pac (daily, SMA100)**:
+- Pool15 Sharpe **1.527**, CAGR 3.5%, MaxDD -5.7%
+- Benchmark Sharpe 1.062, CAGR 2.7%, MaxDD -12.8%
+- ExSharpe **+0.495 [+0.091, +0.903]**, Sharpe-diff +0.465
+- **Elevation: FAIL** — ExSharpe 0.495 < 0.60 threshold
+- Sub-periods: 3/3 positive, CI lower > 0
+
+**Degradation: 26.7%** (above the 20% proportional-weight threshold). Asia-Pac's
+3 known-bad sleeves (Phase 7: CMA -0.049, HML -0.212, RMW -0.167) drag the pool
+more than their 1/5 weight would predict. The pooling mechanism partially absorbs
+the bad region (Sharpe-diff is still positive at +0.465, and the pool still passes
+3/4 gate criteria) but the absorption is not clean — it degrades more than
+proportionally.
+
+**Cross-arm synthesis**: E4's mechanism transfers to both monthly cadence and a
+broader geographic scope, but with 24-27% degradation in each case. The daily,
+4-region, CMA/HML/RMW construction appears to be the strongest variant — not
+because the mechanism is fragile, but because the specific construction is near
+the optimum on this data.
+
+Result JSON: `results/e18_oos_monthly_asiapac.json`. Zero elevations.
 
 <!-- Each experiment gets a dated entry below with raw numbers and qualitative findings. -->
