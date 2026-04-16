@@ -132,8 +132,12 @@ def main():
     print(f"  Mean exposure: {mean_exposure:.2f}x")
 
     # --- Load VTI + T-bill ---
+    # Fetch VTI from 2001 to cover the full 2003+ breadth window.
+    # Use a dedicated snapshot dir to avoid cache collision with E14's
+    # 2011-start snapshots (Codex R1: B4 window mismatch fix).
     print(f"\n[{experiment}] Loading VTI prices and T-bill rates...")
-    prices = fetch_prices(tickers=["VTI"], start="2001-01-01", snapshot_dir=ETF_SNAP_DIR)
+    e20_snap = ETF_SNAP_DIR / "e20"
+    prices = fetch_prices(tickers=["VTI"], start="2001-01-01", snapshot_dir=e20_snap)
     vti_ret = prices["VTI"].pct_change().dropna()
     tbill = fetch_tbill_rates(start="2001-01-01")
 

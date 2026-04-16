@@ -42,8 +42,8 @@ Runs in this order (E10 first as pipeline smoke test):
 | 18 | E18a | monthly OOS | FAIL (0.55) | Monthly 12-sleeve — transfers but 24% degradation |
 | 19 | E18b | Asia-Pac OOS | FAIL (0.50) | 15-sleeve with Asia-Pac — absorbs partially, 27% degradation |
 | 20 | E21 | CAGR frontier | diagnostic | Leverage sweep 1-6x: no peak, 6x = 12.3% CAGR, Kelly negative |
-| 21 | E19 | leveraged pool | FAIL (gate) | 4-6x pool: ExS > 0.60 but Sharpe-diff negative. 6x barely beats VTI |
-| 22 | E20 | breadth VTI | FAIL (0.09) | Breadth-gated VTI: 20.5% CAGR, 0.822 Sharpe — highest CAGR but ExS ~0 vs SMA 3x |
+| 21 | E19 | leveraged pool | FAIL (gate) | 4-6x pool: timing works (ExS +0.7 vs true lev B&H) but factor CAGR base too small |
+| 22 | E20 | breadth VTI | **FAIL (-0.10)** | Breadth-gated VTI: -85% MaxDD (GFC), CAGR 12.4% < SMA 3x 16.3%. Factor signal bad for equity timing |
 
 ## Guiding Principles
 
@@ -991,13 +991,14 @@ Result JSON: `results/e21_cagr_frontier.json`. Diagnostic only.
 ### 2026-04-16 — E19 Leveraged factor pool (4x/5x/6x with full CIs)
 
 Pre-committed levels from E21's peak neighborhood. Full bootstrap CIs and
-gate-v2 evaluation.
+gate-v2 evaluation. Codex R1 fix: true leveraged buy-and-hold benchmark
+constructed via `ConditionallyLeveragedSMA(on_leverage=lev, off_exposure=lev)`.
 
-| Level | CAGR | Sharpe | MaxDD | ExS vs 1x | CI | Beats VTI? |
-|-------|------|--------|-------|-----------|-----|------------|
-| 4x | 8.4% | 0.844 | -29.0% | +0.627 [+0.212, +1.029] | | N |
-| 5x | 10.3% | 0.818 | -36.3% | +0.653 [+0.240, +1.055] | | N |
-| 6x | **12.3%** | 0.800 | -43.1% | **+0.667** [+0.254, +1.066] | | **Y** |
+| Level | CAGR | Sharpe | MaxDD | ExS vs 1x | Beats VTI? |
+|-------|------|--------|-------|-----------|------------|
+| 4x | 8.4% | 0.844 | -29.0% | +0.627 [+0.212, +1.029] | N |
+| 5x | 10.3% | 0.818 | -36.3% | +0.653 [+0.240, +1.055] | N |
+| 6x | **12.3%** | 0.800 | -43.1% | **+0.667** [+0.254, +1.066] | **Y** |
 
 All three levels FAIL gate v2 (Sharpe-diff is negative because leveraged
 Sharpe < unlevered Sharpe 1.57 in every case). But all three PASS on the
@@ -1007,11 +1008,12 @@ failure is purely on the Sharpe-difference leg: leverage trades Sharpe for CAGR.
 **6x is the only level that beats VTI CAGR** (12.3% > 11.1%). None beats 3x
 VTI SMA (21.6%).
 
-**Timing still works under leverage**: the `lev_vs_levbh` comparisons show
-ExSharpe ~+0.73 at all three levels — similar to unlevered E4's +0.716.
-Leverage scales returns and risk proportionally while preserving the timing
-signal's value. The issue is that paper factor returns are too small as a
-base.
+**Timing genuinely works under leverage** (Codex R1 corrected comparison vs
+TRUE leveraged B&H): ExSharpe +0.74/+0.70/+0.66 at 4x/5x/6x — all CIs
+exclude zero. Leveraged B&H has terrible risk-adjusted performance (Sharpe
+0.37-0.40, MaxDD -56% to -69%). Timing preserves Sharpe at 0.80-0.84 and
+cuts MaxDD by roughly half. The issue is not that timing fails under leverage
+— it's that paper factor returns are too small as a CAGR base.
 
 Result JSON: `results/e19_leveraged_pool.json`. Zero formal elevations.
 
@@ -1023,27 +1025,33 @@ breadth >= 10 -> 3x, >= 7 -> 2x, >= 4 -> 1x, < 4 -> cash.
 **Breadth distribution**: mean 6.6, median 7. Ladder allocation: 3x on 8.7%
 of days, 2x on 47.4%, 1x on 34.7%, cash on 9.2%. Mean exposure 1.56x.
 
-**Results**:
-- Breadth-gated: Sharpe **0.822**, CAGR **20.5%**, MaxDD -49.5%
-- Single-SMA 3x VTI: Sharpe 0.596, CAGR 15.3%, MaxDD -53.8%
-- VTI B&H: Sharpe 0.786, CAGR 13.0%, MaxDD -35.0%
+**Codex R1 fix**: extended window from 2011-2026 (cache artifact, missing GFC)
+to 2003-2026 (full locked window, 5783 days). The original 2011-start hid a
+catastrophic drawdown.
 
-**The breadth-gated strategy produces the highest CAGR** in the entire workflow
-at 20.5%, beating both VTI B&H (+7.4pp) and single-SMA 3x VTI (+5.2pp). The
-Sharpe (0.822) also exceeds VTI B&H (0.786) and SMA 3x (0.596).
+**Results (corrected, 2003-2026)**:
+- Breadth-gated: Sharpe **0.519**, CAGR **12.4%**, MaxDD **-85.1%**
+- Single-SMA 3x VTI: Sharpe 0.621, CAGR 16.3%, MaxDD -54.2%
+- VTI B&H: Sharpe 0.641, CAGR 10.7%, MaxDD -59.1%
 
-**However, the gate vs SMA 3x fails**: ExSharpe +0.085 [-0.277, +0.460], CI
-massively straddles zero. The breadth signal doesn't add statistically detectable
-risk-adjusted value over a simpler single-SMA signal on this sample. The CAGR
-advantage may come entirely from the ladder's lower mean exposure (1.56x vs ~2.25x
-for SMA 3x), which reduces vol-decay.
+**Clean refutation**: the breadth-gated strategy is WORSE than single-SMA 3x VTI
+on both CAGR (12.4% vs 16.3%) and Sharpe (0.519 vs 0.621). The -85.1% MaxDD is
+a near-total wipeout — far worse than both SMA 3x (-54.2%) and VTI B&H (-59.1%).
 
-**NOTE**: the common window starts 2011-01-04 (VTI + T-bill intersection) rather
-than 2003 because E4's fold schedule doesn't produce exposure signals until after
-the 10yr walk-forward warmup. Only ~15 years of data — underpowered.
+**Mechanism failure diagnosis**: factor breadth is orthogonal to market returns.
+During the 2008 GFC, factor signals did NOT go to zero (breadth stayed moderate
+at ~5-7 because paper factor returns behaved differently from VTI). The ladder
+kept the strategy in 1-2x VTI exposure through the crash, while single-SMA 3x
+correctly exited to cash (VTI fell below SMA). The factor signal is a good signal
+for paper factor timing but a BAD signal for market-equity timing.
 
-CAGR gate: beats VTI (20.5% > 11.1%), does NOT beat 3x VTI SMA locked benchmark
-(20.5% < 21.6%).
+**Pre-correction vs post-correction**: the 2011-2026 window showed 20.5% CAGR and
+0.822 Sharpe (seemingly the best in the workflow). The 2003-2026 window shows 12.4%
+CAGR and 0.519 Sharpe with -85% MaxDD. This is the strongest example in the
+workflow of why including the GFC stress period is essential for any leveraged
+strategy evaluation.
+
+CAGR gate: beats VTI (12.4% > 11.1%), does NOT beat 3x VTI SMA (12.4% < 21.6%).
 
 Result JSON: `results/e20_breadth_vti.json`. Zero formal elevations.
 

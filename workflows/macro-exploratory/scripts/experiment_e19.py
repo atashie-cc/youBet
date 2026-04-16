@@ -97,6 +97,7 @@ def main():
     for lev in LEVERAGE_LEVELS:
         print(f"\n[{experiment}] Leverage {lev:.0f}x...")
 
+        # Timed leveraged pool (SMA on, leverage; SMA off, cash)
         pool_result = simulate_pooled_regional(
             regional_factors=regional_factors,
             regional_rf=regional_rf,
@@ -109,13 +110,29 @@ def main():
             rebalance_freq="A",
         )
 
+        # True leveraged buy-and-hold (always at leverage, no timing)
+        # Uses off_exposure=lev so exposure is constant regardless of SMA
+        # Codex R1: pool_benchmark from simulate_pooled_regional is always
+        # unlevered — must construct leveraged B&H explicitly.
+        lev_bh_result = simulate_pooled_regional(
+            regional_factors=regional_factors,
+            regional_rf=regional_rf,
+            strategy_factory=lambda l=lev: ConditionallyLeveragedSMA(
+                window=SMA_WINDOW, on_leverage=l, off_exposure=l,
+            ),
+            factor_names=FACTOR_NAMES,
+            config=sim_cfg,
+            borrow_spread_bps=BORROW_SPREAD_BPS,
+            rebalance_freq="A",
+        )
+
         lev_ret = pool_result["pool_returns"] - daily_expense
-        lev_bench = pool_result["pool_benchmark"]
+        lev_bh_ret = lev_bh_result["pool_returns"] - daily_expense
         lev_key = f"lev{lev:.0f}x"
 
         lev_m = compute_metrics(lev_ret, f"pool_{lev_key}_net")
         unlev_m = compute_metrics(unlev_ret, "pool_1x")
-        bench_m = compute_metrics(lev_bench, f"bench_{lev_key}")
+        lev_bh_m = compute_metrics(lev_bh_ret, f"levbh_{lev_key}_net")
 
         print(
             f"  {lev_key} Sharpe {lev_m['sharpe']:+.3f}  CAGR {lev_m['cagr']:+.2%}  "
@@ -131,9 +148,9 @@ def main():
         )
         sub_vs_unlev = subperiod_consistency(lev_ret, unlev_ret, cfg["subperiods"])
 
-        # CI 2: leveraged timed vs leveraged buy-and-hold
+        # CI 2: leveraged timed vs TRUE leveraged buy-and-hold (Codex R1 fix)
         ci_vs_levbh = bootstrap_excess_sharpe(
-            lev_ret, lev_bench,
+            lev_ret, lev_bh_ret,
             n_bootstrap=cfg["bootstrap"]["n_replicates"],
             confidence=cfg["bootstrap"]["confidence"],
             block_length=cfg["bootstrap"]["block_length"],
@@ -152,7 +169,8 @@ def main():
             f"[{ci_vs_unlev['excess_sharpe_lower']:+.3f}, {ci_vs_unlev['excess_sharpe_upper']:+.3f}]"
         )
         print(
-            f"  vs {lev_key} B&H: ExSharpe {ci_vs_levbh['excess_sharpe_point']:+.3f}"
+            f"  vs {lev_key} B&H (true lev): ExSharpe {ci_vs_levbh['excess_sharpe_point']:+.3f}  "
+            f"Lev B&H Sharpe {lev_bh_m['sharpe']:+.3f}  CAGR {lev_bh_m['cagr']:+.2%}"
         )
 
         comparisons[f"{lev_key}_vs_unlev"] = {
@@ -163,8 +181,9 @@ def main():
         }
         comparisons[f"{lev_key}_vs_{lev_key}_buyhold"] = {
             "strategy_metrics": lev_m,
-            "benchmark_metrics": bench_m,
+            "benchmark_metrics": lev_bh_m,
             "excess_sharpe_ci": ci_vs_levbh,
+            "note": "True leveraged B&H (always at leverage, no timing) — Codex R1 fix",
         }
 
         # CAGR gate check
