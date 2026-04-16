@@ -1,0 +1,150 @@
+workflow:
+  name: "macro-exploratory"
+  description: "Exploratory CAGR/Sharpe-max macro strategies (hypothesis generation)"
+  track: "exploratory"  # NOT confirmatory — no Holm across experiments
+
+# Locked benchmarks — chosen before any results. Matches etf/ CLAUDE.md #16.
+benchmarks:
+  primary:
+    vti:
+      label: "VTI buy-and-hold"
+      ticker: "VTI"
+      cagr_ref: 0.111        # etflab-max finding
+      sharpe_ref: null       # computed from data
+
+    leveraged_cagr:
+      label: "3x long/cash SMA100"
+      description: "Synthetic 3x VTI with 100-day SMA trend filter, cash when below"
+      cagr_ref: 0.216        # etf final-report: 21.6% CAGR / 0.649 Sharpe
+      sharpe_ref: 0.649
+
+    leveraged_factor:
+      label: "MGK @ 2.3x SMA100"
+      description: "Etflab-max best leveraged strategy"
+      cagr_ref: 0.206        # 20.6% CAGR
+      sharpe_ref: 0.645
+      max_dd_ref: -0.47
+
+    factor_paper:
+      label: "CMA SMA100 (Ken French paper)"
+      description: "Factor-timing workflow Phase 6 passing variant"
+      excess_sharpe_ref: 0.687
+      holm_p_ref: 0.009
+
+    umd_bsc_canonical:
+      label: "BSC 2015 vol-managed UMD"
+      description: "Barroso & Santa-Clara 2015 canonical monthly vol-managed momentum"
+      sample: "1927-07 to 2011-12 (BSC paper window)"
+      sharpe_ref: null       # computed from data; BSC 2015 Table III reports gross numbers
+
+    e4_paper_frozen:
+      label: "E4 pooled 12-sleeve paper result"
+      description: "Reference anchor for E13/E14/E15 — pointer to E4's result JSON"
+      result_json: "results/e4_pooled_regional.json"
+      excess_sharpe_ref: 0.716
+      sharpe_diff_ref: 0.635
+
+# Walk-forward parameters — LOCKED. Same as etf/ CLAUDE.md #18.
+backtest:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"
+  initial_capital: 100000
+  start_date: "2003-01-01"
+  # Factor paper portfolios use a longer train window since data goes back further
+  factor_train_months: 120
+
+# Block bootstrap — LOCKED at Politis-Romano defaults
+bootstrap:
+  n_replicates: 10000
+  block_length: 22          # ~1 month for daily data
+  confidence: 0.90
+  seed: 42
+
+# Exploratory gates (NOT the confirmatory strict gate)
+# These are descriptive-only thresholds for the elevation-to-confirmatory rule.
+# Version 2 (2026-04-14, post-E2 methodology correction): added positive
+# Sharpe-difference requirement to close the estimand-divergence hole.
+exploratory_gate:
+  version: 2
+  elevation_excess_sharpe: 0.60     # elevate to confirmatory if beaten
+  elevation_ci_lower: 0.0           # and CI lower > 0
+  elevation_subperiods_required: 3  # same-sign in 3/3 windows
+  elevation_require_positive_sharpe_diff: true   # and Sharpe(strat) - Sharpe(bench) > 0
+
+# Sub-period windows for regime consistency check
+subperiods:
+  - [ "2003-01-01", "2012-12-31" ]  # expanded from 2007 to use full data
+  - [ "2013-01-01", "2019-12-31" ]
+  - [ "2020-01-01", "2026-12-31" ]
+
+# E12 sub-periods — BSC canonical 1927-2011 window, three regimes
+subperiods_e12:
+  - [ "1927-07-01", "1960-12-31" ]   # pre-modern era, includes Great Depression
+  - [ "1961-01-01", "1990-12-31" ]   # mid-century, includes 1973-74 crash
+  - [ "1991-01-01", "2011-12-31" ]   # modern era, includes dot-com + GFC
+
+# E13 holdout — frozen slice for quasi-holdout evaluation of E4's mechanism
+holdout_e13:
+  start: "2016-01-01"
+  end: "2026-02-27"
+
+# E13 sub-periods — within the holdout window only
+subperiods_e13:
+  - [ "2016-01-01", "2019-12-31" ]
+  - [ "2020-01-01", "2022-12-31" ]
+  - [ "2023-01-01", "2026-12-31" ]
+
+# E14 sub-periods — constrained by ETF inception (~2013)
+subperiods_e14:
+  - [ "2014-01-01", "2019-12-31" ]
+  - [ "2020-01-01", "2022-12-31" ]
+  - [ "2023-01-01", "2026-12-31" ]
+
+# PIT threshold calibration protocol — MUST be one of:
+#   "literature"            — fixed value from published source
+#   "train_only_percentile" — expanding train window, percentile via Normalizer
+#   "walk_forward_refit"    — refit at each fold boundary
+pit_protocol:
+  # Per-experiment threshold mapping (locked before any runs)
+  e3_macro_gated_leverage:
+    vix_high: { method: "literature", value: 30.0 }
+    vix_crisis: { method: "literature", value: 40.0 }
+    hy_oas_high: { method: "train_only_percentile", percentile: 0.90 }
+    yield_curve_inverted_months: { method: "literature", value: 3 }
+  e6b_gem_circuit_breaker:
+    hy_oas_stress: { method: "train_only_percentile", percentile: 0.80 }
+    yield_curve_inverted_months: { method: "literature", value: 3 }
+  e12_bsc_canonical_umd:
+    target_vol: { method: "literature", value: 0.12, source: "BSC 2015 Table I" }
+    lookback_days: { method: "literature", value: 126, source: "BSC 2015: 6-month trailing daily variance" }
+    max_leverage: { method: "literature", value: 2.0, source: "BSC 2015 Table III Panel B" }
+    rebalance_cadence: { method: "literature", value: "monthly", source: "BSC 2015" }
+  e14_e4_etf_bridge:
+    borrow_rate_annual: { method: "literature", value: 0.0035, source: "Phase 10 base case" }
+    trading_cost_bps: { method: "literature", value: 3.0, source: "Phase 10 base case (one-way)" }
+    margin_rate: { method: "literature", value: 0.05, source: "Phase 10 base case (Reg T)" }
+    hedge_window_days: { method: "literature", value: 60, source: "Phase 10 rolling beta" }
+    decision_cadence: { method: "literature", value: "weekly", source: "Phase 6 frequency study" }
+
+# Experiment roster (execution order matches plan's run order)
+# v2 (2026-04-14, post-E2 reassessment): dropped e6a/e11/e7, merged e1+e3 into e1merged.
+# See research/log.md "Roster prune and merge" entry for per-experiment reasoning.
+experiments:
+  # v3 (2026-04-16): added e12-e15 per Codex adversarial review proposals.
+  order: [ "e10", "e2", "e4", "e9", "e6b", "e1merged", "e12", "e13", "e14", "e15" ]
+  dropped:
+    e6a: "duplicate of e10 (pure GEM baseline already run)"
+    e11: "rotation mechanism fights factor-timing Phase 13/15 cash-optionality finding"
+    e7:  "multi-horizon SMA voting on leveraged MGK — minor smoothing of the signal E2 just failed to leverage productively"
+  merged:
+    e1merged: "e1+e3 combined — multi-signal agreement gate with two arms (3x VTI, 2x MGK)"
+
+# Costs — use existing per-category cost schedule from commodity workflow
+costs:
+  use_default_etf_schedule: true
+  financing:
+    # For leveraged strategies: financing on leverage increment
+    borrow_spread_bps: 50.0
+    base_rate: "tbill_3m"

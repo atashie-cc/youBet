@@ -105,7 +105,7 @@ def _parse_french_csv(content: str, expected_cols: list[str]) -> pd.DataFrame:
         # Check if line starts with a date (YYYYMMDD format)
         parts = stripped.split(",")
         first = parts[0].strip()
-        if first.isdigit() and len(first) == 8:
+        if first.isdigit() and len(first) in (6, 8):
             # This is data. Header is the previous non-empty line.
             if header_line is None:
                 # Look backwards for header

@@ -137,6 +137,7 @@ def excess_sharpe_ci(
     confidence: float = 0.90,
     expected_block_length: int = 22,
     seed: int = 42,
+    periods_per_year: int = 252,
 ) -> dict:
     """Bootstrap confidence intervals for strategy vs benchmark comparison.
 
@@ -168,13 +169,15 @@ def excess_sharpe_ci(
     """
     rng = np.random.default_rng(seed)
     common = strategy_returns.index.intersection(benchmark_returns.index)
-    strat = strategy_returns[common].values
-    bench = benchmark_returns[common].values
+    strat = np.asarray(strategy_returns[common].values, dtype=np.float64)
+    bench = np.asarray(benchmark_returns[common].values, dtype=np.float64)
     n = len(strat)
     p = 1.0 / expected_block_length
 
+    ann = np.sqrt(periods_per_year)
+
     def sharpe(x):
-        return x.mean() / max(x.std(), 1e-10) * np.sqrt(252)
+        return x.mean() / max(x.std(), 1e-10) * ann
 
     # Observed point estimates
     obs_sharpe_strat = sharpe(strat)
@@ -184,31 +187,48 @@ def excess_sharpe_ci(
     excess = strat - bench
     obs_sharpe_of_excess = sharpe(excess)
 
-    # Paired block bootstrap: sample the SAME blocks from both series
-    jump_draws = rng.random((n_bootstrap, n))
-    jump_targets = rng.integers(0, n, size=(n_bootstrap, n))
-    start_indices = rng.integers(0, n, size=n_bootstrap)
-
-    indices = np.empty((n_bootstrap, n), dtype=np.int64)
-    indices[:, 0] = start_indices
-    for i in range(1, n):
-        continued = (indices[:, i - 1] + 1) % n
-        jumped = jump_targets[:, i]
-        do_jump = jump_draws[:, i] < p
-        indices[:, i] = np.where(do_jump, jumped, continued)
-
-    # Use SAME indices for both strat and bench (paired resampling)
-    boot_strat = strat[indices]
-    boot_bench = bench[indices]
-    boot_excess = boot_strat - boot_bench
+    # Batched paired block bootstrap. Building (n_bootstrap, n) matrices at once
+    # peaks at ~7.7 GB for 62yr Ken French daily × 10k reps. Batching keeps peak
+    # under ~400 MB per chunk at the cost of a minor RNG stream change.
+    batch_size = max(1, min(n_bootstrap, max(1, 4_000_000 // max(n, 1))))
 
     def sharpe_vec(X):
         m = X.mean(axis=1)
         s = np.maximum(X.std(axis=1), 1e-10)
-        return m / s * np.sqrt(252)
+        return m / s * ann
 
-    boot_sharpe_diff = sharpe_vec(boot_strat) - sharpe_vec(boot_bench)
-    boot_sharpe_excess = sharpe_vec(boot_excess)
+    diff_chunks = []
+    excess_chunks = []
+    remaining = n_bootstrap
+    while remaining > 0:
+        b = min(batch_size, remaining)
+        jump_draws = rng.random((b, n), dtype=np.float32)
+        jump_targets = rng.integers(0, n, size=(b, n), dtype=np.int32)
+        start_indices = rng.integers(0, n, size=b, dtype=np.int32)
+
+        indices = np.empty((b, n), dtype=np.int32)
+        indices[:, 0] = start_indices
+        for i in range(1, n):
+            continued = (indices[:, i - 1] + 1) % n
+            do_jump = jump_draws[:, i] < p
+            indices[:, i] = np.where(do_jump, jump_targets[:, i], continued)
+
+        # Free the auxiliary arrays before allocating the resampled matrices
+        del jump_draws, jump_targets, start_indices
+
+        boot_strat = strat[indices]
+        boot_bench = bench[indices]
+        diff_chunks.append(sharpe_vec(boot_strat) - sharpe_vec(boot_bench))
+        # Compute excess in-place by subtracting bench from strat view
+        boot_strat -= boot_bench
+        excess_chunks.append(sharpe_vec(boot_strat))
+
+        del boot_strat, boot_bench, indices
+        remaining -= b
+
+    boot_sharpe_diff = np.concatenate(diff_chunks)
+    boot_sharpe_excess = np.concatenate(excess_chunks)
+    del diff_chunks, excess_chunks
 
     alpha = 1 - confidence
     diff_lo = float(np.percentile(boot_sharpe_diff, 100 * alpha / 2))
