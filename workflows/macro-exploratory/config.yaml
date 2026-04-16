@@ -135,6 +135,23 @@ pit_protocol:
   e18_monthly_oos:
     sma_window: { method: "literature", value: 5, source: "100d daily / ~20d per month = 5 months" }
     train_months: { method: "literature", value: 60, source: "5yr standard for monthly factor timing" }
+  e19_leveraged_pool:
+    borrow_spread_bps: { method: "literature", value: 50.0, source: "LETF financing convention" }
+    expense_ratio: { method: "literature", value: 0.0095, source: "UPRO/TQQQ 95bps" }
+    sma_window: 100
+    # leverage_levels locked after E21 frontier diagnostic
+  e20_breadth_vti:
+    borrow_spread_bps: { method: "literature", value: 50.0, source: "LETF financing convention" }
+    expense_ratio: { method: "literature", value: 0.0095, source: "UPRO/TQQQ 95bps" }
+    breadth_ladder:
+      thresholds: [10, 7, 4]       # breadth >= threshold -> leverage
+      leverage_levels: [3.0, 2.0, 1.0]  # corresponding leverage
+      default_leverage: 0.0              # below all thresholds -> cash
+
+# CAGR gate — secondary criterion alongside Sharpe-based gate v2
+cagr_gate:
+  vti_buyhold: 0.111       # 11.1% VTI CAGR
+  leveraged_sma: 0.216     # 21.6% 3x VTI SMA100 CAGR
 
 # E18 monthly sub-periods (within 1993-2026 intl monthly window)
 subperiods_e18_monthly:
@@ -146,8 +163,8 @@ subperiods_e18_monthly:
 # v2 (2026-04-14, post-E2 reassessment): dropped e6a/e11/e7, merged e1+e3 into e1merged.
 # See research/log.md "Roster prune and merge" entry for per-experiment reasoning.
 experiments:
-  # v4 (2026-04-16): added e16-e18 round 3 (UMD pool, unhedged ETF, OOS).
-  order: [ "e10", "e2", "e4", "e9", "e6b", "e1merged", "e12", "e13", "e14", "e15", "e16", "e17", "e18" ]
+  # v5 (2026-04-16): added e19-e21 round 4 (CAGR maximization).
+  order: [ "e10", "e2", "e4", "e9", "e6b", "e1merged", "e12", "e13", "e14", "e15", "e16", "e17", "e18", "e19", "e20", "e21" ]
   dropped:
     e6a: "duplicate of e10 (pure GEM baseline already run)"
     e11: "rotation mechanism fights factor-timing Phase 13/15 cash-optionality finding"
