@@ -44,6 +44,10 @@ Runs in this order (E10 first as pipeline smoke test):
 | 20 | E21 | CAGR frontier | diagnostic | Leverage sweep 1-6x: no peak, 6x = 12.3% CAGR, Kelly negative |
 | 21 | E19 | leveraged pool | FAIL (gate) | 4-6x pool: timing works (ExS +0.7 vs true lev B&H) but factor CAGR base too small |
 | 22 | E20 | breadth VTI | **FAIL (-0.10)** | Breadth-gated VTI: -85% MaxDD (GFC), CAGR 12.4% < SMA 3x 16.3%. Factor signal bad for equity timing |
+| 23 | E23 | SMA overfit | **ROBUST 6/6** | All windows 50-200 positive Sharpe-diff; smooth plateau, SMA100 not overfit |
+| 24 | E22 | random null | **p=0.003** | Real edge: 0/300 random Markov signals match E4. Null mean +0.313 vs real +0.783 |
+| 25 | E24 | permutation | **p=0.007** | Factor-specific timing matters: 53% factor-specific, 47% diversification |
+| 26 | E25 | commitment | protocol | Prospective holdout commitment frozen 2026-04-16 for future Ken French data |
 
 ## Guiding Principles
 
@@ -1054,5 +1058,102 @@ strategy evaluation.
 CAGR gate: beats VTI (12.4% > 11.1%), does NOT beat 3x VTI SMA (12.4% < 21.6%).
 
 Result JSON: `results/e20_breadth_vti.json`. Zero formal elevations.
+
+### 2026-04-16 — E23 SMA window sweep (E4 overfit assessment)
+
+Tests E4's construction at SMA windows 50/75/100/125/150/200.
+
+| Window | Sharpe | Sharpe-diff | ExSharpe | CI Lower | CAGR |
+|--------|--------|-------------|----------|----------|------|
+| 50 | 1.732 | +0.796 | +0.800 | +0.444 | 3.9% |
+| 75 | 1.626 | +0.691 | +0.739 | +0.370 | 3.8% |
+| **100** | **1.570** | **+0.635** | **+0.716** | **+0.339** | **3.7%** |
+| 125 | 1.536 | +0.600 | +0.674 | +0.297 | 3.6% |
+| 150 | 1.505 | +0.570 | +0.642 | +0.253 | 3.6% |
+| 200 | 1.448 | +0.513 | +0.580 | +0.180 | 3.4% |
+
+**Assessment: ROBUST (6/6 positive, threshold >= 4/6)**. All six windows
+have positive Sharpe-diff with CIs excluding zero. The pattern is a smooth
+monotonic decline from SMA50 (strongest) to SMA200 (weakest) — no spike at
+SMA100. The mechanism is not parameter-overfit; SMA100 is actually
+*conservative* relative to shorter windows. Shorter SMA reacts faster to
+factor trends but has slightly higher turnover.
+
+Result JSON: `results/e23_sma_sweep.json`.
+
+### 2026-04-16 — E22 Random signal null (block-randomized Markov, 300 sims)
+
+Tests whether E4's Sharpe-diff is a real timing edge or a construction artifact.
+300 simulations with Markov-chain random signals matching each sleeve's
+SMA100 autocorrelation (transition probabilities fitted from real signals).
+
+**E4 real pool Sharpe-diff: +0.783**
+
+Null distribution: mean +0.313, std 0.117
+Percentiles: [5th +0.127, 25th +0.236, 50th +0.308, 75th +0.395, 95th +0.498]
+Rank: 0/300
+
+**p = 0.003 — REAL EDGE.** E4's timing signal is 4 standard deviations above
+the block-randomized null. Zero of 300 random Markov signals matched it.
+
+**Important finding**: the null distribution mean (+0.313) is positive, meaning
+block-random switching WITH the same autocorrelation structure generates some
+apparent alpha from pooling mechanics alone. But E4's +0.783 is far beyond
+what the construction can produce by chance. The SMA signal captures something
+real about factor dynamics, not just "switching in and out of factors."
+
+Markov transition parameters: on-fraction ranges from 44.6% (US CMA) to
+62.2% (Dev ex-US HML). Daily flip probabilities 2-6%. Signals are persistent
+(staying on/off for 17-50 days on average).
+
+Result JSON: `results/e22_random_null.json`.
+
+### 2026-04-16 — E24 Signal-factor permutation test (300 permutations)
+
+Tests whether factor-specific timing matters — whether each factor's own
+SMA signal is better at timing itself than a random other factor's signal.
+
+**E4 real pool Sharpe-diff: +0.783**
+
+Permuted distribution: mean +0.417, std 0.174
+Percentiles: [5th +0.094, 50th +0.430, 95th +0.690]
+Rank: 1/300
+
+**p = 0.007 — FACTOR-SPECIFIC TIMING MATTERS.** Only 1 of 300 random
+signal-factor pairings matched the real pairing.
+
+**Quantifying factor-specificity**: mean degradation from permutation is
++0.367. The correctly paired pool (+0.783) outperforms the average mismatched
+pool (+0.417) by nearly half the total signal. This means:
+- ~53% of E4's edge comes from factor-specific SMA timing (the right signal
+  paired with the right factor)
+- ~47% comes from having 12 weakly-correlated timing signals regardless of
+  which factor they're paired with (the "diversification of switching noise"
+  component)
+
+Both components are real — the permuted pool still beats buy-and-hold
+(mean +0.417 vs 0.0), and the correct pairing adds a large increment on top.
+
+Result JSON: `results/e24_permutation.json`.
+
+### 2026-04-16 — E25 Prospective holdout commitment
+
+Protocol commitment — no computation. Addresses Codex's "no true holdout"
+weakness by freezing E4's construction for evaluation on genuinely unseen
+future data.
+
+**Frozen construction**: 12 sleeves ({US, Dev ex-US, Europe, Japan} ×
+{CMA, HML, RMW}), SMA100, equal weight, annual rebalance, 120/12/12
+walk-forward. No costs. Ken French 2x3 daily factors.
+
+**Commitment date**: 2026-04-16.
+**Evaluation trigger**: first Ken French daily data update beyond 2026-02-28.
+**Pass criterion**: ExSharpe > 0 AND Sharpe-diff > 0 on the new holdout.
+
+Reference results at commitment time: E4 ExS +0.716, E13 quasi-holdout ExS
++0.845, E22 random null p=0.003, E23 sweep 6/6 robust, E24 permutation
+p=0.007.
+
+Result JSON: `results/e25_prospective_commitment.json`.
 
 <!-- Each experiment gets a dated entry below with raw numbers and qualitative findings. -->

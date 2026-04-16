@@ -147,6 +147,14 @@ pit_protocol:
       thresholds: [10, 7, 4]       # breadth >= threshold -> leverage
       leverage_levels: [3.0, 2.0, 1.0]  # corresponding leverage
       default_leverage: 0.0              # below all thresholds -> cash
+  e22_random_null:
+    n_sim: 300
+    block_method: "markov"         # match SMA autocorrelation via transition matrix
+  e23_sma_sweep:
+    windows: [50, 75, 100, 125, 150, 200]
+    pass_criterion: 4              # Sharpe-diff > 0 for >= 4 of 6 windows
+  e24_permutation:
+    n_sim: 300
 
 # CAGR gate — secondary criterion alongside Sharpe-based gate v2
 cagr_gate:
@@ -163,8 +171,8 @@ subperiods_e18_monthly:
 # v2 (2026-04-14, post-E2 reassessment): dropped e6a/e11/e7, merged e1+e3 into e1merged.
 # See research/log.md "Roster prune and merge" entry for per-experiment reasoning.
 experiments:
-  # v5 (2026-04-16): added e19-e21 round 4 (CAGR maximization).
-  order: [ "e10", "e2", "e4", "e9", "e6b", "e1merged", "e12", "e13", "e14", "e15", "e16", "e17", "e18", "e19", "e20", "e21" ]
+  # v6 (2026-04-16): added e22-e25 round 5 (E4 critical assessment).
+  order: [ "e10", "e2", "e4", "e9", "e6b", "e1merged", "e12", "e13", "e14", "e15", "e16", "e17", "e18", "e19", "e20", "e21", "e22", "e23", "e24", "e25" ]
   dropped:
     e6a: "duplicate of e10 (pure GEM baseline already run)"
     e11: "rotation mechanism fights factor-timing Phase 13/15 cash-optionality finding"
