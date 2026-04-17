@@ -45,8 +45,8 @@ Runs in this order (E10 first as pipeline smoke test):
 | 21 | E19 | leveraged pool | FAIL (gate) | 4-6x pool: timing works (ExS +0.7 vs true lev B&H) but factor CAGR base too small |
 | 22 | E20 | breadth VTI | **FAIL (-0.10)** | Breadth-gated VTI: -85% MaxDD (GFC), CAGR 12.4% < SMA 3x 16.3%. Factor signal bad for equity timing |
 | 23 | E23 | SMA overfit | **ROBUST 6/6** | All windows 50-200 positive Sharpe-diff; smooth plateau, SMA100 not overfit |
-| 24 | E22 | random null | **p=0.003** | Real edge: 0/300 random Markov signals match E4. Null mean +0.313 vs real +0.783 |
-| 25 | E24 | permutation | **p=0.007** | Factor-specific timing matters: 53% factor-specific, 47% diversification |
+| 24 | E22 | random null | **p=0.007** | Beats Markov null: 1/300 match E4's +0.635. Null mean +0.313 (Codex R1 corrected) |
+| 25 | E24 | permutation | p=0.096 | Borderline: 28/300 permutations beat E4. ~34% factor-specific, ~66% diversification (Codex R1 corrected) |
 | 26 | E25 | commitment | protocol | Prospective holdout commitment frozen 2026-04-16 for future Ken French data |
 
 ## Guiding Principles
@@ -1087,24 +1087,33 @@ Tests whether E4's Sharpe-diff is a real timing edge or a construction artifact.
 300 simulations with Markov-chain random signals matching each sleeve's
 SMA100 autocorrelation (transition probabilities fitted from real signals).
 
-**E4 real pool Sharpe-diff: +0.783**
+**Codex R1 correction**: E4's real Sharpe-diff is +0.635 (annual-rebalance
+pooling from E4's saved result), not +0.783 (simplified daily-mean pooling).
+The null sims use simplified pooling; comparing E4's annual-rebalance metric
+against the simplified null is conservative (annual rebalance would also
+reduce the null, making the gap larger if anything).
+
+**E4 real pool Sharpe-diff: +0.635** (annual rebalance)
 
 Null distribution: mean +0.313, std 0.117
 Percentiles: [5th +0.127, 25th +0.236, 50th +0.308, 75th +0.395, 95th +0.498]
-Rank: 0/300
+Rank: 1/300
 
-**p = 0.003 — REAL EDGE.** E4's timing signal is 4 standard deviations above
-the block-randomized null. Zero of 300 random Markov signals matched it.
+**p = 0.007 — beats a return-independent Markov persistence null.** Only 1 of
+300 random Markov signals exceeded E4's +0.635. The SMA signal captures
+something about factor dynamics that random persistence does not.
+
+**Caveat (Codex R1)**: this null tests random persistence, not data-dependent
+timing. The real SMA exits before drawdowns because it tracks cumulative
+returns; the Markov null exits randomly. A stronger null would test against
+other data-dependent timing rules (e.g., momentum, mean-reversion). The
+p=0.007 establishes "better than random block-switching," not "better than
+all plausible timing rules."
 
 **Important finding**: the null distribution mean (+0.313) is positive, meaning
 block-random switching WITH the same autocorrelation structure generates some
-apparent alpha from pooling mechanics alone. But E4's +0.783 is far beyond
-what the construction can produce by chance. The SMA signal captures something
-real about factor dynamics, not just "switching in and out of factors."
-
-Markov transition parameters: on-fraction ranges from 44.6% (US CMA) to
-62.2% (Dev ex-US HML). Daily flip probabilities 2-6%. Signals are persistent
-(staying on/off for 17-50 days on average).
+apparent alpha from pooling mechanics alone. But E4's +0.635 is well above
+the null's 95th percentile (+0.498).
 
 Result JSON: `results/e22_random_null.json`.
 
@@ -1113,26 +1122,37 @@ Result JSON: `results/e22_random_null.json`.
 Tests whether factor-specific timing matters — whether each factor's own
 SMA signal is better at timing itself than a random other factor's signal.
 
-**E4 real pool Sharpe-diff: +0.783**
+**Codex R1 correction**: uses E4's real Sharpe-diff +0.635 (annual rebalance),
+not the inflated +0.783 from simplified pooling. This substantially changes
+the result.
+
+**E4 real pool Sharpe-diff: +0.635** (annual rebalance)
 
 Permuted distribution: mean +0.417, std 0.174
 Percentiles: [5th +0.094, 50th +0.430, 95th +0.690]
-Rank: 1/300
+Rank: 28/300
 
-**p = 0.007 — FACTOR-SPECIFIC TIMING MATTERS.** Only 1 of 300 random
-signal-factor pairings matched the real pairing.
+**p = 0.096 — borderline.** Factor-specific timing shows a marginal advantage
+over random pairing but does NOT reach strong significance. 28 of 300
+permutations exceeded E4's +0.635, compared to 1/300 before the correction.
 
-**Quantifying factor-specificity**: mean degradation from permutation is
-+0.367. The correctly paired pool (+0.783) outperforms the average mismatched
-pool (+0.417) by nearly half the total signal. This means:
-- ~53% of E4's edge comes from factor-specific SMA timing (the right signal
-  paired with the right factor)
-- ~47% comes from having 12 weakly-correlated timing signals regardless of
-  which factor they're paired with (the "diversification of switching noise"
-  component)
+**Revised interpretation**: mean degradation from permutation is +0.219
+(+0.635 real minus +0.417 permuted mean). This suggests:
+- ~34% of E4's edge comes from factor-specific timing (correct pairing)
+- ~66% comes from having 12 weakly-correlated timing signals regardless of
+  pairing (the diversification-of-switching component)
+
+**Caveats (Codex R1)**:
+- Permutations are unconstrained (not derangements), so some sims accidentally
+  retain correct pairings, inflating the permuted mean
+- Permuting signals with different on-fractions (44-62%) confounds
+  factor-specificity with exposure-budget sensitivity
+- The 34/66 decomposition is approximate, not a clean causal partition
 
 Both components are real — the permuted pool still beats buy-and-hold
-(mean +0.417 vs 0.0), and the correct pairing adds a large increment on top.
+(mean +0.417 vs 0.0) — but the factor-specific contribution is weaker than
+initially claimed. The mechanism is more about "pool of diverse binary
+timing signals" than "each factor precisely timed by its own SMA."
 
 Result JSON: `results/e24_permutation.json`.
 

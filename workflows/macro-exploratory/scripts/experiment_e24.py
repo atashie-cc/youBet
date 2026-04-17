@@ -104,18 +104,17 @@ def main():
         idx = signals[label].index
         common_idx = idx if common_idx is None else common_idx.intersection(idx)
 
-    # Real E4 pool (correctly paired signals)
-    real_sleeve_rets = {}
-    for label in labels:
-        sig = signals[label].loc[common_idx]
-        fret = factor_rets[label].loc[common_idx]
-        rfret = rf_rets[label].loc[common_idx]
-        real_sleeve_rets[label] = sig * fret + (1 - sig) * rfret
+    # E4's real Sharpe-diff from the authoritative annual-rebalance result.
+    # Codex R1: simplified daily-mean pooling inflated from +0.635 to +0.783.
+    import json
+    e4_json = WORKFLOW_ROOT / "results" / "e4_pooled_regional.json"
+    with open(e4_json) as f:
+        e4_saved = json.load(f)
+    real_sharpe_diff = e4_saved["comparisons"]["pool_vs_pool_benchmark"]["excess_sharpe_ci"]["point_estimate"]
+    print(f"  E4 real pool Sharpe-diff (annual rebalance): {real_sharpe_diff:+.3f}")
 
-    real_pool = pd.DataFrame(real_sleeve_rets).mean(axis=1)
+    # Benchmark pool for null comparison (simplified pooling, consistent with permuted sims)
     real_bench_pool = pd.DataFrame({l: bench_rets[l].reindex(common_idx).fillna(0) for l in labels}).mean(axis=1)
-    real_sharpe_diff = sharpe_ratio(real_pool) - sharpe_ratio(real_bench_pool)
-    print(f"  E4 real pool Sharpe-diff: {real_sharpe_diff:+.3f}")
 
     # --- Permutation simulations ---
     print(f"\n[{experiment}] Running {n_sim} signal-factor permutations...")

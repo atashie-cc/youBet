@@ -150,14 +150,25 @@ def main():
         on_frac = float(sd["real_exposure"].mean())
         print(f"    {label:25s} on={on_frac:.1%} p(on->off)={sd['p_on_off']:.4f} p(off->on)={sd['p_off_on']:.4f}")
 
-    # E4's real pool (simplified: equal-weight daily mean)
+    # E4's real Sharpe-diff from the authoritative annual-rebalance result.
+    # Codex R1: using simplified daily-mean pooling here inflated the metric
+    # from +0.635 to +0.783. Load E4's actual result for the comparison.
+    import json
+    e4_json = WORKFLOW_ROOT / "results" / "e4_pooled_regional.json"
+    with open(e4_json) as f:
+        e4_saved = json.load(f)
+    real_sharpe_diff = e4_saved["comparisons"]["pool_vs_pool_benchmark"]["excess_sharpe_ci"]["point_estimate"]
+    print(f"\n  E4 real pool Sharpe-diff (annual rebalance): {real_sharpe_diff:+.3f}")
+
+    # Also compute the simplified-pooling version for diagnostic comparison
     real_sleeve_rets = pd.DataFrame({l: sd["real_strat_returns"] for l, sd in sleeve_data.items()})
     real_bench_rets = pd.DataFrame({l: sd["real_bench_returns"] for l, sd in sleeve_data.items()})
     common_idx = real_sleeve_rets.dropna().index
     real_pool = real_sleeve_rets.loc[common_idx].mean(axis=1)
     real_bench_pool = real_bench_rets.loc[common_idx].mean(axis=1)
-    real_sharpe_diff = sharpe_ratio(real_pool) - sharpe_ratio(real_bench_pool)
-    print(f"\n  E4 real pool Sharpe-diff: {real_sharpe_diff:+.3f}")
+    simplified_sharpe_diff = sharpe_ratio(real_pool) - sharpe_ratio(real_bench_pool)
+    print(f"  Simplified-pooling Sharpe-diff (diagnostic): {simplified_sharpe_diff:+.3f}")
+    print(f"  Discrepancy: {simplified_sharpe_diff - real_sharpe_diff:+.3f} (annual rebalance reduces by this amount)")
 
     # --- Run null simulations ---
     print(f"\n[{experiment}] Running {n_sim} block-randomized null simulations...")
@@ -220,6 +231,13 @@ def main():
             "n_sleeves": len(sleeve_data),
         },
         "real_sharpe_diff": real_sharpe_diff,
+        "real_sharpe_diff_simplified": simplified_sharpe_diff,
+        "sharpe_diff_note": (
+            "real_sharpe_diff is from E4's annual-rebalance result (authoritative). "
+            "Null sims use simplified daily-mean pooling. This is a conservative "
+            "comparison: annual rebalance also reduces the null, so if anything "
+            "the p-value is slightly too high, not too low."
+        ),
         "null_distribution": {
             "mean": float(null_arr.mean()),
             "std": float(null_arr.std()),
