@@ -109,11 +109,13 @@ def conditional_leveraged_return(
     leverage_increment = (exp_shifted - 1.0).clip(lower=0.0)
     cash_fraction = (1.0 - exp_shifted).clip(lower=0.0)
 
+    # Expense applies only to the invested position, not cash
+    active = (exp_shifted > 0).astype(float)
     port = (
         exp_shifted * underlying_returns
         + cash_fraction * rf                               # cash earns T-bill
         - leverage_increment * (rf + borrow_daily)          # borrow increment pays T-bill + spread
-        - daily_expense
+        - daily_expense * active                            # expense only when position is active
     )
     return port
 

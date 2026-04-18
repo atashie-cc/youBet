@@ -1,0 +1,19 @@
+{
+  "phase": "phase0_letf",
+  "rationale": "Real LETF products for validation. Selected based on AUM > $200M, inception before 2011, providing >= 14 years history for walk-forward.",
+  "tickers": [
+    "QLD",
+    "ROM",
+    "SOXL",
+    "SPXL",
+    "SSO",
+    "TECL",
+    "TMF",
+    "TNA",
+    "TQQQ",
+    "UBT",
+    "UDOW",
+    "UPRO",
+    "URTY"
+  ]
+}

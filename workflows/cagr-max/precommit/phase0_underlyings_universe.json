@@ -1,0 +1,12 @@
+{
+  "phase": "phase0_underlyings",
+  "rationale": "Underlying indices for LETF signal computation and synthetic leverage.",
+  "tickers": [
+    "IWM",
+    "QQQ",
+    "SPY",
+    "TLT",
+    "VTI",
+    "XLK"
+  ]
+}

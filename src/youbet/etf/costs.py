@@ -22,6 +22,8 @@ COST_SCHEDULE: dict[str, dict[str, float]] = {
     "sector_thematic": {"bid_ask_bps": 3.0, "slippage_bps": 1.0},
     "factor": {"bid_ask_bps": 2.0, "slippage_bps": 1.0},
     "cash_equivalent": {"bid_ask_bps": 1.0, "slippage_bps": 0.0},
+    "leveraged_etf": {"bid_ask_bps": 3.0, "slippage_bps": 2.0},
+    "crypto_etf": {"bid_ask_bps": 5.0, "slippage_bps": 3.0},
     "default": {"bid_ask_bps": 3.0, "slippage_bps": 1.0},
 }
 

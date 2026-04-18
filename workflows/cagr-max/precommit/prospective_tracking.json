@@ -1,0 +1,42 @@
+{
+  "precommitment": "UPRO SMA100 Weekly Paper Tracking",
+  "frozen_date": "2026-04-17",
+  "rule": {
+    "instrument": "UPRO (ProShares UltraPro S&P 500, 3x daily)",
+    "signal": "SPY adjusted close > 100-day simple moving average of SPY adjusted close",
+    "check_frequency": "Weekly, Friday close",
+    "execution": "If signal changes, execute at next trading day open (T+1)",
+    "cash_instrument": "BIL (SPDR Bloomberg 1-3 Month T-Bill) or money market",
+    "position_sizing": "100% UPRO when signal=1, 100% BIL when signal=0",
+    "rebalancing": "None (binary all-in / all-out)",
+    "account_type": "Tax-deferred (IRA / Roth IRA / 401k)"
+  },
+  "historical_performance": {
+    "period": "2009-06-25 to 2026-04-16",
+    "source": "Real UPRO adjusted close from yfinance",
+    "cagr_daily_check": "22.1% (with 10bps switching costs)",
+    "cagr_weekly_check": "24.8% (before switching costs, ~23-24% after)",
+    "sharpe_daily": 0.643,
+    "sharpe_weekly": 0.703,
+    "max_dd_daily": "-48.9%",
+    "max_dd_weekly": "-44.4%"
+  },
+  "caveats": [
+    "0/65 strategies passed strict CAGR gate (Holm-corrected)",
+    "All real LETF data is post-GFC (2009+) — no real-product bear market test",
+    "Synthetic 3x SPY SMA100 from 1998 shows negative pre-2013 CAGR under conservative costs",
+    "Weekly frequency selected in-sample (not walk-forward validated)",
+    "Strategy has ~11 switches/year, 99% short-term gains — requires tax-deferred account",
+    "3x leverage overshoots Kelly-optimal (1.9x for SPY) — accepting excess risk for CAGR"
+  ],
+  "validation_plan": {
+    "start_date": "2026-04-18",
+    "review_dates": ["2027-04-18", "2028-04-18", "2029-04-18"],
+    "metrics_to_track": ["CAGR", "Sharpe", "MaxDD", "switches_count", "time_in_market_pct"],
+    "kill_conditions": [
+      "MaxDD exceeds -60% (worse than historical -49%)",
+      "3-year CAGR below VTI buy-and-hold",
+      "Signal generates >20 switches/year (excessive whipsaw)"
+    ]
+  }
+}

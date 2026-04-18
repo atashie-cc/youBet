@@ -14,11 +14,13 @@ data/reference/
 # Allow committed reference CSVs
 !workflows/etf/data/reference/vanguard_universe.csv
 !workflows/commodity/data/reference/commodity_universe.csv
+!workflows/cagr-max/universe/*.csv
 
 # Models
 *.pkl
 *.joblib
 *.json
+!workflows/cagr-max/precommit/*.json
 models/*.xgb
 models/*.lgb
 

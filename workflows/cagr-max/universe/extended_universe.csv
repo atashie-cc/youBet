@@ -1,0 +1,28 @@
+ticker,name,inception_date,expense_ratio,category,aum_billions,notes
+VTI,Vanguard Total Stock Market,2001-05-24,0.0003,broad_us_equity,420,Benchmark
+SPY,SPDR S&P 500,1993-01-22,0.00095,broad_us_equity,550,Oldest ETF
+QQQ,Invesco Nasdaq-100,1999-03-10,0.0020,broad_us_equity,280,Tech-heavy large cap
+IWF,iShares Russell 1000 Growth,2000-05-22,0.0019,broad_us_equity,95,Growth factor
+IWD,iShares Russell 1000 Value,2000-05-22,0.0019,broad_us_equity,60,Value factor
+SCHG,Schwab US Large Cap Growth,2009-12-11,0.0004,broad_us_equity,32,Low-cost growth
+SPYG,SPDR S&P 500 Growth,2000-09-25,0.0004,broad_us_equity,25,S&P growth slice
+VUG,Vanguard Growth,2004-01-26,0.0004,broad_us_equity,130,Broad growth
+MGK,Vanguard Mega Cap Growth,2007-12-17,0.0007,broad_us_equity,20,Concentrated mega growth
+VGT,Vanguard Info Tech,2004-01-26,0.0010,sector_thematic,75,IT sector
+XLK,Technology Select Sector SPDR,1998-12-16,0.0009,sector_thematic,70,Longest tech history
+IYW,iShares US Technology,2000-05-15,0.0039,sector_thematic,16,Broad tech
+VLUE,iShares MSCI USA Value Factor,2013-04-16,0.0015,factor,8,Value factor ETF
+RPV,Invesco S&P 500 Pure Value,2006-03-01,0.0035,factor,3,Pure value
+VTV,Vanguard Value,2004-01-26,0.0004,factor,120,Broad value
+QUAL,iShares MSCI USA Quality Factor,2013-07-16,0.0015,factor,42,Quality factor ETF
+MTUM,iShares MSCI USA Momentum Factor,2013-04-16,0.0015,factor,12,Momentum factor ETF
+EFA,iShares MSCI EAFE,2001-08-14,0.0032,broad_intl_equity,60,Developed ex-US
+EEM,iShares MSCI Emerging Markets,2003-04-07,0.0068,broad_intl_equity,20,Emerging markets
+VEA,Vanguard FTSE Developed Markets,2007-07-20,0.0005,broad_intl_equity,130,Dev ex-US
+VWO,Vanguard FTSE Emerging Markets,2005-03-04,0.0008,broad_intl_equity,80,EM
+BND,Vanguard Total Bond Market,2007-04-03,0.0003,broad_us_bond,110,US bonds
+VGSH,Vanguard Short-Term Treasury,2009-11-19,0.0004,cash_equivalent,25,Cash proxy
+BIL,SPDR Bloomberg 1-3 Month T-Bill,2007-05-25,0.00136,cash_equivalent,35,T-bill proxy
+IBIT,iShares Bitcoin Trust,2024-01-11,0.0025,crypto_etf,50,Spot BTC ETF (promotional 0.12% until threshold)
+FBTC,Fidelity Wise Origin Bitcoin,2024-01-11,0.0025,crypto_etf,20,Spot BTC ETF
+BITO,ProShares Bitcoin Strategy,2021-10-19,0.0095,crypto_etf,2,Futures-based BTC (contango drag)

@@ -1,0 +1,14 @@
+ticker,name,inception_date,expense_ratio,category,leverage,underlying_ticker,underlying_index,aum_billions,notes
+SSO,ProShares Ultra S&P 500,2006-06-19,0.0089,leveraged_etf,2.0,SPY,S&P 500,4.5,Longest 2x history
+QLD,ProShares Ultra QQQ,2006-06-19,0.0095,leveraged_etf,2.0,QQQ,Nasdaq-100,3.5,2x Nasdaq
+UPRO,ProShares UltraPro S&P 500,2009-06-25,0.0091,leveraged_etf,3.0,SPY,S&P 500,3.0,3x S&P
+TQQQ,ProShares UltraPro QQQ,2010-02-09,0.0086,leveraged_etf,3.0,QQQ,Nasdaq-100,24.0,Largest 3x LETF
+SPXL,Direxion Daily S&P 500 Bull 3x,2008-11-05,0.0097,leveraged_etf,3.0,SPY,S&P 500,4.0,3x S&P (Direxion)
+TECL,Direxion Daily Technology Bull 3x,2008-12-17,0.0094,leveraged_etf,3.0,XLK,Technology Select,2.5,3x tech sector
+SOXL,Direxion Daily Semiconductor Bull 3x,2010-03-11,0.0076,leveraged_etf,3.0,SOXX,PHLX Semiconductor,12.0,3x semiconductors
+TNA,Direxion Daily Small Cap Bull 3x,2008-11-05,0.0097,leveraged_etf,3.0,IWM,Russell 2000,1.5,3x small cap
+UDOW,ProShares UltraPro Dow30,2010-02-09,0.0095,leveraged_etf,3.0,DIA,Dow Jones 30,0.8,3x Dow
+URTY,ProShares UltraPro Russell2000,2010-02-09,0.0095,leveraged_etf,3.0,IWM,Russell 2000,0.3,3x Russell 2000
+ROM,ProShares Ultra Technology,2007-01-30,0.0095,leveraged_etf,2.0,XLK,Technology Select,0.5,2x tech
+TMF,Direxion Daily 20+ Yr Treasury Bull 3x,2009-04-16,0.01009,leveraged_etf,3.0,TLT,ICE US Treasury 20+,0.8,3x long-term treasury
+UBT,ProShares Ultra 20+ Year Treasury,2010-01-19,0.0095,leveraged_etf,2.0,TLT,ICE US Treasury 20+,0.2,2x long-term treasury
