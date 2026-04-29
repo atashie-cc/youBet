@@ -1,0 +1,114 @@
+{
+  "phase": "phase7",
+  "phase_label": "R8 Codex-recommended falsification tests (post-completion bonus)",
+  "committed_at": "2026-04-27",
+  "framing": "EXPLORATORY. Workflow was declared complete after Phase 4 with 0/9 strategies passing the gate on cleaned + precommit-compliant data. Codex R8 (review of next-experiment proposals) recommended 3 bounded falsification tests against the null finding. These are NOT expected winners; they are low-probability falsification probes (R8 expected yields: 12-18%, 8-12%, 5-10% for steps 1/2/3). Pre-committing here so the Joint Holm family is honest about expanded multiplicity.",
+  "benchmark": "SPY",
+  "universe": "S&P 500 historical membership (steps 1 + 2). Step 3 expands to S&P 600 (separate universe build).",
+  "walk_forward": {
+    "train_months": 60,
+    "test_months": 24,
+    "step_months": 12,
+    "rebalance_frequency": "monthly",
+    "first_test_start_min": "2012-01-01",
+    "note": "Inherits Phase 4 floor for ML; rule-based strategies use natural earliest test start (2010-01-01) where data permits. Per-strategy floors documented below."
+  },
+  "step_1_value_profitability": {
+    "rationale_codex_r8": "Novy-Marx (2013) showed gross profitability (GP/A = TTM gross profit / total assets) is a stronger quality metric than ROE for large-cap universes. Codex R8 ranked this #1 with expected yield 12-18% — best literature-backed extension of our current borderline value_earnings_yield finding (+0.354).",
+    "first_test_start_min": "2010-01-01",
+    "strategies": [
+      {
+        "name": "gross_profitability",
+        "class": "youbet.stock.strategies.rules.GrossProfitability",
+        "params": {
+          "decile_breakpoint": 0.10,
+          "min_holdings": 20,
+          "max_holdings": 100,
+          "weighting": "equal"
+        },
+        "rationale": "Standalone GP/A factor. Top decile by ttm_gross_profit / total_assets, equal-weighted. Tests whether the Novy-Marx quality metric beats SPY directly.",
+        "expected_exs_band_post_decay": [0.05, 0.30]
+      },
+      {
+        "name": "value_profitability",
+        "class": "youbet.stock.strategies.composites.ValueProfitability",
+        "params": {
+          "decile_breakpoint": 0.10,
+          "min_holdings": 20,
+          "max_holdings": 100,
+          "weighting": "equal"
+        },
+        "rationale": "AQR QMJ-lite composite: equal-weighted z-score sum of (earnings_yield, gross_profitability). Combines Novy-Marx quality with classic value. Most academically supported simple composite for the GP/A story.",
+        "expected_exs_band_post_decay": [0.05, 0.35]
+      }
+    ]
+  },
+  "step_2_ohlcv_phase4b": {
+    "rationale_codex_r8": "Falsification of 'ML failed because we omitted core liquidity/volume signals'. Codex R8 expected yield 8-12% — plausible uplift on ml_gkx_lightgbm's −0.218, but unlikely to flip clearly positive.",
+    "first_test_start_min": "2012-01-01",
+    "infrastructure_required": [
+      "Extend src/youbet/etf/data.py::_download_prices to optionally return OHLCV (currently Close-only)",
+      "OHLCV snapshot cache parallel to existing close-only snapshot",
+      "Implement 6 volume/illiquidity features in gkx_chars.py: turn_22d, dolvol_22d, std_dolvol, ill_amihud, baspread_hl, zerotrade",
+      "Bump GKX_MVP_FEATURE_NAMES to 20 features (was 14)"
+    ],
+    "strategies": [
+      {
+        "name": "ml_gkx_lightgbm_v20",
+        "class": "youbet.stock.strategies.ml_ranker.MLRanker",
+        "params": {"model_backend": "lightgbm", "feature_count": 20},
+        "rationale": "Same LightGBM config as Phase 4; only feature set changes (14 → 20). Tests Amihud illiquidity contribution.",
+        "expected_exs_band_post_decay": [-0.10, 0.20]
+      },
+      {
+        "name": "ml_gkx_elasticnet_v20",
+        "class": "youbet.stock.strategies.ml_ranker.MLRanker",
+        "params": {"model_backend": "elasticnet", "feature_count": 20},
+        "rationale": "Same ElasticNet config as Phase 4; feature set 14 → 20.",
+        "expected_exs_band_post_decay": [-0.10, 0.15]
+      }
+    ]
+  },
+  "step_3_sp600_smallcap": {
+    "rationale_codex_r8": "Codex R8 expected yield 5-10%, EXPLORATORY universe-shift only (not a likely winner). Israel-Moskowitz 2013 found value gets weaker in larger stocks but momentum has no reliable size relation; Asness 2018 'rescues' size only when controlling for junk; HXZ 2020 generally skeptical post-replication.",
+    "infrastructure_required": [
+      "Build sp600_membership.csv (Wikipedia + Russell historical inclusions or alternative data source)",
+      "S&P 600 delistings CSV",
+      "EDGAR cache extension for S&P 600 CIKs (potentially ~600 new tickers)",
+      "Universe.from_csv already supports it",
+      "Rerun Phase 1 + Phase 3 + Phase 4 on the small-cap universe"
+    ],
+    "scope": "Replicate the same N=4+3+2 = 9-strategy family on S&P 600. New benchmark: small-cap ETF? IJR (iShares S&P Small-Cap)? Or stay with SPY? Decision deferred until step 1+2 inform.",
+    "expected_exs_band_post_decay": "Per-strategy bands depend on benchmark choice; deferred."
+  },
+  "statistical_treatment": {
+    "bootstrap_n_replicates": 10000,
+    "bootstrap_block_length": 22,
+    "bootstrap_seed": 42,
+    "holm_scope_authoritative": "Joint Holm(Phase1 ∪ Phase3 ∪ Phase4 ∪ Phase7-step1) on S&P 500 universe = N=11 (existing 9 + 2 new). Step 2 (OHLCV) is REFIT of existing Phase 4 ML — replaces ml_gkx_elasticnet/lightgbm with v20 versions (still N=2 in Phase 4); Joint family stays N=11. Step 3 (S&P 600) is a SEPARATE universe — not joined into S&P 500 family.",
+    "two_sided_p_reported": true,
+    "gate_evaluated": true,
+    "gate_claims_publishable_only_if_all_true": [
+      "exSh > 0.20 AND hAdj_up < 0.05 (joint N=11 Holm) AND ci_lo > 0",
+      "Strategy survives the same R6 contamination checks as Phase 4 (zero-day distribution, regime split, stripped-window Holm, coverage by year)",
+      "No new contamination found"
+    ]
+  },
+  "contamination_checks_required_before_any_gate_claim": [
+    "Reuse the 12 R6 contamination checks for ALL new strategies",
+    "Confirm _filter_spurious_prices applied (already in fetch path)",
+    "Step 2 OHLCV must verify volume data is also clean (not just close prices)"
+  ],
+  "expected_outcome_per_codex_r8": {
+    "step_1": "12-18% chance of CI-lower>0; most-likely outcome is similar to value_EY (point estimate near zero, CI crosses zero).",
+    "step_2": "8-12% chance; most-likely outcome is ml_gkx_lightgbm point estimate moves from −0.218 toward zero but does not cross.",
+    "step_3": "5-10% chance; most-likely outcome is S&P 600 results similar to S&P 500 with wider noise bands.",
+    "overall": "If all three are null, the workflow's 'no usable cross-sectional signal on free data' conclusion is much stronger. If one is positive, R6+R7+R8 contamination checks must be applied before publication."
+  },
+  "termination_criteria": [
+    "Step 1 null + step 2 null → declare workflow complete with strengthened null. Skip step 3.",
+    "Step 1 null + step 2 small positive shift → step 3 worth running.",
+    "Step 1 positive (CI lower > 0) → AUDIT before celebrating per CLAUDE.md #16, then continue R6 contamination policy.",
+    "Multi-day OS sleep cycles caused major delays in prior runs; use scripts/keep_awake_marker.py for any chained run."
+  ]
+}

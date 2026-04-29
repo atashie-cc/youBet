@@ -1,0 +1,112 @@
+# Stock-Selection — Global Configuration
+# LOCKED: Do not change post-hoc. Changes require re-commitment in CLAUDE.md.
+
+benchmark:
+  ticker: SPY
+  name: "SPDR S&P 500 ETF Trust"
+
+backtest:
+  train_months: 60           # Longer than etf workflow (36) — ~90-feature ML needs more training rows
+  test_months: 24
+  step_months: 12
+  rebalance_frequency: monthly
+  initial_capital: 100000
+
+gate:
+  # Primary: excess Sharpe = Sharpe(strategy) - Sharpe(benchmark)
+  min_excess_sharpe: 0.20
+  significance: 0.05           # After Holm correction
+  ci_lower_threshold: 0.0      # 90% bootstrap CI lower bound > 0
+  confidence: 0.90
+
+bootstrap:
+  n_replicates: 10000
+  block_length: 22             # ~1 month (Politis-Romano)
+  seed: 42
+
+power_analysis:
+  kill_gate: 0.30              # If MDE of excess Sharpe > 0.30, shift to point-estimate reporting
+  target_sharpe_diffs: [0.05, 0.10, 0.15, 0.20, 0.30, 0.40, 0.50]
+
+universe:
+  sp500_membership: "universe/sp500_membership.csv"
+  sp600_membership: "universe/sp600_membership.csv"  # Phase 5
+  delisting_returns: "universe/delisting_returns.csv"
+
+data:
+  price_snapshots: "data/snapshots/prices"
+  edgar_cache: "data/snapshots/edgar"
+  reference_dir: "../etf/data/reference"   # Shared T-bill cache
+
+costs:
+  # Market-cap-bucketed one-way bid-ask + slippage (basis points)
+  mcap_buckets:
+    mega:  {min_usd_b: 200, bid_ask_bps: 1.0, slippage_bps: 1.0}
+    large: {min_usd_b:  10, bid_ask_bps: 2.0, slippage_bps: 3.0}
+    mid:   {min_usd_b:   2, bid_ask_bps: 4.0, slippage_bps: 6.0}
+    small: {min_usd_b: 0.3, bid_ask_bps: 10.0, slippage_bps: 15.0}
+    micro: {min_usd_b:   0, bid_ask_bps: 25.0, slippage_bps: 50.0}
+  commission_per_share_usd: 0.005
+
+pit:
+  # Filing-lag fallback used ONLY when EDGAR filed_date is missing.
+  # Real filed_date from SEC EDGAR takes precedence.
+  filing_lag_days:
+    "10-K": 90
+    "10-Q": 45
+    "8-K_earnings": 30
+
+portfolio_formation:
+  # Cross-sectional strategy defaults
+  decile_breakpoint: 0.10      # Top 10% of ranked signals
+  min_holdings: 20             # Floor; drop to equal-weight SPY proxy if universe too small
+  max_holdings: 100
+  weighting: equal             # "equal" | "inv_vol" | "mcap"
+  exclude_micro_cap: false     # Robustness variant sets this true
+
+ml:
+  # Gu-Kelly-Xiu replication (Phase 4). Revised 2026-04-22 after
+  # Codex R6: explicit override of earlier placeholders.
+  feature_set: gkx20_yfinance_edgar_subset  # 20 chars computable from free data; see phase4_confirmatory.json
+  train_refit_frequency: annual              # refit per walk-forward fold (60mo train, then 24mo test)
+  # No cv_folds — validation is "most recent contiguous 20% of TRAIN REBAL DATES"
+  # (Codex R6-HIGH-Q8: prevents same-date cross-section leakage that random CV would cause).
+  validation_scheme: recent_dates_contiguous
+  validation_fraction_of_train: 0.20
+  # Regularization is model-specific; see phase4 precommit strategies[].params.
+
+codex_review_triggers:
+  - phase_0_infrastructure
+  - phase_1_efficiency
+  - phase_2_robustness
+  - phase_3_composites
+  - phase_4_ml_replication
+  - phase_5_smallcap_oos
+  - final_report
+
+# Phase 2 — regime stability + empirical TE re-assessment.
+# Added 2026-04-19 after Phase 0 revealed MDE > +0.50 at the
+# literature-anchored 8%/yr TE. Phase 1 is now exploratory; Phase 2
+# characterizes regime stability and re-powers the framework with
+# empirical tracking-error estimates.
+phase2:
+  # Regime split: pre- vs post- this boundary (structural-break date
+  # around post-crisis recovery + QE era onset).
+  pre_post_break: "2013-01-01"
+
+  # Exclusion windows: drop these periods to test regime fragility.
+  exclude_windows:
+    gfc:   ["2008-01-01", "2009-12-31"]
+    covid: ["2020-02-01", "2021-06-30"]
+
+  # Tracking-error anchors (annualized decimal) for MDE re-computation.
+  # 8% is the factor-portfolio-literature anchor; 4% reflects a tighter
+  # 20-name mega-cap long-only book; 12% is a wider multi-factor sleeve.
+  te_sensitivity_anchors: [0.04, 0.08, 0.12]
+
+  # Commission anchors (bps one-way) for cost sensitivity.
+  commission_sensitivity_bps: [0.5, 2.0, 5.0, 10.0]
+
+  # Minimum years of test data required to run bootstrap within a
+  # regime subset; below this, report point estimate only.
+  subperiod_min_years: 5

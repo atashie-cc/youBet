@@ -85,6 +85,13 @@ def block_bootstrap_test(
     Uses stationary block bootstrap on excess returns (strategy - benchmark)
     to build a null distribution, preserving autocorrelation and vol-clustering.
 
+    Returns BOTH tails' p-values plus a two-sided combined p. The
+    workflow's `p_value` remains upper-tail (pre-committed gate metric
+    for "beats benchmark"); the new `p_value_lower` and `p_value_two_sided`
+    fields enable direction-agnostic claims (Codex R4 H-bug: prior API
+    was upper-tail only, so "significantly underperforms" claims silently
+    misread 1−p_upper as p_lower and mis-corrected).
+
     Args:
         strategy_returns: Daily returns of the strategy.
         benchmark_returns: Daily returns of the benchmark.
@@ -93,7 +100,12 @@ def block_bootstrap_test(
         seed: Random seed.
 
     Returns:
-        Dict with observed_excess_sharpe, p_value, null distribution stats.
+        Dict with:
+            observed_excess_sharpe
+            p_value              — UPPER-tail (pre-committed gate metric)
+            p_value_lower        — LOWER-tail (negative-direction claims)
+            p_value_two_sided    — 2 * min(p_upper, p_lower), capped at 1
+            plus null distribution stats.
     """
     common = strategy_returns.index.intersection(benchmark_returns.index)
     excess = (strategy_returns[common] - benchmark_returns[common]).values
@@ -108,23 +120,27 @@ def block_bootstrap_test(
         centered, n_bootstrap, expected_block_length, seed
     )
 
-    # Corrected p-value estimator: (1 + count) / (B + 1) per Davison & Hinkley.
-    # Using count/B can return exactly 0.0 — an impossible p-value.
+    # Davison-Hinkley corrected p-values: (1 + count) / (B + 1).
     count_ge = int(np.sum(null_sharpes >= observed_sharpe))
-    p_value = (1 + count_ge) / (n_bootstrap + 1)
-    # Monte Carlo standard error of the p-value estimate
-    p_mc_se = float(np.sqrt(p_value * (1 - p_value) / n_bootstrap))
+    count_le = int(np.sum(null_sharpes <= observed_sharpe))
+    p_upper = (1 + count_ge) / (n_bootstrap + 1)
+    p_lower = (1 + count_le) / (n_bootstrap + 1)
+    p_two_sided = min(2.0 * min(p_upper, p_lower), 1.0)
+    p_mc_se = float(np.sqrt(p_upper * (1 - p_upper) / n_bootstrap))
 
     return {
         "observed_excess_sharpe": float(observed_sharpe),
-        "p_value": p_value,
+        "p_value": p_upper,            # backwards-compat alias
+        "p_value_upper": p_upper,
+        "p_value_lower": p_lower,
+        "p_value_two_sided": p_two_sided,
         "p_mc_se": p_mc_se,
         "null_mean": float(null_sharpes.mean()),
         "null_std": float(null_sharpes.std()),
         "null_95th": float(np.percentile(null_sharpes, 95)),
         "null_99th": float(np.percentile(null_sharpes, 99)),
-        "significant_at_05": p_value < 0.05,
-        "significant_at_01": p_value < 0.01,
+        "significant_at_05": p_upper < 0.05,      # upper-tail gate semantics
+        "significant_at_01": p_upper < 0.01,
         "n_bootstrap": n_bootstrap,
         "block_length": expected_block_length,
     }

@@ -1,0 +1,79 @@
+{
+  "phase": "phase1",
+  "committed_at": "2026-04-19",
+  "framing": "EXPLORATORY (per 2026-04-19 Phase 0 power finding: MDE > +0.50 ExSharpe > gate threshold 0.20 — gate pre-committed but not strict-applied; point estimates + CIs are the deliverable).",
+  "benchmark": "SPY",
+  "universe": "S&P 500 historical membership (Wikipedia + SEC CIK-resolved, survivorship-bias-free with 347-row delistings CSV)",
+  "walk_forward": {"train_months": 60, "test_months": 24, "step_months": 12, "rebalance_frequency": "monthly"},
+  "strategies": [
+    {
+      "name": "value_earnings_yield",
+      "class": "youbet.stock.strategies.rules.ValueScore",
+      "params": {
+        "decile_breakpoint": 0.10,
+        "min_holdings": 20,
+        "max_holdings": 100,
+        "weighting": "equal"
+      },
+      "rationale": "Top-decile earnings yield (TTM_NI / shares_out / price). Literature post-decay ~0.10-0.20 ExS.",
+      "expected_exs_band_post_decay": [0.05, 0.20]
+    },
+    {
+      "name": "momentum_252_21",
+      "class": "youbet.stock.strategies.rules.Momentum12m1",
+      "params": {
+        "lookback_days": 252,
+        "skip_days": 21,
+        "decile_breakpoint": 0.10,
+        "min_holdings": 20,
+        "max_holdings": 100,
+        "weighting": "equal"
+      },
+      "rationale": "Jegadeesh-Titman 12-1 momentum. Literature pre-decay ~0.25-0.35 ExS; post-decay 0.10-0.20.",
+      "expected_exs_band_post_decay": [0.05, 0.20]
+    },
+    {
+      "name": "quality_roe_ttm",
+      "class": "youbet.stock.strategies.rules.QualityROE",
+      "params": {
+        "decile_breakpoint": 0.10,
+        "min_holdings": 20,
+        "max_holdings": 100,
+        "weighting": "equal"
+      },
+      "rationale": "Top-decile trailing-twelve-month ROE. Literature (Novy-Marx) post-decay ~0.10-0.20 ExS.",
+      "expected_exs_band_post_decay": [0.05, 0.20]
+    },
+    {
+      "name": "lowvol_252d",
+      "class": "youbet.stock.strategies.rules.LowVol252d",
+      "params": {
+        "lookback_days": 252,
+        "decile_breakpoint": 0.10,
+        "min_holdings": 20,
+        "max_holdings": 100,
+        "weighting": "equal"
+      },
+      "rationale": "Bottom-decile realized volatility (score = -sigma). Literature pre-decay 0.25-0.35 ExS; robust 1940-2023 per Van Vliet & Blitz.",
+      "expected_exs_band_post_decay": [0.05, 0.20]
+    }
+  ],
+  "statistical_treatment": {
+    "bootstrap_n_replicates": 10000,
+    "bootstrap_block_length": 22,
+    "holm_scope": "within phase (N=4)",
+    "gate_evaluated": true,
+    "gate_claims_published": false,
+    "reason_gate_claims_suppressed": "Phase 0 empirical MDE > +0.50 > gate threshold; claiming PASS/FAIL would be miscalibrated. Gate CI and holm-adj p are reported for audit but the narrative is point estimates + regime stability (see phase2_robustness.py)."
+  },
+  "exclusions": {
+    "first_fold_test_start_min": "2005-01-01",
+    "reason": "EDGAR XBRL coverage begins ~2009 (backfill 2005); fundamental signals unreliable before 2005."
+  },
+  "known_limitations": [
+    "Wikipedia historical coverage thin pre-~2002 (169 active tickers in 1999 vs 521 today).",
+    "Delisting terminal returns placeholder-driven (0.0 acquisition, -0.99 bankruptcy). Actual deal premia not captured.",
+    "Cost model bucket costs assume IB-pro rates (mega=2bps). Realistic retail costs likely 5-10bps at all buckets.",
+    "Momentum NaN handling uses per-ticker min_obs; strategies ignore tickers with gappy lookback history (see H4 fix)."
+  ]
+}

@@ -1,0 +1,41 @@
+ticker,name,gics_sector,gics_subindustry,start_date,end_date,cik,notes
+AAPL,Apple Inc.,Information Technology,Technology Hardware Storage & Peripherals,1982-11-30,,0000320193,seed
+MSFT,Microsoft Corporation,Information Technology,Systems Software,1994-06-07,,0000789019,seed
+GOOGL,Alphabet Inc. Class A,Communication Services,Interactive Media & Services,2006-03-31,,0001652044,seed
+AMZN,Amazon.com Inc.,Consumer Discretionary,Broadline Retail,2005-11-18,,0001018724,seed
+NVDA,NVIDIA Corporation,Information Technology,Semiconductors,2001-11-30,,0001045810,seed
+META,Meta Platforms Inc.,Communication Services,Interactive Media & Services,2013-12-23,,0001326801,seed
+TSLA,Tesla Inc.,Consumer Discretionary,Automobile Manufacturers,2020-12-21,,0001318605,seed
+BRK.B,Berkshire Hathaway Class B,Financials,Multi-Sector Holdings,2010-02-12,,0001067983,seed
+JPM,JPMorgan Chase & Co.,Financials,Diversified Banks,1975-06-30,,0000019617,seed
+JNJ,Johnson & Johnson,Health Care,Pharmaceuticals,1973-06-29,,0000200406,seed
+V,Visa Inc.,Financials,Transaction & Payment Processing Services,2008-12-19,,0001403161,seed
+PG,The Procter & Gamble Company,Consumer Staples,Personal Care Products,1957-03-04,,0000080424,seed
+XOM,Exxon Mobil Corporation,Energy,Integrated Oil & Gas,1957-03-04,,0000034088,seed
+WMT,Walmart Inc.,Consumer Staples,Consumer Staples Merchandise Retail,1982-08-31,,0000104169,seed
+UNH,UnitedHealth Group Incorporated,Health Care,Managed Health Care,1994-07-22,,0000731766,seed
+HD,The Home Depot Inc.,Consumer Discretionary,Home Improvement Retail,1988-04-06,,0000354950,seed
+MA,Mastercard Incorporated,Financials,Transaction & Payment Processing Services,2008-07-18,,0001141391,seed
+LLY,Eli Lilly and Company,Health Care,Pharmaceuticals,1970-10-27,,0000059478,seed
+ABBV,AbbVie Inc.,Health Care,Pharmaceuticals,2013-01-02,,0001551152,seed
+KO,The Coca-Cola Company,Consumer Staples,Soft Drinks & Non-alcoholic Beverages,1957-03-04,,0000021344,seed
+PEP,PepsiCo Inc.,Consumer Staples,Soft Drinks & Non-alcoholic Beverages,1957-03-04,,0000077476,seed
+CVX,Chevron Corporation,Energy,Integrated Oil & Gas,1957-03-04,,0000093410,seed
+MRK,Merck & Co. Inc.,Health Care,Pharmaceuticals,1957-03-04,,0000310158,seed
+COST,Costco Wholesale Corporation,Consumer Staples,Consumer Staples Merchandise Retail,1993-10-29,,0000909832,seed
+ADBE,Adobe Inc.,Information Technology,Application Software,1997-05-05,,0000796343,seed
+CSCO,Cisco Systems Inc.,Information Technology,Communications Equipment,1993-08-12,,0000858877,seed
+AVGO,Broadcom Inc.,Information Technology,Semiconductors,2014-05-09,,0001730168,seed
+ORCL,Oracle Corporation,Information Technology,Application Software,1989-08-22,,0001341439,seed
+CRM,Salesforce Inc.,Information Technology,Application Software,2008-09-15,,0001108524,seed
+NFLX,Netflix Inc.,Communication Services,Movies & Entertainment,2010-12-20,,0001065280,seed
+INTC,Intel Corporation,Information Technology,Semiconductors,1976-12-10,,0000050863,seed
+IBM,International Business Machines Corporation,Information Technology,IT Consulting & Other Services,1957-03-04,,0000051143,seed
+MCD,McDonald's Corporation,Consumer Discretionary,Restaurants,1970-07-01,,0000063908,seed
+NKE,NIKE Inc.,Consumer Discretionary,Footwear,1988-12-06,,0000320187,seed
+SBUX,Starbucks Corporation,Consumer Discretionary,Restaurants,2000-06-21,,0000829224,seed
+BA,The Boeing Company,Industrials,Aerospace & Defense,1957-03-04,,0000012927,seed
+CAT,Caterpillar Inc.,Industrials,Construction Machinery & Heavy Transportation Equipment,1957-03-04,,0000018230,seed
+HON,Honeywell International Inc.,Industrials,Industrial Conglomerates,1957-03-04,,0000773840,seed
+GS,The Goldman Sachs Group Inc.,Financials,Investment Banking & Brokerage,2002-07-22,,0000886982,seed
+MS,Morgan Stanley,Financials,Investment Banking & Brokerage,1993-07-20,,0000895421,seed

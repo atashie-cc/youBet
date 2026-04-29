@@ -1,0 +1,226 @@
+{
+  "phase": "phase4",
+  "committed_at": "2026-04-22",
+  "r6_revisions_applied": "2026-04-22 after Codex R6 (4 HIGH + 4 MED + 2 LOW addressed).",
+  "framing": "EXPLORATORY. Per Phase 0, MDE > +0.5 ExSharpe at 20y daily S&P 500 with empirical TE. Phase 4 ML strategies are reported as point estimates + 90% CIs under a joint Holm(Phase 1 ∪ Phase 3 ∪ Phase 4) correction = N=9 (Phase 1 = 4 + Phase 3 = 3 + Phase 4 = 2). MLP is DEFERRED and NOT in the Holm family at this commit; if MLP is later enabled, it requires an explicit re-commitment that expands N to 10. Gate PASS/FAIL evaluated for audit but is NOT the primary narrative. Post-R5 emphasis: artifact decomposition (coverage, regime, sector) runs BEFORE any Holm claim is published. Post-R6 emphasis: coverage-invalid rebalances are EXCLUDED from the excess-return series, not parked in T-bill cash.",
+  "benchmark": "SPY",
+  "universe": "S&P 500 historical membership (same as Phase 1+3)",
+  "walk_forward": {
+    "train_months": 60,
+    "test_months": 24,
+    "step_months": 12,
+    "rebalance_frequency": "monthly",
+    "first_test_start_min": "2012-01-01",
+    "first_test_start_reason": "R5-informed: drop 2010-2011 where EDGAR coverage was sparse enough to cash-park Piotroski 83% of 2010. ML models are even more coverage-sensitive; locking first test at 2012-01 keeps the active window pre-Mag7 balanced without sacrificing training signal. Walk-forward still trains on 2005-2011 where available.",
+    "note_post_r6": "Walk-forward schedule + 2012-start are locked. No further stripping of train/test windows post-hoc."
+  },
+  "target": {
+    "definition": "cross_sectional_forward_return_22d",
+    "formula": "For each (ticker, rebal_date): y = total_return[rebal_date+1d, rebal_date+22d] − cross_sectional_mean_that_date across the active (coverage-valid) universe.",
+    "framing_post_r6": "GKX-INSPIRED cross-sectional target (not 'GKX-standard', per R6). Trains a relative-ranking model; does not break portfolio-level excess-Sharpe evaluation. Raw-forward-return sensitivity is a locked secondary check (see contamination_checks_required_before_any_gate_claim).",
+    "rationale": "Removes mechanical market-direction effects and focuses the model on cross-sectional selection signal."
+  },
+  "features": {
+    "count_mvp": 14,
+    "count_full_scope": 20,
+    "mvp_vs_full_scope_note": "Phase 4 MVP ships 14 features (close-only + fundamentals + sector-derived). The 6 volume-based features (turn_22d, dolvol_22d, std_dolvol, ill_amihud, baspread_hl, zerotrade) require OHLCV snapshot infrastructure not currently in the pipeline (yfinance snapshot is close-only). These are DEFERRED to a Phase 4b follow-up that adds OHLCV fetching; they are NOT in the MVP Holm family. Volume-based feature list preserved below for audit/scope-clarity only — implementation tasks include a `STOCK_PHASE4_ENABLE_OHLCV=1` flag that would plug them in AFTER a successful MVP run.",
+    "eligibility_table_source": "Gu-Kelly-Xiu (2020) RFS Internet Appendix Table B.1 (full 94-characteristic list).",
+    "selection_basis_post_r6": "Honest relabel per R6-HIGH-Q1: this is a '14-feature yfinance+EDGAR subset' (MVP) / '20-feature full-scope' (with OHLCV), NOT a claim of 'GKX top 20 by OOS R²'. We cross-reference the GKX 94 against computability from free data, then select features with strongest independent-literature support. The choice is explicitly NOT empirically driven from in-sample R² of any prior model.",
+    "gkx_eligibility_audit": {
+      "total_gkx_characteristics": 94,
+      "computable_from_yfinance_edgar": "approximately 42 (rough estimate; full audit deferred to phase4_ml_gkx.py docstring)",
+      "excluded_paid_data": [
+        {"features": "IBES analyst forecast-based (sue, nanalyst, disp, chfeps, fgr5yr, sfe, etc.)", "reason": "IBES paywall"},
+        {"features": "13F institutional-holdings-based (IH breadth, change)", "reason": "EDGAR 13F is available but not built into pipeline; deferred"},
+        {"features": "FINRA short-interest (short ratio, change in short ratio)", "reason": "FINRA daily short-sale volume not in yfinance snapshot"},
+        {"features": "Credit rating (cr)", "reason": "S&P/Moody's/Fitch paywall"},
+        {"features": "Convertible debt / pension (convind, pension funding)", "reason": "requires 10-K narrative parsing beyond XBRL facts"}
+      ],
+      "computable_but_excluded_with_rationale": [
+        {"feature": "mvel1 (market capitalization)", "reason": "S&P 500 cap dispersion ~$10B–$3T (300×); within-index cross-section gives mvel1 a trivial 'bigger = worse return' if mean-reverted, but R5 lesson says Mag7 regime dominates size signal post-2022. Excluded to avoid predictable Mag7 concentration. Ablation flag: STOCK_PHASE4_INCLUDE_MVEL1=1 enables it for a one-off sensitivity run post-primary-results."},
+        {"feature": "sue (standardized unexpected earnings)", "reason": "no IBES consensus; YoY proxy is noisy and correlated with chmom; deferred"},
+        {"feature": "pricedelay", "reason": "requires weekly regressions on 4 lagged market returns; implementation cost > expected signal (low R² contribution in GKX). Deferred; can be added as a 21st feature in a later phase."},
+        {"feature": "agr (asset growth)", "reason": "computable from EDGAR; R5 Piotroski lesson shows fundamentals-based features amplify coverage artifacts; substituted with price-based equivalents in the 20-subset"},
+        {"feature": "invest / cashdebt / depr / pchgm_pchsale / pchsale_pchrect / pchsale_pchinvt / pchsale_pchxsga", "reason": "fundamentals-derived; same coverage-artifact concern as above; none are in top-5 GKX R²"}
+      ],
+      "full_audit_deferred_to": "phase4_ml_gkx.py docstring will include the 94-row table with GKX name, our status, data requirement, inclusion rationale. Committed as part of infrastructure task, not blocking commit of this JSON."
+    },
+    "list_mvp": [
+      {"name": "mom_1m_1m",    "family": "price",    "formula": "log return [t-22, t-1]", "gkx_name": "mom1m"},
+      {"name": "mom_6m_1m",    "family": "price",    "formula": "log return [t-126, t-22] (skip-month)", "gkx_name": "mom6m"},
+      {"name": "mom_12m_1m",   "family": "price",    "formula": "log return [t-252, t-22] (standard 12-1 momentum)", "gkx_name": "mom12m"},
+      {"name": "mom_36m_13m",  "family": "price",    "formula": "log return [t-756, t-273] (long-term reversal)", "gkx_name": "mom36m"},
+      {"name": "chmom",        "family": "price",    "formula": "mom_6m_1m at t minus mom_6m_1m at t-126d"},
+      {"name": "maxret_22d",   "family": "price",    "formula": "max of daily returns in [t-22, t-1] (MAX factor, Bali 2011)"},
+      {"name": "retvol_22d",   "family": "price",    "formula": "std of daily returns in [t-22, t-1], annualized"},
+      {"name": "idiovol_126d", "family": "price",    "formula": "std of residuals from daily CAPM regression on SPY, 126d window"},
+      {"name": "beta_252d",    "family": "price",    "formula": "CAPM beta vs SPY, 252d daily"},
+      {"name": "betasq_252d",  "family": "price",    "formula": "beta_252d ^ 2"},
+      {"name": "ep_ttm",       "family": "fundamentals", "formula": "TTM net income / mcap (PIT, filed_date-gated)"},
+      {"name": "sp_ttm",       "family": "fundamentals", "formula": "TTM revenue / mcap (PIT)"},
+      {"name": "bm",           "family": "fundamentals", "formula": "total equity / mcap (PIT; most-recent filed_date < decision_date)"},
+      {"name": "indmom",       "family": "derived",  "formula": "GICS-sector-mean of mom_12m_1m across peers (industry momentum; uses sector_as_of)"}
+    ],
+    "list_deferred_to_phase4b_ohlcv": [
+      {"name": "turn_22d",     "family": "volume",   "formula": "mean(volume/shares_out) over 22d", "requires": "OHLCV snapshot"},
+      {"name": "dolvol_22d",   "family": "volume",   "formula": "log of mean(close*volume) over 22d", "requires": "OHLCV snapshot"},
+      {"name": "std_dolvol",   "family": "volume",   "formula": "std of log(close*volume) over 22d", "requires": "OHLCV snapshot"},
+      {"name": "ill_amihud",   "family": "volume",   "formula": "mean(|daily_return| / dollar_volume) over 22d (Amihud illiquidity)", "requires": "OHLCV snapshot"},
+      {"name": "baspread_hl",  "family": "volume",   "formula": "mean((high-low)/((high+low)/2)) over 22d (high-low proxy for bid-ask spread)", "requires": "OHLCV snapshot"},
+      {"name": "zerotrade",    "family": "volume",   "formula": "fraction of days in [t-22, t-1] with volume == 0", "requires": "OHLCV snapshot"}
+    ],
+    "preprocessing_order_post_r6": [
+      "1. Compute all 20 features per (ticker, rebal_date) using ONLY data < rebal_date (PIT guarded).",
+      "2. Winsorize at 1st/99th percentile CROSS-SECTIONALLY per rebal_date.",
+      "3. Rank-transform each feature CROSS-SECTIONALLY per rebal_date → uniform [-0.5, +0.5]. Rank on test rebal dates is computed against SAME-DATE active peers only (R6-MED-Q2: never against train-window percentiles).",
+      "4. Impute missing (post-rank) with 0 (median rank) within each feature column per date.",
+      "5. Stack (ticker, rebal_date) rows across the training window for fitting. Training matrix contains same-date-demeaned ranks only."
+    ],
+    "coverage_policy_post_r6": {
+      "r6_fix": "HIGH-Q4 addressed. Coverage-invalid rebalances are INVALIDATED from the excess-return series, NOT parked in T-bill cash. This breaks the R5 pattern where coverage gaps produced apparent 'underperformance' via cash-vs-SPY drag.",
+      "rebal_validity_criteria": {
+        "min_active_tickers_with_features": 50,
+        "min_feature_coverage_pct_per_ticker": 70,
+        "action_on_violation": "That rebalance is EXCLUDED from the strategy's excess-return series entirely (no position, no cash, no T-bill return — the date is simply omitted from the confirmatory estimator)."
+      },
+      "fold_validity_criteria": {
+        "min_valid_rebals_per_fold_pct": 80,
+        "action_on_violation": "Fold is marked COVERAGE-INVALID. Fold-level returns are excluded from all confirmatory claims. Holm family is NOT resized post-hoc; strategy-level PASS requires ≥ min_valid_folds_per_strategy to be coverage-valid."
+      },
+      "strategy_validity_criteria": {
+        "min_valid_folds_per_strategy": 8,
+        "action_on_violation": "Strategy is marked COVERAGE-INVALID overall. Gate PASS is impossible; point estimates + CIs may still be reported but clearly labeled 'coverage-invalid, informational only'."
+      },
+      "rationale": "Per R6: a confirmatory estimator cannot include coverage-gap returns. T-bill parking contaminated the R5 Piotroski excess-Sharpe estimate and was the primary lesson of that retraction. Explicit invalidation is the clean fix.",
+      "live_simulation_alternative": "A secondary return series WITH T-bill parking can be saved for portfolio/live-simulation purposes but is NOT used for the confirmatory Sharpe + CI + Holm calculations."
+    }
+  },
+  "strategies": [
+    {
+      "name": "ml_gkx_elasticnet",
+      "class": "youbet.stock.strategies.ml_ranker.MLRanker",
+      "params": {
+        "model_backend": "elasticnet",
+        "model_params": {"alpha": 1e-3, "l1_ratio": 0.5, "max_iter": 5000, "random_state": 42},
+        "validation_scheme": "recent_dates_contiguous",
+        "validation_fraction_of_train": 0.20,
+        "decile_breakpoint": 0.10,
+        "min_holdings": 20,
+        "max_holdings": 100,
+        "weighting": "equal"
+      },
+      "rationale": "Linear baseline. GKX shows linear models capture 60-70% of GBM's performance on the full 94-feature set; with our 20-feature subset the gap may be smaller. Serves as sanity check that any complex model is earning its overfit budget.",
+      "expected_exs_band_post_decay_post_r6": [0.00, 0.15]
+    },
+    {
+      "name": "ml_gkx_lgbm",
+      "class": "youbet.stock.strategies.ml_ranker.MLRanker",
+      "params": {
+        "model_backend": "lightgbm",
+        "model_params": {
+          "objective": "regression",
+          "metric": "l2",
+          "num_leaves": 31,
+          "max_depth": 6,
+          "learning_rate": 0.05,
+          "n_estimators": 500,
+          "min_child_samples": 50,
+          "subsample": 0.8,
+          "colsample_bytree": 0.8,
+          "reg_alpha": 0.1,
+          "reg_lambda": 1.0,
+          "random_state": 42,
+          "verbose": -1
+        },
+        "early_stopping_rounds": 20,
+        "validation_scheme": "recent_dates_contiguous",
+        "validation_fraction_of_train": 0.20,
+        "decile_breakpoint": 0.10,
+        "min_holdings": 20,
+        "max_holdings": 100,
+        "weighting": "equal"
+      },
+      "rationale": "Gu-Kelly-Xiu primary model. Tree-based captures nonlinear feature interactions. Regularized (min_child_samples=50, reg_alpha+reg_lambda, subsample+colsample_bytree) to bound overfit. Validation uses the most recent contiguous 20% of TRAIN REBAL DATES (R6-HIGH-Q8 fix: prevents same-date cross-section leakage that random-row validation would cause).",
+      "expected_exs_band_post_decay_post_r6": [0.00, 0.25]
+    },
+    {
+      "name": "ml_gkx_mlp",
+      "class": "youbet.stock.strategies.ml_ranker.MLRanker",
+      "optional": true,
+      "enable_flag": "STOCK_PHASE4_ENABLE_MLP=1",
+      "post_r6_note": "Codex R6 recommended DEFERRING MLP until ElasticNet + LightGBM produce a non-artifactual signal. Kept in precommit for completeness but status is DEFERRED, not pending.",
+      "params": {
+        "model_backend": "mlp",
+        "model_params": {
+          "hidden_layers": [32, 16],
+          "activation": "relu",
+          "dropout": 0.20,
+          "weight_decay": 1e-4,
+          "lr": 1e-3,
+          "batch_size": 4096,
+          "max_epochs": 100,
+          "early_stop_patience": 10,
+          "random_seed": 42
+        },
+        "validation_scheme": "recent_dates_contiguous",
+        "validation_fraction_of_train": 0.20,
+        "decile_breakpoint": 0.10,
+        "min_holdings": 20,
+        "max_holdings": 100,
+        "weighting": "equal"
+      },
+      "rationale": "Shallow MLP per GKX. Stretch goal — only run AFTER linear + GBM have gone through contamination analysis and Codex R7.",
+      "expected_exs_band_post_decay_post_r6": [0.00, 0.20]
+    }
+  ],
+  "feature_importance_stability": {
+    "method": "Tree models: record gain-based feature importances per fold. Linear: record absolute coefficients. Require top-10 overlap >= 50% between any two adjacent folds (CLAUDE.md #18). Record in audit; do not hard-fail.",
+    "rationale": "Feature-importance instability is a leading indicator of overfit / regime-chasing."
+  },
+  "statistical_treatment_post_r6": {
+    "bootstrap_n_replicates": 10000,
+    "bootstrap_block_length": 22,
+    "bootstrap_seed": 42,
+    "holm_scope_authoritative": "Joint Phase 1 ∪ Phase 3 ∪ Phase 4 = N=9 (Phase 1 = 4 + Phase 3 = 3 + Phase 4 = 2; MLP is DEFERRED and not in the family). If MLP is later enabled, it requires an explicit re-commitment of this JSON that expands N to 10. This is the authoritative PASS basis per CLAUDE.md #6 extension 2026-04-22.",
+    "holm_scope_secondary": "Within-phase Phase 4 (N=2 or 3) — informational only.",
+    "two_sided_p_reported": true,
+    "gate_evaluated": true,
+    "gate_claims_publishable_only_if_all_true": [
+      "exSh > 0.20 AND hAdj_up < 0.05 (joint N=9 Holm; N=10 if MLP was re-committed and run) AND ci_lo > 0",
+      "Strategy is COVERAGE-VALID overall (>= 8 coverage-valid folds)",
+      "All contamination_checks_required_before_any_gate_claim have been RUN and documented",
+      "No artifact decomposition reproduces the effect (R5 precedent: regime split + coverage check + stripped-window Holm run BEFORE publication)"
+    ]
+  },
+  "contamination_checks_required_before_any_gate_claim_post_r6": [
+    "1. Zero/near-zero return day distribution by year (R5 Artifact-1 check).",
+    "2. Pre-AI (2012-2022) vs post-AI (2023-2026) regime split per strategy — joint Holm-across-regimes.",
+    "3. Decade split: 2012-2019 vs 2020-2026 per strategy.",
+    "4. COVID exclusion: rerun on [2012-2020-01] ∪ [2021-07-2026] (uses config.yaml phase2.exclude_windows.covid).",
+    "5. Artifact-stripped 2012-2022 Joint Holm(N=9; or N=10 if MLP enabled) rerun.",
+    "6. Feature-importance top-10 stability across adjacent folds.",
+    "7. Sector-neutral variant (orthogonalize to GICS sector mean) — does the signal persist?",
+    "8. Mag7 exposure decomposition: report weight share of AAPL+MSFT+GOOGL+AMZN+NVDA+META+TSLA at each rebal; deconstruct post-2023 alpha by Mag7-in/out.",
+    "9. Universe-count stability: number of coverage-valid tickers per rebalance over time; flag if trending.",
+    "10. Valid-feature coverage by year: heatmap of feature × year → fraction of tickers with non-NaN; flag coverage drift.",
+    "11. Raw-forward-return sensitivity: rerun predictions against raw 22d forward return (no cross-sectional demean) — signs and ranks should be stable.",
+    "12. Coverage-invalid-rebal list: count + list of rebalances excluded per strategy; note the Holm family is NOT resized post-hoc."
+  ],
+  "exclusions_post_r6": {
+    "first_test_start_min": "2012-01-01",
+    "coverage_invalid_rebals_excluded_from_return_series": true,
+    "holm_family_frozen_post_hoc": "Holm N is committed at this pre-commit; coverage-invalidation of folds does NOT permit resizing N downward post-hoc."
+  },
+  "known_limitations": [
+    "Only 20 of GKX's 94 characteristics are in scope; about 42 are computable from yfinance+EDGAR and we selected 20 on literature-support grounds, not empirical R².",
+    "S&P 500 universe (not full CRSP) — size dispersion much smaller than GKX universe; size-based features (mvel1) excluded as non-discriminating (see features.gkx_eligibility_audit).",
+    "Cross-sectional rank transform per date means features are relative within-rebalance, not absolute.",
+    "MLP is DEFERRED per R6 — will run only after ElasticNet + LightGBM pass contamination analysis.",
+    "Coverage-invalidation policy excludes rebalances from the confirmatory estimator; a secondary T-bill-parking return series is saved for live-simulation purposes only."
+  ],
+  "references_codex": {
+    "r3_precedent": "LowVol post_2013 CI-excludes-zero claim retracted — do not re-litigate without seed-robustness.",
+    "r5_precedent": "Piotroski significant-negative claim retracted after coverage-artifact + regime decomposition. Phase 4 MUST run contamination checks BEFORE publishing any gate pass.",
+    "r6_precommit_review": "Addressed 4 HIGH: Q1 feature-framing honesty, Q4 coverage→invalidation (not T-bill), Q5 Holm scope extended in CLAUDE.md #6, Q8 date-contiguous validation. Addressed 4 MED: Q2 PIT rank-against-test-peers stated explicitly, Q3 target relabeled 'GKX-inspired', Q6 Sharpe bands narrowed, Q7 contamination checks expanded 5→12."
+  }
+}

@@ -15,12 +15,14 @@ data/reference/
 !workflows/etf/data/reference/vanguard_universe.csv
 !workflows/commodity/data/reference/commodity_universe.csv
 !workflows/cagr-max/universe/*.csv
+!workflows/stock-selection/universe/*.csv
 
 # Models
 *.pkl
 *.joblib
 *.json
 !workflows/cagr-max/precommit/*.json
+!workflows/stock-selection/precommit/*.json
 models/*.xgb
 models/*.lgb
 
@@ -28,6 +30,13 @@ models/*.lgb
 catboost_info/
 *.tfevents
 *.tsv
+
+# Transient logs from helper scripts (keep-awake wakelock, run logs)
+scripts/*.log
+workflows/*/artifacts/*.log
+
+# Claude Code runtime files (settings, scheduled-task locks)
+.claude/
 
 # Database files
 *.sqlite
