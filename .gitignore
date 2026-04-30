@@ -23,6 +23,7 @@ data/reference/
 *.json
 !workflows/cagr-max/precommit/*.json
 !workflows/stock-selection/precommit/*.json
+!workflows/real-world-test/precommit/*.json
 models/*.xgb
 models/*.lgb
 

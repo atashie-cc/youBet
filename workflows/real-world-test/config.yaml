@@ -1,0 +1,61 @@
+# v3 strategy parameters — LOCKED
+# Any change requires explicit re-commit in CLAUDE.md.
+
+strategy:
+  name: v3_real_world
+  weights:
+    vti_core: 0.60
+    upro_satellite: 0.30
+    iau_gold: 0.10
+  overlays:
+    vti_core:
+      enabled: true
+      signal_ticker: VTI       # use VTI's own price for SMA
+      sma_window: 100
+      cadence: weekly          # Friday close
+      cash_proxy: BIL          # SGOV (post-2020) / BIL (pre-2020)
+    upro_satellite:
+      enabled: true
+      signal_ticker: SPY       # underlying signal, not UPRO NAV
+      sma_window: 100
+      cadence: weekly
+      cash_proxy: BIL
+    iau_gold:
+      enabled: false
+  rebalance:
+    annual: true
+    drift_threshold: 0.07      # rebalance if any sleeve drifts > 7pp
+
+costs:
+  switching_cost_bps: 10.0     # one-way per overlay flip
+  upro_expense_ratio: 0.0091
+  iau_expense_ratio: 0.0025
+  vti_expense_ratio: 0.0003
+  bil_expense_ratio: 0.0014    # ~13.6 bps per Vanguard / iShares short Treasury
+
+synthetic_3x:
+  borrow_spread_bps: 25.0      # E2-calibrated for SMA strategies
+  expense_ratio: 0.0091
+
+historical:
+  start_date: 1998-01-02
+  end_date: 2026-04-16
+  initial_capital: 100000.0
+
+monte_carlo:
+  n_paths: 10000
+  horizon_years: 25
+  block_length_weeks: 4        # ~22 trading days, Politis-Romano spirit
+  seed: 20260429
+  bootstrap_sample_start: 1998-01-02   # full sample including dot-com
+  initial_capital: 100000.0
+
+benchmarks:
+  - name: vti_buy_hold
+    type: buy_and_hold
+    ticker: VTI
+  - name: vti_60_bnd_40
+    type: weighted_static
+    weights:
+      VTI: 0.60
+      BND: 0.40
