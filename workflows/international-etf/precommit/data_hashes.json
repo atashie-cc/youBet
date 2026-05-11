@@ -1,0 +1,47 @@
+{
+  "snapshot_date": "2026-05-02",
+  "snapshot_dir": "data/snapshots/2026-05-02",
+  "n_files": 8,
+  "hashes": {
+    "data/snapshots/2026-05-02/prices.parquet": {
+      "sha256": "c7026ef6feb922c88032e15e6f0b66567d3e108b8ca04f7960c7a60d2c113c34",
+      "bytes": 721355,
+      "mtime": 1777762873
+    },
+    "data/snapshots/2026-05-02/macro/dxy.csv": {
+      "sha256": "ac38a36c792160f6f1a083a4e2f4bd85605a25e109008e6a5db28138c2eb2ba6",
+      "bytes": 189063,
+      "mtime": 1777762874
+    },
+    "data/snapshots/2026-05-02/macro/dbc.csv": {
+      "sha256": "46a9e8193985e13128391329a705fb3943d78def0a6bd9b3cf3619cec12ee9b8",
+      "bytes": 155811,
+      "mtime": 1777762874
+    },
+    "data/snapshots/2026-05-02/macro/dgs10.csv": {
+      "sha256": "01ace9572528affd3743db21eaa3e21f036b4a35f8fabfd4f93c4ba090ead34a",
+      "bytes": 110641,
+      "mtime": 1777762876
+    },
+    "data/snapshots/2026-05-02/macro/bund10y.csv": {
+      "sha256": "9f18f9d7dda2ea780d00edf46d3ec9cec38e74bcbd12a0a332dec6dabfb74b4f",
+      "bytes": 7140,
+      "mtime": 1777762877
+    },
+    "data/snapshots/2026-05-02/macro/tb3ms.csv": {
+      "sha256": "89227fa63ef37084a2fbecbec14cb5cc3d6ba7dba45a6b4d58e1992d5111987c",
+      "bytes": 5154,
+      "mtime": 1777762878
+    },
+    "data/snapshots/2026-05-02/macro/twi_broad_dollar.csv": {
+      "sha256": "ab3098e54b0e88dcc7fd675b64f7331ad223822dbf8919d2a2e5a89ec939b0a1",
+      "bytes": 106989,
+      "mtime": 1777762879
+    },
+    "data/snapshots/2026-05-02/macro/breakeven_10y.csv": {
+      "sha256": "1c929bcc140b513f5a76dbbefa45be2acd855434e73952f44f1e5d20eb03cc23",
+      "bytes": 101936,
+      "mtime": 1777762879
+    }
+  }
+}

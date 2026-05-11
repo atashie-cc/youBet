@@ -16,6 +16,7 @@ data/reference/
 !workflows/commodity/data/reference/commodity_universe.csv
 !workflows/cagr-max/universe/*.csv
 !workflows/stock-selection/universe/*.csv
+!workflows/international-etf/data/reference/international_universe.csv
 
 # Models
 *.pkl
@@ -24,6 +25,7 @@ data/reference/
 !workflows/cagr-max/precommit/*.json
 !workflows/stock-selection/precommit/*.json
 !workflows/real-world-test/precommit/*.json
+!workflows/international-etf/precommit/*.json
 models/*.xgb
 models/*.lgb
 

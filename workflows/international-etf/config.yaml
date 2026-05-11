@@ -1,0 +1,181 @@
+# International ETF Workflow — Pre-committed configuration
+# These values are LOCKED at workflow inception. Any change requires
+# a new pre-commit row in research/log.md with explicit rationale, AND
+# re-running ALL strategies under the new spec.
+
+workflow:
+  name: "international-etf"
+  description: "When (if ever) does ex-US ETF allocation beat 100% VTI for a long-horizon US investor?"
+
+# ---------------------------------------------------------------------------
+# Benchmark — locked
+# ---------------------------------------------------------------------------
+benchmark:
+  ticker: "VTI"
+  strategy: "buy_and_hold"
+  rebalance: "none"  # pure B&H, no rebalance bands
+
+# ---------------------------------------------------------------------------
+# Universe — international ETF candidates
+# ---------------------------------------------------------------------------
+universe:
+  reference_file: "data/reference/international_universe.csv"
+  primary_unhedged_developed: ["VXUS", "VEA", "EFA", "IEFA", "SCHF", "IXUS"]
+  primary_unhedged_em: ["VWO", "EEM", "IEMG"]
+  regional: ["VGK", "VPL", "EWJ"]   # Europe, Pacific, Japan
+  small_cap_intl: ["VSS", "SCHC"]
+  hedged_developed: ["HEFA", "HEDJ", "DBEF"]
+  benchmark_us: ["VTI", "VOO"]
+  cash: ["VGSH", "BIL", "SGOV"]
+
+# Pre-2001 splice candidates (for sub-period robustness)
+historical_indices:
+  msci_eafe: "MSCI EAFE TR (Ken French international factors splice)"
+  msci_em:   "MSCI EM TR (Ken French international factors splice; pre-1988 unavailable)"
+
+# ---------------------------------------------------------------------------
+# Walk-forward parameters — LOCKED v1.1
+# ---------------------------------------------------------------------------
+walk_forward:
+  train_months: 36
+  test_months: 12
+  step_months: 12
+  rebalance_frequency: "monthly"  # signal-evaluation cadence
+  rebalance_action: "annual"      # actual portfolio rebalance: annual only (v1.1 H2 fix; drift-band variant moved to Phase 4 sensitivity)
+  initial_capital: 100_000.0
+  in_sample_start: "2001-08-14"   # EFA inception; pre-2001 splicing rejected v1.1 H3
+  in_sample_end:   "2026-04-30"
+
+# Mechanical equal-thirds sub-period boundaries (Phase 4 P3, v1.1 M4 fix)
+sub_periods:
+  - id: 1
+    start: "2001-08-14"
+    end:   "2009-12-31"
+  - id: 2
+    start: "2010-01-01"
+    end:   "2018-04-30"
+  - id: 3
+    start: "2018-05-01"
+    end:   "2026-04-30"
+
+# ---------------------------------------------------------------------------
+# Stationary block bootstrap — LOCKED v1.1
+# ---------------------------------------------------------------------------
+bootstrap:
+  method: "stationary_politis_romano"
+  block_length_days: 22
+  block_length_months_for_horizon_overlap: 24   # used for V1 quintile/3y-forward test only (M5 fix)
+  n_resamples: 10_000
+  ci_level: 0.90
+  multiplicity_correction: "holm"
+  holm_denominator: 18   # LOCKED v1.3 (M5 dropped 2026-05-02 due to no intl CAPE data); was 19 in v1.1
+
+# ---------------------------------------------------------------------------
+# Strict gate — LOCKED v1.1; ExSharpe threshold subject to Phase −1 power-analysis revision
+# ---------------------------------------------------------------------------
+gate:
+  # Phase -1 power analysis (2026-05-01) found:
+  #   power at ExSharpe=0.20: 0.04  (FAR below 0.50)
+  #   power at ExSharpe=0.40: 0.30  (also below 0.50 — pre-committed HALT triggered)
+  # Per pre-committed decision rule: raise gate to 0.40 (fallback), AND mark
+  # the workflow as DESCRIPTIVE/EXPLORATORY since even the fallback is
+  # underpowered. No strategy will be claimed PROCEED-confirmed; results
+  # are reported as point estimates with CIs only.
+  excess_sharpe_min: 0.40
+  holm_p_max: 0.05
+  ci_lower_min: 0.0
+  log_excess_min: 0.0
+  log_excess_ci_lower_min: 0.0
+  power_threshold_min: 0.50
+  workflow_tier: "descriptive_exploratory"   # downgraded from "confirmatory" 2026-05-01
+  power_at_locked_gate: 0.30                  # for documentation; from artifacts/phase_minus_1_power_results.json
+
+# ---------------------------------------------------------------------------
+# Costs — LOCKED, mirrors etf/ workflow
+# ---------------------------------------------------------------------------
+costs:
+  schedule_source: "src/youbet/etf/costs.py COST_SCHEDULE"
+  # Reminder of locked values (do not edit here):
+  # broad_us_equity:    1.0 + 0.0  bps one-way
+  # broad_intl_equity:  2.0 + 1.0  bps one-way
+  # broad_us_bond:      1.0 + 0.0  bps one-way
+  # cash_equivalent:    1.0 + 0.0  bps one-way
+  # default:            3.0 + 1.0  bps one-way
+  # Hedged-ETF FX-overlay drag is already inside the expense ratio (HEFA 35bps, HEDJ 45bps)
+  # v1.1 L3 fix: hedged ETFs also incur ~15 bps/yr forward-roll friction NOT in expense ratio
+  hedge_friction_bps_annual: 15
+  # v1.1 M7 fix: regime-aware multiplier or sensitivity sweep. Phase −1 cost analysis decides.
+  crisis_multiplier_method: "TBD_phase_minus_1"   # one of: "regime_aware_3x", "sensitivity_sweep_3_5_10", "fixed_3"
+  sensitivity_sweep_bps: [3, 5, 10]
+  pass_at_strict_cost_bps: 10   # PROCEED requires passing at the highest cost as well
+
+# ---------------------------------------------------------------------------
+# Cash and risk-free
+# ---------------------------------------------------------------------------
+cash:
+  rate_source: "FRED TB3MS (3-month T-bill, end-of-month)"
+  carry: true   # risk-off positions earn T-bill, never zero
+
+# ---------------------------------------------------------------------------
+# Macro signals — pre-specified, PIT-enforced
+# ---------------------------------------------------------------------------
+macro_signals:
+  dxy:
+    source: "yfinance DX-Y.NYB"
+    publication_lag_days: 0
+  broad_dollar:
+    source: "FRED DTWEXBGS"
+    publication_lag_days: 1
+  us_10y_yield:
+    source: "FRED DGS10"
+    publication_lag_days: 1
+  german_bund_10y:
+    source: "FRED IRLTLT01DEM156N"
+    publication_lag_days: 30   # monthly OECD release, conservative lag
+  us_cape:
+    source: "Robert Shiller online dataset"
+    publication_lag_days: 30
+  intl_cape:
+    source: "Siblis Research / Research Affiliates / Barclays (monthly)"
+    publication_lag_days: 60   # v1.1 M2 fix; Siblis publishes mid-following-month + foreign quarterly earnings lag
+
+# ---------------------------------------------------------------------------
+# Phases
+# ---------------------------------------------------------------------------
+phases:
+  - id: -1
+    name: "Pre-Phase 0 prep"
+    purpose: "Power analysis, Vanguard PDF verification, Holm denominator audit, cost-model crisis sensitivity, data hashing. MANDATORY before Phase 0."
+    deliverables: ["phase_minus_1_power.py", "phase_minus_1_cost_sensitivity.py", "precommit/data_hashes.json"]
+  - id: 0
+    name: "Efficiency test"
+    purpose: "Does any single ex-US ETF beat VTI on walk-forward Sharpe? Kill if no."
+    strategies: ["100pct_VXUS", "100pct_VEA", "100pct_VWO", "100pct_EFA"]
+    holm_count: 4
+  - id: 1
+    name: "Static allocations"
+    purpose: "Sweep VTI/VXUS mix; identify pareto frontier vs 100% VTI."
+    weights: [0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 1.00]
+    rebalance: "annual"   # v1.1 H2 fix; drift-band moved to Phase 4 sensitivity
+    holm_count: 7   # excludes 0% weight (= VTI benchmark)
+  - id: 2
+    name: "Regime-conditional"
+    purpose: "Test pre-committed regime gates: DXY sign, US-Bund yield-diff sign-change, DBC sign, composite, mean-reversion."
+    signals: ["dxy_12m_sign", "us_bund_yield_diff_sign_change", "dbc_12m_sign", "composite_3_of_4", "ex_us_36m_rel_sign"]
+    holm_count: 8   # M1×3 + M3 + M4×2 + M5 + M6 (M2 dropped v1.1 H2)
+  - id: 3
+    name: "Currency hedging — EXPLORATORY"
+    purpose: "HEFA vs VEA, dynamic-hedge toggle. 2014-2026 sample only (synthetic pre-2014 dropped v1.1 H1). NOT IN HOLM DENOMINATOR."
+    strategies: ["C1_HEFA_vs_VEA_40pct", "C3_DXY_hedge_toggle_40pct"]
+    holm_count: 0
+  - id: 4
+    name: "Robustness"
+    purpose: "P1a/P1b mean-shifted placebo, P2 linear-scaling sweep, P3 mechanical equal-thirds sub-bootstrap, P4 regime-shuffle, P5 Codex review."
+    placebo_methods: ["P1a_usd_return_mean_shift", "P1b_local_equity_component_mean_shift", "P4_regime_shuffle"]
+    sub_period_ids: [1, 2, 3]
+
+# ---------------------------------------------------------------------------
+# Reproducibility
+# ---------------------------------------------------------------------------
+seed: 42
+random_state: 42

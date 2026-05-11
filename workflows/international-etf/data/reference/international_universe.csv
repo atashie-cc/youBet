@@ -1,0 +1,24 @@
+ticker,name,inception_date,expense_ratio,category,region,hedged
+VTI,Vanguard Total Stock Market ETF,2001-05-24,0.0003,broad_us_equity,US,no
+VOO,Vanguard S&P 500 ETF,2010-09-07,0.0003,broad_us_equity,US,no
+VXUS,Vanguard Total International Stock ETF,2011-01-26,0.0005,broad_intl_equity,ex-US,no
+VEA,Vanguard FTSE Developed Markets ETF,2007-07-20,0.0005,broad_intl_equity,DM_ex-US,no
+VWO,Vanguard FTSE Emerging Markets ETF,2005-03-04,0.0008,broad_intl_equity,EM,no
+VGK,Vanguard FTSE Europe ETF,2005-03-04,0.0008,broad_intl_equity,Europe,no
+VPL,Vanguard FTSE Pacific ETF,2005-03-04,0.0008,broad_intl_equity,Pacific,no
+VSS,Vanguard FTSE All-World ex-US Small-Cap ETF,2009-04-02,0.0007,broad_intl_equity,ex-US_small,no
+EFA,iShares MSCI EAFE ETF,2001-08-14,0.0032,broad_intl_equity,DM_ex-US,no
+IEFA,iShares Core MSCI EAFE ETF,2012-10-18,0.0007,broad_intl_equity,DM_ex-US,no
+EEM,iShares MSCI Emerging Markets ETF,2003-04-07,0.0070,broad_intl_equity,EM,no
+IEMG,iShares Core MSCI Emerging Markets ETF,2012-10-18,0.0009,broad_intl_equity,EM,no
+IXUS,iShares Core MSCI Total International Stock ETF,2012-10-18,0.0007,broad_intl_equity,ex-US,no
+SCHF,Schwab International Equity ETF,2009-11-03,0.0006,broad_intl_equity,DM_ex-US,no
+SCHE,Schwab Emerging Markets Equity ETF,2010-01-14,0.0011,broad_intl_equity,EM,no
+SCHC,Schwab International Small-Cap Equity ETF,2010-01-14,0.0011,broad_intl_equity,ex-US_small,no
+HEFA,iShares Currency Hedged MSCI EAFE ETF,2014-01-31,0.0035,broad_intl_equity,DM_ex-US,yes
+HEDJ,WisdomTree Europe Hedged Equity ETF,2009-12-31,0.0058,broad_intl_equity,Europe,yes
+DBEF,Xtrackers MSCI EAFE Hedged Equity ETF,2011-06-09,0.0035,broad_intl_equity,DM_ex-US,yes
+EWJ,iShares MSCI Japan ETF,1996-03-12,0.0050,broad_intl_equity,Japan,no
+VGSH,Vanguard Short-Term Treasury ETF,2009-11-19,0.0004,cash_equivalent,US,no
+BIL,SPDR Bloomberg 1-3 Month T-Bill ETF,2007-05-25,0.0014,cash_equivalent,US,no
+SGOV,iShares 0-3 Month Treasury Bond ETF,2020-05-26,0.0007,cash_equivalent,US,no

@@ -51,7 +51,7 @@ class BacktestConfig:
     initial_capital: float = 100_000.0
 
     def __post_init__(self):
-        valid_freq = {"daily", "weekly", "monthly"}
+        valid_freq = {"daily", "weekly", "monthly", "annual"}
         if self.rebalance_frequency not in valid_freq:
             raise ValueError(
                 f"rebalance_frequency must be one of {valid_freq}, "
@@ -199,6 +199,19 @@ class Backtester:
                 test_dates.to_period("M")
             ).first()
             return pd.DatetimeIndex(monthly.values)
+        elif freq == "annual":
+            # First trading day of each year. NOTE: most backtesters force a
+            # rebalance at the start of each test fold even on annual cadence;
+            # this implementation simply takes the first trading day of every
+            # calendar year intersected with the test window. For 12-month
+            # test windows aligned with calendar years the result is one
+            # rebalance per fold; for offset windows it can be zero or two
+            # rebalances depending on alignment. Acceptable for buy-and-hold
+            # variants where the rebalance is corrective only.
+            annual = test_dates.to_series().groupby(
+                test_dates.to_period("Y")
+            ).first()
+            return pd.DatetimeIndex(annual.values)
         else:
             raise ValueError(f"Unknown rebalance frequency: {freq}")
 
