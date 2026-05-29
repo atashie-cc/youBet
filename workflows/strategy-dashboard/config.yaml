@@ -1,0 +1,48 @@
+experiment:
+  name: strategy_dashboard
+  description: Multi-criteria comparative scoring across ~65 strategies from 6 workflows + 6 reference baselines
+  frozen_at: 2026-05-12
+
+window:
+  common_start: "2010-01-05"
+  common_end:   "2026-04-30"
+
+regime_periods:
+  gfc_2008:           ["2007-10-01", "2009-06-30"]
+  covid_2020:         ["2020-02-01", "2020-05-31"]
+  stagflation_2022:   ["2022-01-01", "2022-12-31"]
+
+benchmark:
+  vti_parquet: "workflows/real-world-test/artifacts/panel.parquet"
+  vti_column:  "VTI"
+
+# Default weights = 1.0 for all 16 metrics. User can tune these to re-prioritize without code edits.
+metric_weights:
+  cagr: 1.0
+  annualized_return: 1.0
+  median_rolling_1y_return: 1.0
+  sharpe: 1.0
+  sortino: 1.0
+  info_ratio_vs_vti: 1.0
+  max_drawdown: 1.0
+  calmar: 1.0
+  longest_underwater_days: 1.0
+  cvar_95: 1.0
+  skew: 1.0
+  worst_rolling_12mo: 1.0
+  return_gfc_2008: 1.0
+  return_covid_2020: 1.0
+  return_stagflation_2022: 1.0
+  rolling_sharpe_std: 1.0
+
+metric_groups:
+  return:        [cagr, annualized_return, median_rolling_1y_return]
+  risk_adjusted: [sharpe, sortino, info_ratio_vs_vti]
+  drawdown:      [max_drawdown, calmar, longest_underwater_days]
+  tail:          [cvar_95, skew, worst_rolling_12mo]
+  regime:        [return_gfc_2008, return_covid_2020, return_stagflation_2022]
+  stability:     [rolling_sharpe_std]
+
+lower_is_better:
+  - longest_underwater_days
+  - rolling_sharpe_std

@@ -1,0 +1,662 @@
+{
+  "frozen_at": "2026-05-12T15:19:06.695382Z",
+  "git_sha": "f5a5b5e0529cfdeaa73ebba0872766e53bea164e",
+  "common_window": [
+    "2010-01-05",
+    "2026-04-30"
+  ],
+  "regime_periods": {
+    "gfc_2008": [
+      "2007-10-01",
+      "2009-06-30"
+    ],
+    "covid_2020": [
+      "2020-02-01",
+      "2020-05-31"
+    ],
+    "stagflation_2022": [
+      "2022-01-01",
+      "2022-12-31"
+    ]
+  },
+  "n_strategies": 63,
+  "strategies": [
+    {
+      "id": "commodity__IAU_5pct_in_60_40",
+      "workflow": "commodity",
+      "parquet": "workflows/commodity/artifacts/phase2_returns.parquet",
+      "candidate_column": "IAU_5pct",
+      "category": "commodity_sleeve",
+      "implementability": "real_etfs",
+      "notes": "5% IAU in 60/40 VTI/BND (Phase 2 static sleeve)"
+    },
+    {
+      "id": "commodity__IAU_10pct_in_60_40",
+      "workflow": "commodity",
+      "parquet": "workflows/commodity/artifacts/phase2_returns.parquet",
+      "candidate_column": "IAU_10pct",
+      "category": "commodity_sleeve",
+      "implementability": "real_etfs",
+      "notes": "10% IAU in 60/40 VTI/BND (Phase 2 static sleeve)"
+    },
+    {
+      "id": "commodity__IAU_15pct_in_60_40",
+      "workflow": "commodity",
+      "parquet": "workflows/commodity/artifacts/phase2_returns.parquet",
+      "candidate_column": "IAU_15pct",
+      "category": "commodity_sleeve",
+      "implementability": "real_etfs",
+      "notes": "15% IAU in 60/40 VTI/BND (Phase 2 static sleeve)"
+    },
+    {
+      "id": "commodity__IAU_20pct_in_60_40",
+      "workflow": "commodity",
+      "parquet": "workflows/commodity/artifacts/phase2_returns.parquet",
+      "candidate_column": "IAU_20pct",
+      "category": "commodity_sleeve",
+      "implementability": "real_etfs",
+      "notes": "20% IAU in 60/40 VTI/BND (Phase 2 static sleeve)"
+    },
+    {
+      "id": "commodity__static_54_36_10_iau_walkforward",
+      "workflow": "commodity",
+      "parquet": "workflows/commodity/artifacts/phase2b_walkforward_returns.parquet",
+      "candidate_column": "54_36_10_IAU",
+      "category": "commodity_sleeve",
+      "implementability": "real_etfs",
+      "notes": "Walk-forward variant of 10% IAU in 60/40 \u2014 most robust commodity finding"
+    },
+    {
+      "id": "commodity__iau_sma100_sleeve",
+      "workflow": "commodity",
+      "parquet": "workflows/commodity/artifacts/phase3_returns.parquet",
+      "candidate_column": "IAU_SMA100_sleeve",
+      "category": "commodity_timing",
+      "implementability": "real_etfs",
+      "notes": "SMA100 timing on IAU portion of 54/36/10 sleeve"
+    },
+    {
+      "id": "commodity__macro_dbc_additive",
+      "workflow": "commodity",
+      "parquet": "workflows/commodity/artifacts/phase6_returns.parquet",
+      "candidate_column": "6.4_ADDITIVE",
+      "category": "commodity_macro",
+      "implementability": "etf_dbc",
+      "notes": "Macro-gated DBC (inflation+dollar additive rule). Prior Sharpe-diff +0.456"
+    },
+    {
+      "id": "commodity__macro_dbc_dollar_only",
+      "workflow": "commodity",
+      "parquet": "workflows/commodity/artifacts/phase6_returns.parquet",
+      "candidate_column": "6.4_DOLLAR_ONLY",
+      "category": "commodity_macro",
+      "implementability": "etf_dbc",
+      "notes": "DXY-only gating (no inflation signal) \u2014 captures ~88% of additive effect"
+    },
+    {
+      "id": "factor_timing__Mkt-RF_sma_100",
+      "workflow": "factor-timing",
+      "parquet": "workflows/factor-timing/artifacts/phase1_timing_returns.parquet",
+      "candidate_column": "Mkt-RF_sma_100",
+      "category": "paper_factor",
+      "implementability": "paper_only",
+      "structural_caveat": "Ken French long-short factor spread; not directly investable; ETF bridge only validated for HML\u2192VLUE",
+      "notes": "Mkt-RF_sma_100 (Ken French paper factor with SMA timing). Native benchmark=__bench_Mkt-RF__ (factor B&H)"
+    },
+    {
+      "id": "factor_timing__Mkt-RF_sma_200",
+      "workflow": "factor-timing",
+      "parquet": "workflows/factor-timing/artifacts/phase1_timing_returns.parquet",
+      "candidate_column": "Mkt-RF_sma_200",
+      "category": "paper_factor",
+      "implementability": "paper_only",
+      "structural_caveat": "Ken French long-short factor spread; not directly investable; ETF bridge only validated for HML\u2192VLUE",
+      "notes": "Mkt-RF_sma_200 (Ken French paper factor with SMA timing). Native benchmark=__bench_Mkt-RF__ (factor B&H)"
+    },
+    {
+      "id": "factor_timing__SMB_sma_100",
+      "workflow": "factor-timing",
+      "parquet": "workflows/factor-timing/artifacts/phase1_timing_returns.parquet",
+      "candidate_column": "SMB_sma_100",
+      "category": "paper_factor",
+      "implementability": "paper_only",
+      "structural_caveat": "Ken French long-short factor spread; not directly investable; ETF bridge only validated for HML\u2192VLUE",
+      "notes": "SMB_sma_100 (Ken French paper factor with SMA timing). Native benchmark=__bench_SMB__ (factor B&H)"
+    },
+    {
+      "id": "factor_timing__SMB_sma_200",
+      "workflow": "factor-timing",
+      "parquet": "workflows/factor-timing/artifacts/phase1_timing_returns.parquet",
+      "candidate_column": "SMB_sma_200",
+      "category": "paper_factor",
+      "implementability": "paper_only",
+      "structural_caveat": "Ken French long-short factor spread; not directly investable; ETF bridge only validated for HML\u2192VLUE",
+      "notes": "SMB_sma_200 (Ken French paper factor with SMA timing). Native benchmark=__bench_SMB__ (factor B&H)"
+    },
+    {
+      "id": "factor_timing__HML_sma_100",
+      "workflow": "factor-timing",
+      "parquet": "workflows/factor-timing/artifacts/phase1_timing_returns.parquet",
+      "candidate_column": "HML_sma_100",
+      "category": "paper_factor",
+      "implementability": "paper_only",
+      "structural_caveat": "Ken French long-short factor spread; not directly investable; ETF bridge only validated for HML\u2192VLUE",
+      "notes": "HML_sma_100 (Ken French paper factor with SMA timing). Native benchmark=__bench_HML__ (factor B&H)"
+    },
+    {
+      "id": "factor_timing__HML_sma_200",
+      "workflow": "factor-timing",
+      "parquet": "workflows/factor-timing/artifacts/phase1_timing_returns.parquet",
+      "candidate_column": "HML_sma_200",
+      "category": "paper_factor",
+      "implementability": "paper_only",
+      "structural_caveat": "Ken French long-short factor spread; not directly investable; ETF bridge only validated for HML\u2192VLUE",
+      "notes": "HML_sma_200 (Ken French paper factor with SMA timing). Native benchmark=__bench_HML__ (factor B&H)"
+    },
+    {
+      "id": "factor_timing__RMW_sma_100",
+      "workflow": "factor-timing",
+      "parquet": "workflows/factor-timing/artifacts/phase1_timing_returns.parquet",
+      "candidate_column": "RMW_sma_100",
+      "category": "paper_factor",
+      "implementability": "paper_only",
+      "structural_caveat": "Ken French long-short factor spread; not directly investable; ETF bridge only validated for HML\u2192VLUE",
+      "notes": "RMW_sma_100 (Ken French paper factor with SMA timing). Native benchmark=__bench_RMW__ (factor B&H)"
+    },
+    {
+      "id": "factor_timing__RMW_sma_200",
+      "workflow": "factor-timing",
+      "parquet": "workflows/factor-timing/artifacts/phase1_timing_returns.parquet",
+      "candidate_column": "RMW_sma_200",
+      "category": "paper_factor",
+      "implementability": "paper_only",
+      "structural_caveat": "Ken French long-short factor spread; not directly investable; ETF bridge only validated for HML\u2192VLUE",
+      "notes": "RMW_sma_200 (Ken French paper factor with SMA timing). Native benchmark=__bench_RMW__ (factor B&H)"
+    },
+    {
+      "id": "factor_timing__CMA_sma_100",
+      "workflow": "factor-timing",
+      "parquet": "workflows/factor-timing/artifacts/phase1_timing_returns.parquet",
+      "candidate_column": "CMA_sma_100",
+      "category": "paper_factor",
+      "implementability": "paper_only",
+      "structural_caveat": "Ken French long-short factor spread; not directly investable; ETF bridge only validated for HML\u2192VLUE",
+      "notes": "CMA_sma_100 (Ken French paper factor with SMA timing). Native benchmark=__bench_CMA__ (factor B&H)"
+    },
+    {
+      "id": "factor_timing__CMA_sma_200",
+      "workflow": "factor-timing",
+      "parquet": "workflows/factor-timing/artifacts/phase1_timing_returns.parquet",
+      "candidate_column": "CMA_sma_200",
+      "category": "paper_factor",
+      "implementability": "paper_only",
+      "structural_caveat": "Ken French long-short factor spread; not directly investable; ETF bridge only validated for HML\u2192VLUE",
+      "notes": "CMA_sma_200 (Ken French paper factor with SMA timing). Native benchmark=__bench_CMA__ (factor B&H)"
+    },
+    {
+      "id": "factor_timing__UMD_sma_100",
+      "workflow": "factor-timing",
+      "parquet": "workflows/factor-timing/artifacts/phase1_timing_returns.parquet",
+      "candidate_column": "UMD_sma_100",
+      "category": "paper_factor",
+      "implementability": "paper_only",
+      "structural_caveat": "Ken French long-short factor spread; not directly investable; ETF bridge only validated for HML\u2192VLUE",
+      "notes": "UMD_sma_100 (Ken French paper factor with SMA timing). Native benchmark=__bench_UMD__ (factor B&H)"
+    },
+    {
+      "id": "factor_timing__UMD_sma_200",
+      "workflow": "factor-timing",
+      "parquet": "workflows/factor-timing/artifacts/phase1_timing_returns.parquet",
+      "candidate_column": "UMD_sma_200",
+      "category": "paper_factor",
+      "implementability": "paper_only",
+      "structural_caveat": "Ken French long-short factor spread; not directly investable; ETF bridge only validated for HML\u2192VLUE",
+      "notes": "UMD_sma_200 (Ken French paper factor with SMA timing). Native benchmark=__bench_UMD__ (factor B&H)"
+    },
+    {
+      "id": "etflab_max__p1_VGT",
+      "workflow": "etflab-max",
+      "parquet": "workflows/etflab-max/artifacts/phase1_returns.parquet",
+      "candidate_column": "p1_VGT",
+      "category": "etf_sector_growth",
+      "implementability": "real_etfs",
+      "notes": "VGT unleveraged sleeve"
+    },
+    {
+      "id": "etflab_max__p1_MGK",
+      "workflow": "etflab-max",
+      "parquet": "workflows/etflab-max/artifacts/phase1_returns.parquet",
+      "candidate_column": "p1_MGK",
+      "category": "etf_sector_growth",
+      "implementability": "real_etfs",
+      "notes": "MGK unleveraged sleeve"
+    },
+    {
+      "id": "etflab_max__p1_VUG",
+      "workflow": "etflab-max",
+      "parquet": "workflows/etflab-max/artifacts/phase1_returns.parquet",
+      "candidate_column": "p1_VUG",
+      "category": "etf_sector_growth",
+      "implementability": "real_etfs",
+      "notes": "VUG unleveraged sleeve"
+    },
+    {
+      "id": "etflab_max__VTI_1.5x_SMA100",
+      "workflow": "etflab-max",
+      "parquet": "workflows/etflab-max/artifacts/phase3_returns.parquet",
+      "candidate_column": "VTI_1.5x_SMA100",
+      "category": "leveraged_sma",
+      "implementability": "synthetic_leverage",
+      "notes": "VTI_1.5x_SMA100 (Phase 3 leveraged-SMA sweep)"
+    },
+    {
+      "id": "etflab_max__VTI_2.0x_SMA100",
+      "workflow": "etflab-max",
+      "parquet": "workflows/etflab-max/artifacts/phase3_returns.parquet",
+      "candidate_column": "VTI_2.0x_SMA100",
+      "category": "leveraged_sma",
+      "implementability": "synthetic_leverage",
+      "notes": "VTI_2.0x_SMA100 (Phase 3 leveraged-SMA sweep)"
+    },
+    {
+      "id": "etflab_max__VTI_2.5x_SMA100",
+      "workflow": "etflab-max",
+      "parquet": "workflows/etflab-max/artifacts/phase3_returns.parquet",
+      "candidate_column": "VTI_2.5x_SMA100",
+      "category": "leveraged_sma",
+      "implementability": "synthetic_leverage",
+      "notes": "VTI_2.5x_SMA100 (Phase 3 leveraged-SMA sweep)"
+    },
+    {
+      "id": "etflab_max__VTI_3.0x_SMA100",
+      "workflow": "etflab-max",
+      "parquet": "workflows/etflab-max/artifacts/phase3_returns.parquet",
+      "candidate_column": "VTI_3.0x_SMA100",
+      "category": "leveraged_sma",
+      "implementability": "synthetic_leverage",
+      "notes": "VTI_3.0x_SMA100 (Phase 3 leveraged-SMA sweep)"
+    },
+    {
+      "id": "etflab_max__p1_MGK_2.0x_SMA100",
+      "workflow": "etflab-max",
+      "parquet": "workflows/etflab-max/artifacts/phase3_returns.parquet",
+      "candidate_column": "p1_MGK_2.0x_SMA100",
+      "category": "leveraged_sma",
+      "implementability": "synthetic_leverage",
+      "notes": "p1_MGK_2.0x_SMA100 (Phase 3 leveraged-SMA sweep)"
+    },
+    {
+      "id": "etflab_max__p1_VGT_2.0x_SMA100",
+      "workflow": "etflab-max",
+      "parquet": "workflows/etflab-max/artifacts/phase3_returns.parquet",
+      "candidate_column": "p1_VGT_2.0x_SMA100",
+      "category": "leveraged_sma",
+      "implementability": "synthetic_leverage",
+      "notes": "p1_VGT_2.0x_SMA100 (Phase 3 leveraged-SMA sweep)"
+    },
+    {
+      "id": "etflab_max__macro_factor_aggressive_2.0x_SMA100",
+      "workflow": "etflab-max",
+      "parquet": "workflows/etflab-max/artifacts/phase3_returns.parquet",
+      "candidate_column": "macro_factor_aggressive_2.0x_SMA100",
+      "category": "leveraged_sma",
+      "implementability": "synthetic_leverage",
+      "notes": "macro_factor_aggressive_2.0x_SMA100 (Phase 3 leveraged-SMA sweep)"
+    },
+    {
+      "id": "etflab_max__macro_factor_aggressive_2.5x_SMA100",
+      "workflow": "etflab-max",
+      "parquet": "workflows/etflab-max/artifacts/phase3_returns.parquet",
+      "candidate_column": "macro_factor_aggressive_2.5x_SMA100",
+      "category": "leveraged_sma",
+      "implementability": "synthetic_leverage",
+      "notes": "macro_factor_aggressive_2.5x_SMA100 (Phase 3 leveraged-SMA sweep)"
+    },
+    {
+      "id": "etflab_max__blend_2.0x_SMA100",
+      "workflow": "etflab-max",
+      "parquet": "workflows/etflab-max/artifacts/phase5_returns.parquet",
+      "candidate_column": "blend_2.0x_SMA100",
+      "category": "blend_leveraged",
+      "implementability": "synthetic_leverage",
+      "notes": "Phase 5 blend at 2x with SMA100"
+    },
+    {
+      "id": "etflab_max__equal_weight_blend",
+      "workflow": "etflab-max",
+      "parquet": "workflows/etflab-max/artifacts/phase5_returns.parquet",
+      "candidate_column": "equal_weight_blend",
+      "category": "blend",
+      "implementability": "real_etfs_blend",
+      "notes": "Equal-weighted blend of top performers (unleveraged)"
+    },
+    {
+      "id": "cagr_max__UPRO_SMA100_real",
+      "workflow": "cagr-max",
+      "parquet": "workflows/cagr-max/artifacts/phase1_returns.parquet",
+      "candidate_column": "UPRO_SMA100_real",
+      "category": "real_letf",
+      "implementability": "letf_3x",
+      "notes": "Real 3x SPY LETF + SMA100 (post-2009 only)"
+    },
+    {
+      "id": "cagr_max__UPRO_SMA100_synthetic",
+      "workflow": "cagr-max",
+      "parquet": "workflows/cagr-max/artifacts/phase1_returns.parquet",
+      "candidate_column": "UPRO_SMA100_synthetic",
+      "category": "synth_letf",
+      "implementability": "synth",
+      "notes": "Synthetic 3x SPY + SMA100, 2009-2026"
+    },
+    {
+      "id": "cagr_max__SSO_SMA100_real",
+      "workflow": "cagr-max",
+      "parquet": "workflows/cagr-max/artifacts/phase1_returns.parquet",
+      "candidate_column": "SSO_SMA100_real",
+      "category": "real_letf",
+      "implementability": "letf_2x",
+      "notes": "Real 2x SPY LETF + SMA100"
+    },
+    {
+      "id": "cagr_max__TQQQ_SMA100_real",
+      "workflow": "cagr-max",
+      "parquet": "workflows/cagr-max/artifacts/phase1_returns.parquet",
+      "candidate_column": "TQQQ_SMA100_real",
+      "category": "real_letf",
+      "implementability": "letf_3x",
+      "notes": "Real 3x QQQ LETF + SMA100"
+    },
+    {
+      "id": "cagr_max__UPRO_3x_SMA100",
+      "workflow": "cagr-max",
+      "parquet": "workflows/cagr-max/artifacts/phase1_returns.parquet",
+      "candidate_column": "UPRO_3x_SMA100",
+      "category": "synth_letf",
+      "implementability": "synth",
+      "notes": "UPRO @ 3x with SMA100"
+    },
+    {
+      "id": "cagr_max__3x_SPY_SMA100_synth",
+      "workflow": "cagr-max",
+      "parquet": "workflows/cagr-max/artifacts/phase2_returns.parquet",
+      "candidate_column": "3x_SPY_SMA100_synth",
+      "category": "synth_letf",
+      "implementability": "synth",
+      "notes": "Synthetic 3x SPY + SMA100, full 1998-2026"
+    },
+    {
+      "id": "cagr_max__LEAPS_2x_SPY_SMA100",
+      "workflow": "cagr-max",
+      "parquet": "workflows/cagr-max/artifacts/phase3_returns.parquet",
+      "candidate_column": "LEAPS_2x_SPY_SMA100",
+      "category": "leaps",
+      "implementability": "options",
+      "notes": "Simulated 2x via SPY LEAPS with SMA100"
+    },
+    {
+      "id": "cagr_max__LEAPS_2x_QQQ_SMA100",
+      "workflow": "cagr-max",
+      "parquet": "workflows/cagr-max/artifacts/phase3_returns.parquet",
+      "candidate_column": "LEAPS_2x_QQQ_SMA100",
+      "category": "leaps",
+      "implementability": "options",
+      "notes": "Simulated 2x via QQQ LEAPS with SMA100"
+    },
+    {
+      "id": "cagr_max__lifecycle_linear_SPY_SMA100",
+      "workflow": "cagr-max",
+      "parquet": "workflows/cagr-max/artifacts/phase3_returns.parquet",
+      "candidate_column": "lifecycle_linear_SPY_SMA100",
+      "category": "lifecycle",
+      "implementability": "synth",
+      "notes": "Linear glide 3x\u21921x over horizon"
+    },
+    {
+      "id": "cagr_max__lifecycle_convex_SPY_SMA100",
+      "workflow": "cagr-max",
+      "parquet": "workflows/cagr-max/artifacts/phase3_returns.parquet",
+      "candidate_column": "lifecycle_convex_SPY_SMA100",
+      "category": "lifecycle",
+      "implementability": "synth",
+      "notes": "Convex glide 3x\u21921x"
+    },
+    {
+      "id": "cagr_max__multi_sma_2x_SPY",
+      "workflow": "cagr-max",
+      "parquet": "workflows/cagr-max/artifacts/phase4_returns.parquet",
+      "candidate_column": "multi_sma_2x_SPY",
+      "category": "multi_sma",
+      "implementability": "synth",
+      "notes": "2x SPY with multi-SMA vote (50/100/200)"
+    },
+    {
+      "id": "cagr_max__multi_sma_3x_SPY",
+      "workflow": "cagr-max",
+      "parquet": "workflows/cagr-max/artifacts/phase4_returns.parquet",
+      "candidate_column": "multi_sma_3x_SPY",
+      "category": "multi_sma",
+      "implementability": "synth",
+      "notes": "3x SPY with multi-SMA vote"
+    },
+    {
+      "id": "stock_selection__value_earnings_yield",
+      "workflow": "stock-selection",
+      "parquet": "workflows/stock-selection/artifacts/phase1_returns.parquet",
+      "candidate_column": "value_earnings_yield",
+      "category": "single_stock_factor",
+      "implementability": "real_stocks_monthly_rebal",
+      "notes": "R9 +0.351 ExSharpe; raw p_up=0.064 but fails Holm"
+    },
+    {
+      "id": "stock_selection__momentum_252_21",
+      "workflow": "stock-selection",
+      "parquet": "workflows/stock-selection/artifacts/phase1_returns.parquet",
+      "candidate_column": "momentum_252_21",
+      "category": "single_stock_factor",
+      "implementability": "real_stocks_monthly_rebal",
+      "notes": "R9 -0.322 ExSharpe"
+    },
+    {
+      "id": "stock_selection__quality_roe_ttm",
+      "workflow": "stock-selection",
+      "parquet": "workflows/stock-selection/artifacts/phase1_returns.parquet",
+      "candidate_column": "quality_roe_ttm",
+      "category": "single_stock_factor",
+      "implementability": "real_stocks_monthly_rebal",
+      "notes": "R9 +0.242 ExSharpe"
+    },
+    {
+      "id": "stock_selection__lowvol_252",
+      "workflow": "stock-selection",
+      "parquet": "workflows/stock-selection/artifacts/phase1_returns.parquet",
+      "candidate_column": "lowvol_252",
+      "category": "single_stock_factor",
+      "implementability": "real_stocks_monthly_rebal",
+      "notes": "R9 -0.349 ExSharpe"
+    },
+    {
+      "id": "stock_selection__piotroski_f_min7",
+      "workflow": "stock-selection",
+      "parquet": "workflows/stock-selection/artifacts/phase3_returns.parquet",
+      "candidate_column": "piotroski_f_min7",
+      "category": "single_stock_factor",
+      "implementability": "real_stocks_monthly_rebal",
+      "notes": "R9 -0.825 ExSharpe (worst)"
+    },
+    {
+      "id": "stock_selection__magic_formula",
+      "workflow": "stock-selection",
+      "parquet": "workflows/stock-selection/artifacts/phase3_returns.parquet",
+      "candidate_column": "magic_formula",
+      "category": "single_stock_factor",
+      "implementability": "real_stocks_monthly_rebal",
+      "notes": "R9 +0.093 ExSharpe"
+    },
+    {
+      "id": "stock_selection__quality_value_zsum",
+      "workflow": "stock-selection",
+      "parquet": "workflows/stock-selection/artifacts/phase3_returns.parquet",
+      "candidate_column": "quality_value_zsum",
+      "category": "single_stock_factor",
+      "implementability": "real_stocks_monthly_rebal",
+      "notes": "R9 +0.068 ExSharpe"
+    },
+    {
+      "id": "stock_selection__ml_gkx_elasticnet_v20",
+      "workflow": "stock-selection",
+      "parquet": "workflows/stock-selection/artifacts/phase4b_returns.parquet",
+      "candidate_column": "ml_gkx_elasticnet_v20",
+      "category": "single_stock_factor",
+      "implementability": "real_stocks_monthly_rebal",
+      "notes": "R9 -0.215 ExSharpe (ML)"
+    },
+    {
+      "id": "stock_selection__ml_gkx_lightgbm_v20",
+      "workflow": "stock-selection",
+      "parquet": "workflows/stock-selection/artifacts/phase4b_returns.parquet",
+      "candidate_column": "ml_gkx_lightgbm_v20",
+      "category": "single_stock_factor",
+      "implementability": "real_stocks_monthly_rebal",
+      "notes": "R9 +0.259 ExSharpe (ML, sign-flipped after R9 bugfixes)"
+    },
+    {
+      "id": "real_world__v3_1998",
+      "workflow": "real-world-test",
+      "parquet": "workflows/real-world-test/artifacts/historical_v3_full_returns.parquet",
+      "candidate_column": "v3_1998",
+      "category": "blended_v3",
+      "implementability": "real_etfs",
+      "notes": "Original v3 (60/30/10 VTI/UPRO/IAU + weekly SMA100) 1998-2026 \u2014 rejected by MC"
+    },
+    {
+      "id": "real_world__v3_2005_with_gold",
+      "workflow": "real-world-test",
+      "parquet": "workflows/real-world-test/artifacts/historical_v3_full_returns.parquet",
+      "candidate_column": "v3_2005_with_gold",
+      "category": "blended_v3",
+      "implementability": "real_etfs",
+      "notes": "v3 variant starting 2005 with explicit gold sleeve"
+    },
+    {
+      "id": "real_world__v3_2009_real_upro",
+      "workflow": "real-world-test",
+      "parquet": "workflows/real-world-test/artifacts/historical_v3_full_returns.parquet",
+      "candidate_column": "v3_2009_real_upro",
+      "category": "blended_v3",
+      "implementability": "real_etfs",
+      "notes": "v3 variant using real UPRO (2009+)"
+    },
+    {
+      "id": "ref__VTI_100",
+      "workflow": "reference",
+      "parquet": "workflows/real-world-test/artifacts/panel.parquet",
+      "construction": {
+        "weights": {
+          "VTI": 1.0
+        }
+      },
+      "category": "reference",
+      "implementability": "real_etfs",
+      "notes": "100% VTI buy-and-hold \u2014 universal benchmark anchor"
+    },
+    {
+      "id": "ref__SPY_100",
+      "workflow": "reference",
+      "parquet": "workflows/real-world-test/artifacts/panel.parquet",
+      "construction": {
+        "weights": {
+          "SPY": 1.0
+        }
+      },
+      "category": "reference",
+      "implementability": "real_etfs",
+      "notes": "100% SPY buy-and-hold"
+    },
+    {
+      "id": "ref__60_40_VTI_BND",
+      "workflow": "reference",
+      "parquet": "workflows/real-world-test/artifacts/panel.parquet",
+      "construction": {
+        "weights": {
+          "VTI": 0.6,
+          "BND": 0.4
+        }
+      },
+      "category": "reference",
+      "implementability": "real_etfs",
+      "notes": "60/40 VTI/BND daily-rebalanced \u2014 classic conservative anchor"
+    },
+    {
+      "id": "ref__60_40_VTI_IEF",
+      "workflow": "reference",
+      "parquet": "workflows/real-world-test/artifacts/panel.parquet",
+      "construction": {
+        "weights": {
+          "VTI": 0.6,
+          "IEF": 0.4
+        }
+      },
+      "category": "reference",
+      "implementability": "real_etfs",
+      "notes": "60/40 VTI/IEF daily-rebalanced"
+    },
+    {
+      "id": "ref__95_5_VTI_IAU",
+      "workflow": "reference",
+      "parquet": "workflows/real-world-test/artifacts/panel.parquet",
+      "construction": {
+        "weights": {
+          "VTI": 0.95,
+          "GOLD": 0.05
+        }
+      },
+      "category": "reference",
+      "implementability": "real_etfs",
+      "notes": "95/5 VTI/GOLD daily-rebalanced \u2014 real-world-test final-report recommendation"
+    },
+    {
+      "id": "ref__100_GOLD",
+      "workflow": "reference",
+      "parquet": "workflows/real-world-test/artifacts/panel.parquet",
+      "construction": {
+        "weights": {
+          "GOLD": 1.0
+        }
+      },
+      "category": "reference",
+      "implementability": "real_etfs",
+      "notes": "100% GOLD \u2014 provides full-window comparison anchor"
+    }
+  ],
+  "deferred_candidates": [
+    {
+      "workflow": "international-etf",
+      "reason": "No daily-return parquet",
+      "would_have_been": [
+        "Phase 1 mean-shifted placebo @10% VXUS",
+        "Phase 4 C1b 60/40 VTI/HEFA mean-shifted"
+      ]
+    },
+    {
+      "workflow": "macro-exploratory",
+      "reason": "Results stored as per-experiment JSON; no daily returns parquet",
+      "would_have_been": [
+        "E4 pooled 12-sleeve factor-vs-cash timing (+0.716 paper)"
+      ]
+    },
+    {
+      "workflow": "etf",
+      "reason": "No artifacts/ directory; runtime-computed only",
+      "would_have_been": [
+        "VTI SMA200 trend-following (MaxDD reduction +64%)"
+      ]
+    },
+    {
+      "workflow": "factor-timing",
+      "reason": "Hedged VLUE ETF-bridge daily returns not persisted",
+      "would_have_been": [
+        "Hedged VLUE net ExSharpe +0.453 (only validated investable factor)"
+      ]
+    }
+  ]
+}
