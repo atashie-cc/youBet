@@ -26,6 +26,8 @@ data/reference/
 !workflows/stock-selection/precommit/*.json
 !workflows/real-world-test/precommit/*.json
 !workflows/international-etf/precommit/*.json
+!workflows/vti-as-challenger/research/precommit.json
+!workflows/strategy-dashboard/artifacts/roster.json
 models/*.xgb
 models/*.lgb
 

@@ -1,0 +1,27 @@
+experiment:
+  name: vti_as_challenger
+  description: "Inverted gate cross-workflow experiment \xE2\u20AC\u201D does the\
+    \ native benchmark pass each workflow's gate against the alternative strategies\
+    \ with positive point estimates?"
+  frozen_at: 2026-05-12
+bootstrap:
+  n_bootstrap: 10000
+  expected_block_length: 22
+  seed_base: 20260512
+  confidence: 0.9
+gate:
+  alpha_one_sided: 0.05
+  holm_scope: joint_across_all_classes
+  tost_margins_equal_mei: true
+robustness:
+  controls:
+  - placebo_mean_shifted
+  - subperiod_midpoint_split
+  - linear_scaling_0_5x_2x
+common_window:
+  start: '2017-01-01'
+  end: '2026-04-30'
+  purpose: sensitivity sidebar (apples-to-apples across heterogeneous native windows)
+precommit:
+  path: research/precommit.json
+  sha256: 7f19ed9e213e9e0386ef21df4deca132fe6742b47fa82852e4dad367252958df
