@@ -1,0 +1,46 @@
+{
+  "phase": "phase2_analyst_wrds",
+  "frozen_at": "2026-05-29",
+  "tier": "CONFIRMATORY (enabled by true-PIT WRDS/IBES data; survivorship-free incl. delisted)",
+  "benchmark": "SPY",
+  "estimand": "Sharpe of excess returns: Sharpe(strat - SPY)",
+  "data": "I/B/E/S Summary History via WRDS (statpers = archived as-of snapshot; PIT). NOT free — institutional access required. Linked to the survivorship-free universe via oftic/cusip.",
+  "pit_contract": "IbesSignalStrategy uses the latest statpers STRICTLY < rebal date; max_staleness_days=100 (~3 monthly snapshots). validate_ibes_pit asserts no statpers>=decision leaks.",
+  "confirmatory_family": [
+    {
+      "name": "est_revision_momentum",
+      "signal": "trailing-3mo change in FY1 mean consensus EPS, scaled by |prior|; top decile long",
+      "literature": "So (2013) ~5.8%/yr OOS; Chan-Jegadeesh-Lakonishok (1996); Mill Street ~7.6%/yr gross decile, IC 0.23",
+      "expected_excess_sharpe_band_net": [0.10, 0.35],
+      "expected_band_note": "half-literature, NET of monthly turnover cost; the single highest-probability analyst signal but evidence says large-cap value-weighted net likely lands +0.15-0.35 (Holm-killable). Pre-registered expectation: most likely FAILS, but this is the ONE signal with a credible path.",
+      "gate_member": true
+    },
+    {
+      "name": "recommendation_consensus",
+      "signal": "-meanrec (1=strong buy..5=sell; higher=more buy); top decile long",
+      "literature": "Barber-Lehavy-McNichols-Trueman (2001): net long-only ~0; Engelberg-McLean-Pontiff (2020): levels bet against anomalies",
+      "expected_excess_sharpe_band_net": [-0.10, 0.15],
+      "gate_member": true,
+      "pre_registered_expectation": "FAILS (DOA long-only large-cap)"
+    },
+    {
+      "name": "price_target_upside",
+      "signal": "mean target / price - 1; top decile long. (Absolute is optimism-biased per EMP-2020; within-industry ranking is the stronger form — optional sector-neutral variant.)",
+      "literature": "Da-Schaumburg (2011) within-industry ~24%/yr gross 1999-2004; absolute ~0/biased",
+      "expected_excess_sharpe_band_net": [-0.05, 0.25],
+      "gate_member": true,
+      "pre_registered_expectation": "FAILS absolute; within-industry variant is exploratory"
+    }
+  ],
+  "descriptive_companions": [
+    {
+      "name": "forecast_dispersion_avoid",
+      "signal": "-(stdev/|meanest|); avoid high-dispersion (DMS 2002 short-side anomaly)",
+      "gate_member": false,
+      "note": "tradable side is the SHORT leg; long-only large-cap is weak — descriptive only"
+    }
+  ],
+  "multiplicity": "Holm within the N=3 Phase-2 confirmatory family (authoritative, Sharpe-of-excess). If run jointly with Phase 1 (evebitda) + Phase 4 (vrp), the overall joint family is N=5 — report both the within-phase Holm(3) and the joint Holm(5).",
+  "robustness_required_if_positive": "Phase 5 cross-sectional battery (characteristic-shuffle/random-decile placebo + decile-breakpoint sweep + 3 sub-periods + GFC/COVID exclusion + commission sweep). Plus a turnover/capacity audit (revision momentum is high-turnover) and a small-cap-concentration check (the evidence says analyst alpha concentrates in small/illiquid names OUTSIDE this large-cap universe).",
+  "expected_overall": "0/3 pass, most likely — but est_revision_momentum is the single signal in the entire program with a credible (if unlikely) path to clearing the gate. This is the test the free-data ceiling prevented."
+}

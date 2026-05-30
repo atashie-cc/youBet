@@ -1,0 +1,29 @@
+{
+  "phase": "phase4_macro_sector",
+  "frozen_at": "2026-05-29",
+  "tier": "single confirmatory tilt + hierarchical max-statistic-null descriptive cross",
+  "benchmark": "SPY",
+  "rationale": "Macro x sector timing is DOA on power + data-mining grounds (Welch-Goyal; Molchanov-Stangl 'Myth of Business Cycle Sector Rotation'; youBet failed regime conditioning twice). A naive 5x11x3 = 165-hypothesis cross is Holm death. The pre-registered confirmatory footprint is therefore a SINGLE theory-anchored binary tilt; the full grid is descriptive with a max-statistic permutation null.",
+  "core_strategies": [
+    {
+      "name": "vrp_defensive_tilt",
+      "hypothesis": "Overweight defensive sectors (XLP/XLU/XLV constituents) vs cyclicals (XLK/XLY/XLI/XLB/XLE) when the variance risk premium (VIX - trailing realized vol) is elevated.",
+      "signal_inputs": ["VIX (FRED VIXCLS / ^VIX, not revised)", "SPY realized vol (from prices)"],
+      "confirmatory_input_restriction": "market-derived not-revised ONLY: {vix, realized_vol}. AAII/VVIX/MOVE/CNN-F&G and any revised/reconstructed series are FORBIDDEN in this gate.",
+      "bucketing": "SPDR-proxy / coarse defensive-vs-cyclical partition INVARIANT across 2016 Real-Estate spinout and 2018 Comm-Services reclassification. Per-stock sector_as_of names with missing/'nan' sector are EXCLUDED (never bucketed). Real Estate / Comm Services / Telecom deliberately unclassified.",
+      "threshold": "pre-committed quantile of VRP (top tercile) — FROZEN before run",
+      "expected_excess_sharpe_band": [0.05, 0.20],
+      "expected_band_anchor": "Bollerslev-Tauchen-Zhou VRP is aggregate, short-horizon (OOS R^2 ~4%), halved for decay.",
+      "gate_member": true,
+      "pre_registered_expectation": "FAILS gate"
+    }
+  ],
+  "descriptive_cross": {
+    "grid": {"macro_signals": ["vrp", "yield_3m10y", "credit_baa10y", "breakeven_5y5y", "real_rate_10y"], "sectors": 11, "thresholds": ["top_tercile", "median", "top_quartile"]},
+    "n_cells": 165,
+    "discipline": "PRE-REGISTERED in full; report the WHOLE-grid excess-Sharpe distribution overlaid with a random-permutation null band. NO single cell is a 'finding' unless it survives a max-statistic (Romano-Wolf / White reality-check) permutation test across all 165 cells. This is the honest descriptive analogue of Holm.",
+    "effective_sample_note": "Macro panel mixing VVIX(2007+)/putcall(2006-11+)/DTWEXBGS(2006+) starts ~2007, not 2005 -> recompute MDE on the shorter sample.",
+    "hierarchical": "Runs as a GATE only if vrp_defensive_tilt passes (it is not expected to). Otherwise descriptive-with-null only."
+  },
+  "multiplicity": "vrp_defensive_tilt is the 2nd member of the joint N=2 gate family (distinct hypothesis from the value signal). Romano-Wolf simultaneous CI headline."
+}

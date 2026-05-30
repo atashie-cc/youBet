@@ -140,7 +140,16 @@ class Universe:
         row = m[mask]
         if row.empty:
             return None
-        return str(row.iloc[0]["gics_sector"])
+        sector = row.iloc[0]["gics_sector"]
+        # R1 fix (individual-stocks-snp500): the 146 added/delisted membership
+        # rows have a blank gics_sector. Without this guard `str(NaN)` returns
+        # the literal string 'nan', injecting a phantom 'nan' sector that is
+        # structurally correlated with delisting (a survivorship leak in any
+        # sector-bucketing strategy). Return None for missing/blank labels so
+        # callers route them through an explicit missing-sector policy.
+        if pd.isna(sector) or str(sector).strip().lower() in {"", "nan", "none"}:
+            return None
+        return str(sector)
 
     def cik_for(self, ticker: str) -> str | None:
         """SEC EDGAR CIK (10-digit zero-padded) for a ticker, or None."""

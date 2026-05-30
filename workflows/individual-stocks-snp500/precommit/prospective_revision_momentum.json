@@ -1,0 +1,22 @@
+{
+  "phase": "prospective_estimate_revision_momentum",
+  "frozen_at": "2026-05-29",
+  "tier": "EXPLORATORY-PERMANENT (free data) — can NEVER anchor a confirmatory gate",
+  "status": "harness DEFERRED per user decision 2026-05-29 (free-only, no 6yr commitment now)",
+  "rationale": "Estimate-revision momentum (So 2013 ~5.8%/yr; Mill Street ~7.6%/yr decile, IC 0.23) is the strongest analyst signal on paper, but is NOT free-PIT-backtestable historically. The only free path is forward-collection of FMP /analyst-estimates snapshots, which is survivorship-contaminated BY CONSTRUCTION (free sources serve currently-listed names only; a name that delists during collection drops out). Therefore even ~6 years of accrued snapshots can never satisfy the survivorship-free bar. Only WRDS I/B/E/S or Benzinga (delisted-inclusive) could make this confirmatory.",
+  "signal": {
+    "name": "estimate_revision_momentum",
+    "construction": "decile-rank by trailing-window delta in forward consensus EPS (revision_score), top-decile EW, monthly rebalance",
+    "source": "FMP /stable/analyst-estimates weekly snapshots (single lean source); algorithmic-aggregated proxy of true consensus -> a proxy of a proxy",
+    "expected_excess_sharpe_band_net": [0.10, 0.30],
+    "expected_band_anchor": "half of already-decayed literature, FURTHER discounted for (a) the algorithmic-vs-true-consensus gap and (b) computed monthly-turnover cost (mcap-bucketed bps). Frozen NET so the future evaluation cannot relax it."
+  },
+  "data_contract": {
+    "harness": "scripts/snapshot_forward.py (deferred)",
+    "cadence": "weekly, write-once dated parquet, sha256 manifest, quarantine-on-mismatch",
+    "membership": "re-resolve active S&P 500 weekly; log delisting events (still cannot back-snapshot delisted tail)",
+    "pit_contract": "consensus_as_of(t,d) returns rows with snapshot_timestamp < d - 1 trading day; NEVER reads FMP rows whose fiscal-period date precedes snapshot_date (avoids FMP realized-number backfill)"
+  },
+  "prospective_eval_date": "2032-06-01",
+  "eval_note": "Exploratory checkpoint only — recompute accrued-length MDE in a future Phase 0; not a gate."
+}

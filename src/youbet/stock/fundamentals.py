@@ -283,6 +283,16 @@ CONCEPT_ALIASES: dict[str, list[str]] = {
     "operating_cash_flow": [
         "NetCashProvidedByUsedInOperatingActivities",
     ],
+    # Depreciation & amortization (cash-flow-statement add-back). Used by
+    # fwd_valuation.ebitda_pit (EBITDA = OperatingIncome + D&A). Additive:
+    # no existing caller queries "dep_amort", so this is zero-risk to the
+    # workflows that already use this module.
+    "dep_amort": [
+        "DepreciationDepletionAndAmortization",
+        "DepreciationAmortizationAndAccretionNet",
+        "DepreciationAndAmortization",
+        "DepreciationAmortization",
+    ],
     "shares_outstanding": [
         "CommonStockSharesOutstanding",
         "EntityCommonStockSharesOutstanding",
@@ -607,7 +617,7 @@ def compute_fundamentals_from_panel(
 
     none_dict = {k: None for k in (
         "ttm_net_income", "ttm_revenue", "ttm_gross_profit",
-        "ttm_operating_income", "ttm_operating_cash_flow",
+        "ttm_operating_income", "ttm_operating_cash_flow", "ttm_dep_amort",
         "total_assets", "total_liabilities", "stockholders_equity",
         "cash", "long_term_debt", "short_term_debt",
         "current_assets", "current_liabilities", "shares_outstanding",
@@ -644,6 +654,7 @@ def compute_fundamentals_from_panel(
     out["ttm_gross_profit"] = _ttm("gross_profit")
     out["ttm_operating_income"] = _ttm("operating_income")
     out["ttm_operating_cash_flow"] = _ttm("operating_cash_flow")
+    out["ttm_dep_amort"] = _ttm("dep_amort")
 
     out["total_assets"] = _latest("assets")
     out["total_liabilities"] = _latest("liabilities")
@@ -728,7 +739,7 @@ def compute_fundamentals(
     if facts.empty or not (filed_series < d).any():
         result = {k: None for k in (
             "ttm_net_income", "ttm_revenue", "ttm_gross_profit",
-            "ttm_operating_income", "ttm_operating_cash_flow",
+            "ttm_operating_income", "ttm_operating_cash_flow", "ttm_dep_amort",
             "total_assets", "total_liabilities", "stockholders_equity",
             "cash", "long_term_debt", "short_term_debt",
             "current_assets", "current_liabilities", "shares_outstanding",
@@ -747,6 +758,7 @@ def compute_fundamentals(
     out["ttm_gross_profit"] = ttm_sum(facts, "gross_profit", d)
     out["ttm_operating_income"] = ttm_sum(facts, "operating_income", d)
     out["ttm_operating_cash_flow"] = ttm_sum(facts, "operating_cash_flow", d)
+    out["ttm_dep_amort"] = ttm_sum(facts, "dep_amort", d)
 
     out["total_assets"] = latest_stock(facts, "assets", d)
     out["total_liabilities"] = latest_stock(facts, "liabilities", d)

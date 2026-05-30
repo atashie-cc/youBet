@@ -1,0 +1,29 @@
+{
+  "phase": "phase1_forward_valuation",
+  "frozen_at": "2026-05-29",
+  "tier": "descriptive_in_aggregate",
+  "benchmark": "SPY",
+  "estimand": "Sharpe of excess returns: Sharpe(strat - SPY)",
+  "rationale": "Trailing/derived enterprise-multiple valuation is the ONLY forward-valuation form that is free + point-in-time-backtestable (EDGAR-reconstructed). The genuinely novel construction stock-selection did NOT run is the EV/EBITDA yield. Forward P/E, PEG, and estimate revisions are snapshot-only/survivorship-leaking and are NOT tested here (see data-availability.md).",
+  "core_strategies": [
+    {
+      "name": "evebitda_yield",
+      "class": "youbet.stock.fwd_valuation.EVEBITDAYield",
+      "params": {"use_ebit_fallback": true, "decile_breakpoint": 0.10, "min_holdings": 20, "max_holdings": 100, "weighting": "equal", "rebalance_frequency": "monthly"},
+      "expected_excess_sharpe_band": [0.05, 0.35],
+      "expected_band_anchor": "in-universe sibling value_EY realized +0.351 (failed Holm); quality_value_zsum +0.068. NOT re-halved literature (avoids double-counting McLean-Pontiff decay already embedded in the realized sibling).",
+      "gate_member": true,
+      "pre_registered_expectation": "FAILS gate"
+    }
+  ],
+  "descriptive_companions": [
+    {
+      "name": "earnings_yield_v2",
+      "class": "youbet.stock.fwd_valuation.EarningsYieldV2",
+      "note": "~95% clone of stock-selection value_EY; point-estimate + CI only, NOT in the gate family (cannot independently confirm what the prior already tested). Report pairwise daily-excess-return correlation vs evebitda_yield to document effective independent N.",
+      "gate_member": false
+    }
+  ],
+  "multiplicity": "Pre-registered gate family = {evebitda_yield, vrp_defensive_tilt} (N=2, phase1 + phase4). Romano-Wolf simultaneous CI is the HEADLINE control; Holm(N=2) conservative cross-check.",
+  "robustness_required_if_positive": "Phase 5 cross-sectional battery: characteristic-shuffle/random-decile placebo + long-leg mean-equalization + decile-breakpoint sweep {0.05,0.10,0.20,0.30} + 3 sub-periods + GFC/COVID exclusion + commission sweep."
+}

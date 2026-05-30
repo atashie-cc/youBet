@@ -28,6 +28,7 @@ data/reference/
 !workflows/international-etf/precommit/*.json
 !workflows/vti-as-challenger/research/precommit.json
 !workflows/strategy-dashboard/artifacts/roster.json
+!workflows/individual-stocks-snp500/precommit/*.json
 models/*.xgb
 models/*.lgb
 

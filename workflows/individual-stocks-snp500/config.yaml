@@ -1,0 +1,100 @@
+# individual-stocks-snp500 — Configuration
+# Locked thresholds INHERITED from workflows/stock-selection/config.yaml (do not redefine/relax here).
+# This file holds only ADDITIONS specific to the forward/analyst/macro-sector families.
+# Any change requires explicit re-commitment in CLAUDE.md with rationale BEFORE re-running.
+
+inherits: "../stock-selection/config.yaml"   # gate, bootstrap, walk-forward, costs, pit lags, power_analysis, phase2
+
+benchmark:
+  ticker: SPY
+
+# ---- Tier (post-review) --------------------------------------------------
+tier: descriptive_exploratory          # aggregate tier; pre-registered core is gate-tested with expectation 0/2
+pre_registered_core:
+  # The ONLY two distinct-hypothesis, PIT-safe-free, gate-tested strategies.
+  strategies: [evebitda_yield, vrp_defensive_tilt]
+  expectation: "0/2 passes"
+  multiplicity_headline: romano_wolf_simultaneous   # simultaneous_sharpe_diff_ci (handles correlation)
+  multiplicity_crosscheck: holm                     # Holm(N=2), conservative
+descriptive_companions: [earnings_yield_v2, pit_value_quality_evebitda_zsum, macro_sector_cross, ml_multisignal]
+
+# ---- Macro / fear / sector data -----------------------------------------
+macro_sector:
+  credit_spread_series: BAA10Y                 # REPLACES BAMLH0A0HYM2 (FRED 3yr-rolling truncation; repo-breaking fix)
+  # Phase-0 coverage report (2026-05-29) FOUND BAMLC0A0CM (IG OAS) is ALSO
+  # ICE-truncated to 2023-05-30 (785 obs) — same license issue as HY OAS.
+  # Credit conditioning uses BAA10Y (deep, public-domain). ig_oas dropped.
+  new_fred_series: [T10Y3M, DFF, DFII10, T5YIFR]   # all deep to 2003 (verified)
+  truncated_unusable: [BAMLH0A0HYM2, BAMLC0A0CM]    # ICE BofA OAS — rolling 3yr only
+  alfred_first_release_series: [CPIAUCSL, INDPRO]   # MANDATORY real ALFRED vintages (get_series_all_releases + realtime_start<d)
+  prefer_cpi_nsa: true                         # CPIAUCNS not annually back-revised
+  aaii_url: "https://www.aaii.com/files/surveys/sentiment.xls"
+  putcall_start: "2006-11-01"                  # CBOE equity P/C archive start; NO pre-2006 splice
+  # per-series coverage floors (macro panel mixing these effectively STARTS ~2007, not 2005):
+  series_start_floors: {vvix: "2007-01-03", move: "fragile", putcall: "2006-11-01", dtwexbgs: "2006-01-02", dfii10: "2003-01-02"}
+  confirmatory_inputs_only: [vix, realized_vol]   # confirmatory macro feature set MUST be a subset of market-derived not-revised series
+  exploratory_only: [vvix, move, aaii_sentiment, cnn_fear_greed]   # never enter the gate family
+  sector_spdrs:
+    Technology: XLK
+    Financials: XLF
+    Energy: XLE
+    Materials: XLB
+    "Health Care": XLV
+    "Consumer Staples": XLP
+    Utilities: XLU
+    Industrials: XLI
+    "Consumer Discretionary": XLY
+    "Real Estate": XLRE
+    "Communication Services": XLC
+  sector_proxy_regime_breaks: {real_estate_spinout: "2016-08-31", comm_services: "2018-09-21"}
+  defensive_buckets: [XLP, XLU, XLV]           # coarse, invariant across 2016/2018 reclassifications
+  cyclical_buckets:  [XLK, XLY, XLI, XLB, XLE]
+
+# ---- Macro x sector multiplicity discipline -----------------------------
+macro_sector_multiplicity:
+  confirmatory_count: 1                        # the single VRP/defensive tilt
+  hierarchical: true                           # broad cross runs as a GATE only if the single tilt passes
+  descriptive_grid: {macro_signals: 5, sectors: 11, thresholds: 3}   # 165 cells, PRE-REGISTERED in full
+  descriptive_null: max_statistic_permutation  # Romano-Wolf / White reality-check; no single cell is a "finding" without it
+
+# ---- Forward-collection harness (OPTIONAL; exploratory-permanent) --------
+forward_collection:
+  enabled: false                               # stand up only if Open-Decision 1=free AND 2=do-it AND ~6yr commitment
+  status: exploratory_permanent                # survivorship-contaminated by construction; can NEVER anchor a gate on free data
+  snapshot_dir: "data/forward_snapshots"
+  cadence: weekly
+  sources: [fmp_estimates]                     # SINGLE lean source (yfinance/Finnhub dropped from standing harness)
+  fmp_calls_per_day: 250
+  re_resolve_membership_weekly: true           # capture names while still listed; log delistings
+  pit_buffer_trading_days: 1                   # consensus_as_of requires snapshot_timestamp < decision_date - 1 trading day
+  fmp_signal_caveat: "algorithmic-aggregated, not true sell-side consensus; overwrites per fiscal period (proxy of a proxy)"
+  never_read_past_fiscal_period: true          # guard against FMP backfilling past-FY estimates to realized numbers
+  prospective_eval_date: "2032-06-01"          # earliest exploratory re-test; recomputed in Phase 0
+
+# ---- WRDS / I/B/E/S confirmatory analyst path (Phase 2) -----------------
+wrds_ibes:
+  # Provide ONE of: extract_dir (local WRDS extract, relative to workflow dir)
+  # OR use_live_wrds: true (the `wrds` package authenticates from your env).
+  extract_dir: null            # e.g. "data/wrds_ibes" with ibes_*.parquet
+  use_live_wrds: false
+  wrds_username: null
+  start: "2004-01-01"
+  crosswalk: null              # optional {ibes_ticker: exchange_ticker} for linking
+  confirmatory_family: [est_revision_momentum, recommendation_consensus, price_target_upside]
+  descriptive: [forecast_dispersion_avoid]
+  revision_window_months: 3
+  max_staleness_days: 100      # IBES statpers is monthly; refuse signals older than ~3 snapshots
+
+# ---- Delisted-tail GICS handling ----------------------------------------
+gics_backfill:
+  build_sic_backfill: false                    # default: use SPDR proxies; drop sic_backfill.py + its Phase-0 check from v1
+  sector_as_of_nan_fix: required               # patch universe.sector_as_of to return None on NaN; normalize MISSING
+
+# ---- Phase-5 source-period-bias battery (cross-sectional analogues) -----
+robustness:
+  placebo: [characteristic_shuffle, random_decile, long_leg_mean_equalization]
+  decile_breakpoint_sweep: [0.05, 0.10, 0.20, 0.30]
+  tilt_weight_sweep_for_sleeve: [0.01, 0.05, 0.10, 0.30, 0.50]   # applies to vrp_defensive_tilt only
+  sub_periods: [["2007-01-01","2013-12-31"], ["2013-01-01","2018-12-31"], ["2018-01-01","2024-12-31"]]
+  exclude_windows: {gfc: ["2008-01-01","2009-12-31"], covid: ["2020-02-01","2021-06-30"]}
+  commission_sensitivity_bps: [0.5, 2.0, 5.0, 10.0]

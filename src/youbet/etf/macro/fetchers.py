@@ -116,25 +116,55 @@ def fetch_yield_curve(
 def fetch_credit_spread(
     start: str = "2003-01-01",
     end: str | None = None,
+    series_id: str = "BAMLH0A0HYM2",
 ) -> PITFeatureSeries:
-    """ICE BofA US High Yield Option-Adjusted Spread. Real-time.
+    """Credit-spread stress proxy. Real-time (~1 business-day lag).
 
-    Higher = more market stress. Historical range: ~3% (calm) to ~20% (crisis).
-    Source: FRED BAMLH0A0HYM2.
+    Default series is ICE BofA US High Yield OAS (FRED BAMLH0A0HYM2).
+
+    REPO FIX (2026, individual-stocks-snp500 review): as of ~2026 FRED
+    restricts the ICE BofA OAS series to a rolling ~3-year window (ICE
+    license), so a FRESH fetch of BAMLH0A0HYM2 returns only ~2023+ and used
+    to silently NaN-pad earlier dates. For deep history pass
+    series_id="BAA10Y" (Moody's Baa minus 10Y Treasury, public-domain,
+    daily since 1986) — a slightly different (investment-grade) credit
+    segment, but the only free option with full history. Workflows that
+    already hold a full-history cache are unaffected (cache is read first).
+    A non-default series_id uses its own cache file so it never clobbers the
+    HY-OAS cache.
     """
     if end is None:
         end = date.today().isoformat()
 
-    cached = _load_cache("credit_spread")
+    cache_name = (
+        "credit_spread" if series_id == "BAMLH0A0HYM2"
+        else f"credit_spread_{series_id}"
+    )
+    cached = _load_cache(cache_name)
     if cached is not None and len(cached) > 100:
         vals = cached[(cached.index >= start) & (cached.index <= end)]
         if len(vals) > 100:
             vals.name = "credit_spread"
             return PITFeatureSeries.from_series(vals, "credit_spread")
 
-    vals = _fetch_fred("BAMLH0A0HYM2", start, end)
+    vals = _fetch_fred(series_id, start, end)
+    # Coverage guard: convert the silent-truncation footgun into a loud
+    # error. If a long window was requested but FRED returned a series
+    # starting far later (the ICE 3-yr rolling truncation), fail instead of
+    # NaN-padding pre-truncation dates.
+    if not vals.empty:
+        gap_days = (vals.index.min() - pd.Timestamp(start)).days
+        if gap_days > 370:
+            raise RuntimeError(
+                f"credit_spread series {series_id!r} returned data starting "
+                f"{vals.index.min().date()} but {pd.Timestamp(start).date()} "
+                f"was requested ({gap_days}d gap). FRED likely truncated this "
+                f"series (ICE BofA OAS is now rolling-3yr). Pass "
+                f"series_id='BAA10Y' for deep public-domain history, or "
+                f"pre-cache the full series."
+            )
     vals.name = "credit_spread"
-    _save_cache(vals, "credit_spread")
+    _save_cache(vals, cache_name)
     return PITFeatureSeries.from_series(vals, "credit_spread")
 
 
