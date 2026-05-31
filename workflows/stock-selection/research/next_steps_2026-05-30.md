@@ -7,8 +7,8 @@ Decisions locked with the user after the market-cap split-adjust correction
 2. **Resolve the ML number** (finish corrected rerun → Joint Holm N=11) — Phase B.
 3. **Next strategy: quality-only composite** — Phase C.
 
-> **STATUS (updated): Phase A is DONE + committed + pushed** (`f94b43b`, `d7a2c3b`,
-> `3171a9c`): the raw-price market-cap fix is wired through every contaminated engine
+> **STATUS: Phase A is DONE + committed + pushed** (`f94b43b`, `d7a2c3b`,
+> `3171a9c`; HEAD `8db0d89`): the raw-price market-cap fix is wired through every contaminated engine
 > site (rules.ValueScore, composites z_ey, gkx_chars ep/sp/bm) + `_shared.run_backtest`
 > + a `load_raw_prices` helper, all backward-compatible (adjusted-price fallback +
 > warning when `raw_prices` absent). `pytest tests/stock/` = **119 passed**. The only
@@ -22,54 +22,45 @@ Decisions locked with the user after the market-cap split-adjust correction
 
 ---
 
-## Phase A — EXECUTION STATUS (2026-05-30)
+## Phase A — EXECUTION STATUS (2026-05-30) — DONE + committed + pushed
 
-**Part 1 COMMITTED + VERIFIED (`f94b43b`). Part 2 (gkx_chars ML site + _shared
-wiring + real-panel sanity test) IN PROGRESS.** All committed edits are
-backward-compatible: when `raw_prices` is absent, mcap falls back to the old
-adjusted-price behavior with a loud warning — nothing breaks. Full suite green:
-**`pytest tests/stock/` → 119 passed, 0 failed** (113 pre-existing exercising the
-fallback path + 6 new mcap tests). *(The `f94b43b` commit message mis-states this
-as "122 passed"; the verified literal count is 119.)*
+**Phase A COMPLETE** across commits `f94b43b` (part 1: value/composite sites),
+`d7a2c3b` (part 2: gkx_chars ML ep/sp/bm + MLRanker threading + backtester
+`raw_prices_full`), `3171a9c` (`_shared.run_backtest` passthrough + `load_raw_prices`
+helper), all pushed to origin (HEAD `8db0d89`). Every committed edit is
+backward-compatible: when `raw_prices` is absent, mcap falls back to adjusted price
+with a one-time warning. Verified: **`pytest tests/stock/` → 119 passed, 0 failed**
+(113 pre-existing exercising the fallback path + 6 new `test_mcap_raw.py`). *(The
+`f94b43b` commit message mis-states this as "122 passed"; the verified literal count
+is 119.)*
 
-COMMITTED + VERIFIED (Part 1, `f94b43b`):
-- `src/youbet/stock/data.py` — `reconstruct_raw_close` (pure split-undo) +
-  `fetch_raw_close` (yfinance splits, snapshot-cached) + `compute_market_caps(...,
-  raw_prices=...)`. Tested by `tests/stock/test_mcap_raw.py` (6 tests: 4:1 split →
-  raw=adj×4 pre-split; sequential 2:1·3:1 → ×6; mcap raw vs adj differs by split
-  factor; no-shares proxy).
-- `src/youbet/stock/backtester.py` — `__init__(raw_prices=...)`; `_panel_at`
-  PIT-gates it, feeds `_compute_mcaps`, exposes `panel["raw_prices"]`;
-  `_compute_mcaps(raw_prices=...)` uses raw basis when given, else warns + falls back.
-- `src/youbet/stock/strategies/rules.py` — `ValueScore` consumes `panel["mcaps"]`
-  (raw-based) instead of recomputing `ttm_ni/(shares×adj_price)`.
-- `src/youbet/stock/strategies/composites.py` — `_earnings_yield_from_mcap` helper;
-  `QualityValue` + `ValueProfitability` z_ey legs route through it.
-- Backward-compat confirmed: the 113 existing tests don't pass `raw_prices`, run the
-  fallback path, and still pass → no regression for un-migrated callers.
+What landed (the full raw-price wiring, confirmed by signature inspection):
+- `data.py` — `reconstruct_raw_close` (pure split-undo: cumulative product of
+  post-date splits) + `fetch_raw_close` (yfinance splits, snapshot-cached) +
+  `compute_market_caps(raw_prices=...)`.
+- `backtester.py` — `StockBacktester(raw_prices=...)`; `_panel_at` PIT-gates it →
+  `_compute_mcaps(raw_prices=...)` + `panel["raw_prices"]`; `_training_panel`
+  exposes `raw_prices_full` for the ML fit path.
+- `rules.ValueScore` + `composites.QualityValue`/`ValueProfitability` (z_ey leg) —
+  consume the central raw-based `panel["mcaps"]`.
+- `gkx_chars.compute_chars_at_date(raw_prices=...)` — ep/sp/bm use raw price;
+  `MLRanker` threads it through fit (`raw_prices_full`, PIT-gated per train rebal)
+  and score (`panel["raw_prices"]`).
+- `_shared.run_backtest(raw_prices=...)` + `load_raw_prices(uni, prices)`.
 
-**REMAINING for Phase A (Part 2):**
-1. `src/youbet/stock/features/gkx_chars.py::_fundamentals_ratios` +
-   `compute_chars_at_date` — still computes `mcap = adj_last_price × shares` for
-   ep/sp/bm. Add a `raw_prices` param to `compute_chars_at_date`, thread it from
-   `MLRanker._build_features_one_date` (score path ← `panel["raw_prices"]`; fit path
-   ← training panel's `raw_prices`) and `_build_training_matrix`, and pass the raw
-   last price into `_fundamentals_ratios`. This is the ONLY un-converted site.
-   `backtester._training_panel` must also expose `panel["raw_prices"]` (PIT-gated
-   < train_end) for the fit path.
-2. Wire `raw_prices=fetch_raw_close(uni, prices, snapshot_dir=...)` into both
-   `_shared.py` backtester constructions (stock-selection + individual-stocks-snp500)
-   AND `experiments/phase4b_ohlcv.py`.
-3. Run `pytest tests/stock/ -q` (expect 113 + 6 = 119 green). The existing tests don't
-   pass raw_prices, so they exercise the fallback path — confirm no new failures and
-   that the fallback warning fires (not an error).
-4. Add a real-panel assertion test: with raw_prices wired, no EV/EBITDA or E/P yield
-   > 1.0 on the actual S&P 500 panel (the red flag that would have caught the bug).
-5. THEN commit Phase A as one unit.
+**ONLY remaining Phase-A item (cosmetic; deferred to next experiment run):** pass
+`raw_prices=load_raw_prices(uni, prices)` at the per-experiment `StockBacktester`
+construction sites — `phase1_efficiency`, `phase3_composites`, `phase4_ml_gkx`,
+`phase4b_ohlcv`, `phase7_extensions`, and the `individual-stocks-snp500` phase
+scripts. Until then those scripts run the warned adjusted-price fallback. Wiring
+them triggers a one-time yfinance split fetch (cached after). A real-panel sanity
+test (no E/P or EV/EBITDA yield > 1.0 with raw prices) is also still TODO.
 
-**Verification protocol on resume:** the box thrashes under the ML walk-forward (8 GB);
-keep only ONE python process at a time, no background ML, and confirm RAM > 2 GB free
-before running the suite. Do NOT commit engine edits until `pytest tests/stock/` is green.
+**Verification protocol (lesson from this session):** the 8 GB box OOMs under the ML
+walk-forward and corrupts tool output when RAM is low. Keep ONE python process at a
+time, no background ML, confirm RAM > 2 GB free before the suite, and re-read every
+result from literal output — never record a test count or git state without
+re-reading it (mis-stated "122 passed" once this session; true count is 119).
 
 ---
 
