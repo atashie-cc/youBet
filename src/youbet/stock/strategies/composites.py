@@ -377,3 +377,111 @@ class QualityValue(CrossSectionalStrategy):
     @property
     def name(self) -> str:
         return "quality_value_zsum"
+
+
+class QualityComposite(CrossSectionalStrategy):
+    """Phase 8 — MCAP-FREE quality composite (post-contamination directional bet).
+
+    Equal-weighted cross-sectional z-score sum of three quality signals, NONE of
+    which is price/mcap-denominated, so this strategy is immune to the market-cap
+    split-adjust bug (`contamination_rerun_2026-05-30.md`):
+
+      - ROE_ttm        = TTM net income / stockholders equity        (clean)
+      - GP/A           = TTM gross profit / total assets (Novy-Marx) (clean)
+      - magic_rank     = -(rank(EBIT/assets) + rank(EBIT/(assets-cash)))
+                         (Greenblatt magic-formula combined rank; assets-EV proxy)
+
+    Rationale: after the 2026-05-30 correction, pure value is dead on free large-cap
+    PIT data; the only confirmed directional survivors are the clean quality signals
+    quality_roe_ttm (+0.242) and magic_formula (+0.093). This recombines exactly
+    those plus GP/A (the Novy-Marx quality anchor, low-correlation to ROE). Each
+    signal is standardised cross-sectionally per rebal date; a ticker needs >=2 of 3
+    signals present. Top decile, equal weight. EXPLORATORY (recombines tested
+    signals, motivated post-hoc) — not a confirmatory claim.
+    """
+
+    def __init__(
+        self,
+        decile_breakpoint: float = 0.10,
+        weighting: str = "equal",
+        min_holdings: int = 20,
+        max_holdings: int = 100,
+    ):
+        self.decile_breakpoint = decile_breakpoint
+        self.weighting = weighting
+        self.min_holdings = min_holdings
+        self.max_holdings = max_holdings
+
+    def score(self, panel: dict) -> pd.Series:
+        active = panel["active_tickers"]
+        facts_by_ticker = panel.get("facts_by_ticker") or {}
+        decision_date = panel["as_of_date"]
+
+        roe_by: dict[str, float] = {}
+        gpa_by: dict[str, float] = {}
+        mey_by: dict[str, float] = {}   # magic earnings yield = EBIT/assets
+        mroic_by: dict[str, float] = {}  # magic ROIC = EBIT/(assets-cash)
+        for ticker in active:
+            facts = facts_by_ticker.get(ticker)
+            if facts is None:
+                continue
+            f = compute_fundamentals(facts, decision_date)
+            roe = f.get("roe_ttm")
+            if roe is not None and np.isfinite(roe):
+                roe_by[ticker] = float(roe)
+            gp = f.get("ttm_gross_profit")
+            assets = f.get("total_assets")
+            if (gp is not None and assets is not None
+                    and np.isfinite(gp) and np.isfinite(assets) and assets > 0):
+                gpa_by[ticker] = float(gp) / float(assets)
+            op_income = f.get("ttm_operating_income")
+            cash = f.get("cash")
+            if (op_income is not None and assets is not None
+                    and np.isfinite(op_income) and np.isfinite(assets) and assets > 0):
+                invested = float(assets) - (float(cash) if cash is not None and np.isfinite(cash) else 0.0)
+                mey_by[ticker] = float(op_income) / float(assets)
+                if invested > 0:
+                    mroic_by[ticker] = float(op_income) / invested
+
+        if not roe_by and not gpa_by and not mey_by:
+            return pd.Series(dtype=float)
+
+        def _zscore(d: dict[str, float]) -> pd.Series:
+            s = pd.Series(d)
+            mu, sd = s.mean(), s.std()
+            if sd <= 0 or not np.isfinite(sd):
+                return pd.Series(0.0, index=s.index)
+            return (s - mu) / sd
+
+        z_roe = _zscore(roe_by)
+        z_gpa = _zscore(gpa_by)
+
+        # Magic-formula combined rank -> a single z-scored signal. Rank EY and
+        # ROIC descending (best = rank 1); negate the rank-sum so higher = better,
+        # then z-score so it composes on the same scale as ROE/GP-A.
+        z_magic = pd.Series(dtype=float)
+        ey = pd.Series(mey_by)
+        roic = pd.Series(mroic_by)
+        common = ey.index.intersection(roic.index)
+        if len(common) > 0:
+            ey_rank = ey.loc[common].rank(ascending=False, method="min")
+            roic_rank = roic.loc[common].rank(ascending=False, method="min")
+            magic_score = -(ey_rank + roic_rank)  # higher = better
+            z_magic = _zscore(magic_score.to_dict())
+
+        all_tickers = z_roe.index.union(z_gpa.index).union(z_magic.index)
+        rows = []
+        for t in all_tickers:
+            parts = [z_roe.get(t), z_gpa.get(t), z_magic.get(t)]
+            present = [p for p in parts if p is not None and np.isfinite(p)]
+            if len(present) < 2:   # require >=2 of 3 signals
+                continue
+            rows.append((t, float(sum(present)) / len(present)))
+
+        if not rows:
+            return pd.Series(dtype=float)
+        return pd.Series({t: v for t, v in rows})
+
+    @property
+    def name(self) -> str:
+        return "quality_composite_v1"
