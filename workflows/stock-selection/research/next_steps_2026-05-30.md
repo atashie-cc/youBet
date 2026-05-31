@@ -7,13 +7,18 @@ Decisions locked with the user after the market-cap split-adjust correction
 2. **Resolve the ML number** (finish corrected rerun → Joint Holm N=11) — Phase B.
 3. **Next strategy: quality-only composite** — Phase C.
 
-> ⚠️ Phases A–C are **specified but NOT yet executed.** They were deferred in the
-> 2026-05-30 session because (a) the box is RAM-starved (8 GB) and tool calls are
-> capped at 600 s — the ML walk-forward (~2 h/model) cannot finish here; and (b)
-> file reads were intermittently corrupting, making precise multi-site edits to the
-> shared engine unsafe. This doc makes each phase mechanical to execute on a stable
-> machine. The verified contamination corrections (value_EY −0.098, qv +0.004, vp
-> −0.109; gate 0/11; pure value dead) are already committed and stand on their own.
+> **STATUS (updated): Phase A is DONE + committed + pushed** (`f94b43b`, `d7a2c3b`,
+> `3171a9c`): the raw-price market-cap fix is wired through every contaminated engine
+> site (rules.ValueScore, composites z_ey, gkx_chars ep/sp/bm) + `_shared.run_backtest`
+> + a `load_raw_prices` helper, all backward-compatible (adjusted-price fallback +
+> warning when `raw_prices` absent). `pytest tests/stock/` = **119 passed**. The only
+> Phase-A remainder is cosmetic: pass `raw_prices=load_raw_prices(uni, prices)` at the
+> per-experiment `StockBacktester` construction sites — done naturally when each
+> experiment is next run (it triggers a one-time yfinance split fetch, cached).
+> **Phases B (resolve ML) and C (quality composite) remain NOT executed** — both need a
+> RAM-healthy / cap-free run (the ML walk-forward is ~2 h/model and this 8 GB box
+> OOMs). The verified contamination corrections (value_EY −0.098, qv +0.004, vp
+> −0.109; gate 0/11; pure value dead) are committed and stand on their own.
 
 ---
 
