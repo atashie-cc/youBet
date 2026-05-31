@@ -38,6 +38,45 @@ from youbet.stock.strategies.base import CrossSectionalStrategy
 logger = logging.getLogger(__name__)
 
 
+def _earnings_yield_from_mcap(
+    ttm_ni: float | None,
+    ticker: str,
+    panel_mcaps,
+    last_prices,
+    shares: float | None,
+    _warn: dict,
+) -> float | None:
+    """TTM net income / market cap, using the backtester's centrally-computed
+    panel['mcaps'] (raw split-unadjusted price basis when raw_prices were
+    supplied). Falls back to adjusted price × shares with a one-time warning when
+    mcaps is unavailable. Returns None if no valid mcap or earnings.
+
+    Market-cap split-adjust fix (2026-05-30): pairing adjusted price with EDGAR
+    as-reported shares understates mcap by the split factor and inflates the
+    earnings-yield (value) leg on high-split names.
+    """
+    if ttm_ni is None or not np.isfinite(ttm_ni):
+        return None
+    mcap = None
+    if panel_mcaps is not None and ticker in getattr(panel_mcaps, "index", ()):
+        m = panel_mcaps.get(ticker)
+        if m is not None and np.isfinite(m) and m > 0:
+            mcap = float(m)
+    if mcap is None:
+        price = last_prices.get(ticker) if last_prices is not None else None
+        if shares is None or shares <= 0 or price is None \
+                or not np.isfinite(price) or price <= 0:
+            return None
+        if not _warn.get("done"):
+            logger.warning(
+                "composite value leg: panel['mcaps'] missing %s — falling back "
+                "to ADJUSTED price × shares (contaminated). Supply raw_prices to "
+                "the backtester.", ticker)
+            _warn["done"] = True
+        mcap = float(price) * float(shares)
+    return float(ttm_ni) / mcap
+
+
 class PiotroskiF(CrossSectionalStrategy):
     """Top-F-score long-only strategy.
 
@@ -185,6 +224,8 @@ class ValueProfitability(CrossSectionalStrategy):
         if prices.empty:
             return pd.Series(dtype=float)
         last_prices = prices.ffill().iloc[-1]
+        mcaps = panel.get("mcaps")
+        _warn: dict = {}
 
         ey_by: dict[str, float] = {}
         gpa_by: dict[str, float] = {}
@@ -195,15 +236,12 @@ class ValueProfitability(CrossSectionalStrategy):
             f = compute_fundamentals(facts, decision_date)
             ttm_ni = f.get("ttm_net_income")
             shares = f.get("shares_outstanding")
-            price = last_prices.get(ticker)
             gp = f.get("ttm_gross_profit")
             assets = f.get("total_assets")
-            if (
-                ttm_ni is not None and shares is not None
-                and price is not None and shares > 0
-                and np.isfinite(price) and price > 0
-            ):
-                ey_by[ticker] = float(ttm_ni) / float(shares) / float(price)
+            ey = _earnings_yield_from_mcap(
+                ttm_ni, ticker, mcaps, last_prices, shares, _warn)
+            if ey is not None:
+                ey_by[ticker] = ey
             if (
                 gp is not None and assets is not None
                 and np.isfinite(gp) and np.isfinite(assets) and assets > 0
@@ -279,6 +317,8 @@ class QualityValue(CrossSectionalStrategy):
         if prices.empty:
             return pd.Series(dtype=float)
         last_prices = prices.ffill().iloc[-1]
+        mcaps = panel.get("mcaps")
+        _warn: dict = {}
 
         roe_by: dict[str, float] = {}
         gm_by: dict[str, float] = {}
@@ -292,17 +332,14 @@ class QualityValue(CrossSectionalStrategy):
             gm = f.get("gross_margin_ttm")
             ttm_ni = f.get("ttm_net_income")
             shares = f.get("shares_outstanding")
-            price = last_prices.get(ticker)
             if roe is not None and np.isfinite(roe):
                 roe_by[ticker] = float(roe)
             if gm is not None and np.isfinite(gm):
                 gm_by[ticker] = float(gm)
-            if (
-                ttm_ni is not None and shares is not None
-                and price is not None and shares > 0
-                and np.isfinite(price) and price > 0
-            ):
-                ey_by[ticker] = float(ttm_ni) / float(shares) / float(price)
+            ey = _earnings_yield_from_mcap(
+                ttm_ni, ticker, mcaps, last_prices, shares, _warn)
+            if ey is not None:
+                ey_by[ticker] = ey
 
         if not roe_by and not gm_by and not ey_by:
             return pd.Series(dtype=float)

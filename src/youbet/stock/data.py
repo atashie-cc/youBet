@@ -15,6 +15,7 @@ import logging
 from datetime import date
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from youbet.etf.data import fetch_prices as etf_fetch_prices
@@ -312,10 +313,135 @@ def _filter_ohlcv_spurious(
     return out
 
 
+def reconstruct_raw_close(
+    adj_close: pd.DataFrame,
+    splits_by_ticker: dict[str, pd.Series],
+) -> pd.DataFrame:
+    """Reconstruct as-traded (split-unadjusted) close from split-adjusted close.
+
+    yfinance `auto_adjust=True` divides every historical price by the cumulative
+    product of all splits that occur *after* that date. To undo the split
+    adjustment we multiply each day's adjusted close by the cumulative product of
+    all splits strictly *after* that day:
+
+        raw_close(t) = adj_close(t) × ∏ { ratio_s : split date s > t }
+
+    Pure (network-free, unit-testable) core of the market-cap fix. Removes
+    *split* adjustment only — residual *dividend* adjustment remains in the level
+    (a few-%/yr effect, immaterial to cross-sectional value ranking vs the 20–50×
+    split error it corrects, and exactly what the validated `unadj_close.parquet`
+    reconstruction did). See
+    `workflows/stock-selection/research/contamination_rerun_2026-05-30.md`.
+
+    Args:
+        adj_close: date × ticker split-adjusted close.
+        splits_by_ticker: ticker -> Series of split ratios indexed by split date
+            (yfinance `Ticker(t).splits`; 4.0 for a 4:1 split). Missing/empty →
+            never-split → raw == adj.
+
+    Returns:
+        date × ticker DataFrame of reconstructed raw close, same shape/columns.
+    """
+    if adj_close.empty:
+        return adj_close.copy()
+    idx = adj_close.index
+    out = {}
+    for ticker in adj_close.columns:
+        col = adj_close[ticker]
+        splits = splits_by_ticker.get(ticker)
+        if splits is None or len(splits) == 0:
+            out[ticker] = col
+            continue
+        splits = pd.Series(splits).copy()
+        splits.index = pd.to_datetime(splits.index)
+        splits = splits[(splits > 0) & splits.notna()].sort_index()
+        if splits.empty:
+            out[ticker] = col
+            continue
+        factor = pd.Series(1.0, index=idx)
+        running = 1.0
+        for s_date, ratio in splits[::-1].items():
+            running *= float(ratio)
+            factor.loc[idx < s_date] = running
+        out[ticker] = col * factor
+    return pd.DataFrame(out, index=idx)[list(adj_close.columns)]
+
+
+def fetch_raw_close(
+    universe: Universe,
+    adj_close: pd.DataFrame,
+    snapshot_dir: Path | None = None,
+) -> pd.DataFrame:
+    """As-traded (split-unadjusted) close aligned to `adj_close`, snapshot-cached.
+
+    Fetches per-ticker split history from yfinance (small) and reconstructs raw
+    close via `reconstruct_raw_close`. Never re-downloads prices — `adj_close`
+    must already be the fetched split-adjusted frame (output of
+    `fetch_stock_prices`). The splits snapshot is cached so re-runs are cheap.
+    """
+    import yfinance as yf
+
+    if snapshot_dir is None:
+        repo_root = Path(__file__).resolve().parents[3]
+        snapshot_dir = (
+            repo_root / "workflows" / "stock-selection"
+            / "data" / "snapshots" / "prices"
+        )
+    snapshot_dir = Path(snapshot_dir)
+    splits_path = snapshot_dir / "splits_by_ticker.parquet"
+
+    tickers = list(adj_close.columns)
+    cached: dict[str, pd.Series] = {}
+    if splits_path.exists():
+        df = pd.read_parquet(splits_path)
+        for tk, grp in df.groupby("ticker"):
+            cached[tk] = pd.Series(
+                grp["ratio"].to_numpy(),
+                index=pd.to_datetime(grp["date"].to_numpy()),
+            )
+        logger.info("Loaded cached splits for %d tickers from %s",
+                    len(cached), splits_path)
+
+    missing = [t for t in tickers if t not in cached]
+    fetched_rows = []
+    if missing:
+        logger.info("Fetching splits for %d tickers from yfinance", len(missing))
+        for t in missing:
+            try:
+                sp = yf.Ticker(t).splits
+            except Exception as exc:  # noqa: BLE001
+                logger.debug("splits fetch failed %s: %s", t, exc)
+                sp = pd.Series(dtype=float)
+            if sp is not None and len(sp) > 0:
+                sp_idx = pd.to_datetime(sp.index)
+                try:
+                    sp_idx = sp_idx.tz_localize(None)
+                except (TypeError, AttributeError):
+                    pass
+                cached[t] = pd.Series(sp.to_numpy(), index=sp_idx)
+                for d_, r_ in zip(sp_idx, sp.to_numpy()):
+                    fetched_rows.append({"ticker": t, "date": d_, "ratio": float(r_)})
+            else:
+                cached[t] = pd.Series(dtype=float)
+        if fetched_rows:
+            new = pd.DataFrame(fetched_rows)
+            if splits_path.exists():
+                old = pd.read_parquet(splits_path)
+                new = pd.concat([old, new], ignore_index=True).drop_duplicates(
+                    subset=["ticker", "date"], keep="last")
+            snapshot_dir.mkdir(parents=True, exist_ok=True)
+            new.to_parquet(splits_path)
+            logger.info("Saved splits snapshot (%d rows) -> %s", len(new), splits_path)
+
+    splits_by_ticker = {t: cached.get(t, pd.Series(dtype=float)) for t in tickers}
+    return reconstruct_raw_close(adj_close, splits_by_ticker)
+
+
 def compute_market_caps(
     prices: pd.DataFrame,
     shares_outstanding_by_ticker: dict[str, pd.Series] | None = None,
     as_of_date: pd.Timestamp | str | None = None,
+    raw_prices: pd.DataFrame | None = None,
 ) -> pd.Series:
     """Market cap per ticker at a given date (price × shares outstanding).
 
@@ -323,11 +449,20 @@ def compute_market_caps(
     still permits mcap-bucketing by log-scale). Phase 0 uses this proxy;
     production must supply real shares-outstanding from EDGAR.
 
+    **Market-cap split-adjust fix:** if `raw_prices` (split-unadjusted close, e.g.
+    from `fetch_raw_close`) is supplied, the price factor is taken from it — this
+    is REQUIRED for a correct mcap, because pairing yfinance adjusted prices with
+    EDGAR as-reported shares understates mcap by the cumulative split factor (see
+    `contamination_rerun_2026-05-30.md`). If `raw_prices` is None the function
+    falls back to the (contaminated) adjusted price and logs a warning.
+
     Args:
-        prices: Daily price DataFrame.
+        prices: Daily split-adjusted price DataFrame.
         shares_outstanding_by_ticker: Optional dict of ticker -> Series of
             shares outstanding indexed by fiscal-period end (PIT-valid).
         as_of_date: Decision date. Uses most recent available price.
+        raw_prices: Optional split-unadjusted price DataFrame; used for the
+            price factor when present.
 
     Returns:
         Series indexed by ticker with market cap in USD (or price if no
@@ -342,13 +477,27 @@ def compute_market_caps(
     if shares_outstanding_by_ticker is None:
         return last_price.dropna()
 
+    if raw_prices is not None and not raw_prices.empty:
+        raw_avail = raw_prices.loc[raw_prices.index < d] if as_of_date is not None else raw_prices
+        price_basis = raw_avail.ffill().iloc[-1] if not raw_avail.empty else last_price
+    else:
+        logger.warning(
+            "compute_market_caps: no raw_prices supplied — mcap uses SPLIT-ADJUSTED "
+            "price (understated by the split factor for split names; contaminated). "
+            "Pass raw_prices (fetch_raw_close) for a correct mcap."
+        )
+        price_basis = last_price
+
     mcap = {}
-    for ticker, price in last_price.dropna().items():
+    for ticker in last_price.dropna().index:
         shares_ser = shares_outstanding_by_ticker.get(ticker)
         if shares_ser is None or shares_ser.empty:
             continue
         pit = shares_ser[shares_ser.index < d]
         if pit.empty:
+            continue
+        price = price_basis.get(ticker)
+        if price is None or not np.isfinite(price) or price <= 0:
             continue
         shares = float(pit.iloc[-1])
         mcap[ticker] = float(price) * shares

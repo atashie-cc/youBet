@@ -17,6 +17,52 @@ Decisions locked with the user after the market-cap split-adjust correction
 
 ---
 
+## Phase A — EXECUTION STATUS (2026-05-30, paused mid-flight)
+
+**Started executing on this box; PAUSED because RAM (8 GB) dropped to ~0.6 GB free
+and tool output (Bash + Read) began corrupting — cannot reliably run the 113-test
+suite to verify. Edits are UNCOMMITTED (HEAD/origin clean at the pushed plan commit);
+all are backward-compatible (fall back to old adjusted-price behavior with a warning
+when `raw_prices` is absent), so the working tree is not broken — just unverified
+end-to-end.**
+
+Applied to the working tree (each passed an AST parse check):
+- `src/youbet/stock/data.py` — ADDED `reconstruct_raw_close` (pure split-undo) +
+  `fetch_raw_close` (yfinance splits + snapshot cache) + `compute_market_caps(...,
+  raw_prices=...)`. **VERIFIED**: `tests/stock/test_mcap_raw.py` (6 tests) pass
+  (4:1 split → raw=adj×4 pre-split; sequential 2:1·3:1 → ×6; mcap raw vs adj differs
+  by split factor; no-shares proxy). This core is solid.
+- `src/youbet/stock/backtester.py` — `__init__` takes `raw_prices`; `_panel_at` PIT-
+  gates it, passes to `_compute_mcaps`, exposes `panel["raw_prices"]`; `_compute_mcaps`
+  uses raw price basis when given. AST OK; NOT run end-to-end.
+- `src/youbet/stock/strategies/rules.py` — `ValueScore` consumes `panel["mcaps"]`
+  (raw-based) instead of recomputing `ttm_ni/(shares×adj_price)`; warns+falls back if
+  mcaps missing. AST OK; NOT run.
+- `src/youbet/stock/strategies/composites.py` — added `_earnings_yield_from_mcap`
+  helper; `QualityValue` + `ValueProfitability` z_ey legs route through it. AST OK; NOT run.
+- `tests/stock/test_mcap_raw.py` — NEW, 6 passing.
+
+**REMAINING for Phase A (do when RAM is healthy):**
+1. `src/youbet/stock/features/gkx_chars.py::_fundamentals_ratios` + `compute_chars_at_date`
+   — still computes `mcap = adj_last_price × shares` for ep/sp/bm. Add a `raw_prices`
+   param to `compute_chars_at_date` (thread from `MLRanker._build_features_one_date` ←
+   `panel["raw_prices"]`/training panel), and pass `raw_last_price` into
+   `_fundamentals_ratios`. This is the ONLY un-converted site.
+2. Wire `raw_prices=fetch_raw_close(uni, prices, snapshot_dir=...)` into both
+   `_shared.py` backtester constructions (stock-selection + individual-stocks-snp500).
+3. Run `pytest tests/stock/ -q` (expect 113 + 6 = 119 green). The existing tests don't
+   pass raw_prices, so they exercise the fallback path — confirm no new failures and
+   that the fallback warning fires (not an error).
+4. Add a real-panel assertion test: with raw_prices wired, no EV/EBITDA or E/P yield
+   > 1.0 on the actual S&P 500 panel (the red flag that would have caught the bug).
+5. THEN commit Phase A as one unit.
+
+**Verification protocol on resume:** the box thrashes under the ML walk-forward (8 GB);
+keep only ONE python process at a time, no background ML, and confirm RAM > 2 GB free
+before running the suite. Do NOT commit engine edits until `pytest tests/stock/` is green.
+
+---
+
 ## Phase A — Engine fix: raw-price market cap (foundation)
 
 **Problem.** Four sites compute `mcap = adjusted_price × as-reported_shares`, which

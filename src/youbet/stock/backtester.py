@@ -91,6 +91,7 @@ class StockBacktester:
         facts_by_ticker: dict | None = None,
         shares_outstanding_by_ticker: dict | None = None,
         ohlcv: dict[str, pd.DataFrame] | None = None,
+        raw_prices: pd.DataFrame | None = None,
     ):
         self.config = config
         self.prices = prices.sort_index()
@@ -98,6 +99,12 @@ class StockBacktester:
         self.cost_model = cost_model
         self.facts_by_ticker = facts_by_ticker or {}
         self.shares_outstanding_by_ticker = shares_outstanding_by_ticker or {}
+        # Split-unadjusted close (date × ticker) for CORRECT market cap. Without
+        # it, mcap = adjusted_price × as-reported shares is understated by the
+        # split factor (the contamination fixed 2026-05-30). Optional for
+        # backward-compat; when None, mcap falls back to adjusted price with a
+        # warning. See youbet.stock.data.fetch_raw_close / reconstruct_raw_close.
+        self.raw_prices = raw_prices.sort_index() if raw_prices is not None else None
         # OHLCV for Phase 7 step 2 (R8): full {open, high, low, close, volume}
         # frames keyed by field. Optional; ML strategies use it only when
         # feature_set='full'.
@@ -162,9 +169,15 @@ class StockBacktester:
         validate_price_pit(available_prices, rebal_date, label="panel")
         active = self.universe.active_as_of(rebal_date)
 
-        # Estimated market caps at rebal_date (price × latest PIT shares_out).
+        # PIT-gated raw (split-unadjusted) prices for correct mcap.
+        available_raw = None
+        if self.raw_prices is not None:
+            available_raw = self.raw_prices.loc[self.raw_prices.index < rebal_date]
+
+        # Estimated market caps at rebal_date (raw price × latest PIT shares_out).
         mcaps = _compute_mcaps(
-            available_prices, self.shares_outstanding_by_ticker, rebal_date
+            available_prices, self.shares_outstanding_by_ticker, rebal_date,
+            raw_prices=available_raw,
         )
 
         # PIT-gate OHLCV the same way as prices (strict <)
@@ -177,6 +190,7 @@ class StockBacktester:
 
         return {
             "prices": available_prices,
+            "raw_prices": available_raw,
             "active_tickers": active,
             "mcaps": mcaps,
             "facts_by_ticker": self.facts_by_ticker,
@@ -444,24 +458,40 @@ def _compute_mcaps(
     available_prices: pd.DataFrame,
     shares_outstanding_by_ticker: dict,
     as_of_date: pd.Timestamp,
+    raw_prices: pd.DataFrame | None = None,
 ) -> pd.Series:
-    """Estimated market caps = latest-available price × latest-filed shares.
+    """Estimated market caps = latest-available RAW price × latest-filed shares.
 
-    Falls back to price-only when shares_outstanding is missing (returns
-    a magnitude proxy that still bucket-ranks reasonably).
+    Falls back to price-only when shares_outstanding is missing (returns a
+    magnitude proxy that still bucket-ranks reasonably).
+
+    Market-cap split-adjust fix: when `raw_prices` (split-unadjusted close) is
+    supplied, the price factor is taken from it. Adjusted price × as-reported
+    shares understates mcap by the split factor (contamination fixed 2026-05-30).
+    When `raw_prices` is None, falls back to adjusted price (legacy/contaminated)
+    — callers that care about value ratios must supply raw_prices.
     """
     if available_prices.empty:
         return pd.Series(dtype=float)
     last_price = available_prices.ffill().iloc[-1].dropna()
     if not shares_outstanding_by_ticker:
         return last_price  # price-only proxy
+
+    if raw_prices is not None and not raw_prices.empty:
+        price_basis = raw_prices.ffill().iloc[-1]
+    else:
+        price_basis = last_price
+
     mcap = {}
-    for ticker, price in last_price.items():
+    for ticker in last_price.index:
         ser = shares_outstanding_by_ticker.get(ticker)
         if ser is None or len(ser) == 0:
             continue
         pit = ser[ser.index < as_of_date]
         if pit.empty:
+            continue
+        price = price_basis.get(ticker)
+        if price is None or not np.isfinite(price) or price <= 0:
             continue
         shares = float(pit.iloc[-1])
         mcap[ticker] = float(price) * shares

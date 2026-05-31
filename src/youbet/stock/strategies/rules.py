@@ -187,7 +187,16 @@ class ValueScore(CrossSectionalStrategy):
 
         if prices.empty:
             return pd.Series(dtype=float)
+        # Earnings yield = TTM net income / market cap. Market cap MUST use the
+        # split-unadjusted (raw) price basis: pairing adjusted price with EDGAR
+        # as-reported shares understates mcap by the split factor and inflates
+        # the yield on high-split names (contamination fixed 2026-05-30). Consume
+        # the backtester's centrally-computed panel["mcaps"] (raw-price-based when
+        # raw_prices were supplied). Fall back to adjusted price × shares with a
+        # warning only when mcaps is unavailable (legacy callers).
+        mcaps = panel.get("mcaps")
         last_prices = prices.ffill().iloc[-1]
+        warned = False
 
         scores: dict[str, float] = {}
         for ticker in active:
@@ -195,14 +204,27 @@ class ValueScore(CrossSectionalStrategy):
                 continue
             f = compute_fundamentals(facts_by_ticker[ticker], decision_date)
             ttm_ni = f.get("ttm_net_income")
-            shares = f.get("shares_outstanding")
-            price = last_prices.get(ticker)
-            if ttm_ni is None or shares is None or price is None:
+            if ttm_ni is None or not np.isfinite(ttm_ni):
                 continue
-            if shares <= 0 or not np.isfinite(price) or price <= 0:
-                continue
-            eps_ttm = ttm_ni / shares
-            scores[ticker] = eps_ttm / price  # earnings yield
+            mcap = None
+            if mcaps is not None and ticker in getattr(mcaps, "index", ()):  # Series
+                m = mcaps.get(ticker)
+                if m is not None and np.isfinite(m) and m > 0:
+                    mcap = float(m)
+            if mcap is None:
+                shares = f.get("shares_outstanding")
+                price = last_prices.get(ticker)
+                if shares is None or shares <= 0 or price is None \
+                        or not np.isfinite(price) or price <= 0:
+                    continue
+                if not warned:
+                    logger.warning(
+                        "value_earnings_yield: panel['mcaps'] missing %s — "
+                        "falling back to ADJUSTED price × shares (contaminated). "
+                        "Supply raw_prices to the backtester.", ticker)
+                    warned = True
+                mcap = float(price) * float(shares)
+            scores[ticker] = float(ttm_ni) / mcap  # earnings yield
         return pd.Series(scores)
 
     @property
