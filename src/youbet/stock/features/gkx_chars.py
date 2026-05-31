@@ -269,6 +269,7 @@ def compute_chars_at_date(
     universe: "Universe",
     ohlcv: dict[str, pd.DataFrame] | None = None,
     shares_outstanding_by_ticker: dict | None = None,
+    raw_prices: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Compute the 14-feature MVP characteristic matrix at `decision_date`.
 
@@ -276,6 +277,16 @@ def compute_chars_at_date(
     volume/illiquidity features → 20-feature output. `ohlcv` should be
     a dict with keys {'high', 'low', 'close', 'volume'}, each a date×ticker
     DataFrame. Caller MUST pre-filter ohlcv to dates < decision_date.
+
+    **Market-cap split-adjust fix:** the mcap-denominated value features
+    (ep_ttm, sp_ttm, bm) MUST use a split-unadjusted (raw) price for market cap;
+    pairing adjusted price with EDGAR as-reported shares understates mcap by the
+    split factor and inflates these features on high-split names (see
+    `contamination_rerun_2026-05-30.md`). Pass `raw_prices` (split-unadjusted
+    close, e.g. from `fetch_raw_close`, PIT-gated < decision_date by the caller).
+    When `raw_prices` is None, ep/sp/bm fall back to the adjusted price with a
+    one-time warning. Price-based features (momentum, vol, beta) are split-
+    invariant and always use the adjusted `prices`.
 
     PIT contract: caller must pass `prices` with all rows strictly before
     decision_date (the backtester's `_panel_at()._panel.prices` already
@@ -312,6 +323,18 @@ def compute_chars_at_date(
         bench_series = returns[bench_ticker]
 
     last_prices = prices.ffill().iloc[-1]
+    # Raw (split-unadjusted) last price for mcap-denominated value features.
+    # Caller passes raw_prices already PIT-gated < decision_date.
+    if raw_prices is not None and not raw_prices.empty:
+        last_raw = raw_prices.ffill().iloc[-1]
+    else:
+        if raw_prices is None:
+            logger.warning(
+                "compute_chars_at_date @ %s: no raw_prices — ep/sp/bm use "
+                "SPLIT-ADJUSTED price (contaminated on split names). Pass "
+                "raw_prices (fetch_raw_close) for correct value features.",
+                decision_date)
+        last_raw = last_prices
     rows = {}
 
     # Pre-compute mom_12m_1m for every ticker (also used for indmom)
@@ -382,10 +405,10 @@ def compute_chars_at_date(
             feats["betasq_252d"] = beta * beta if np.isfinite(beta) else float("nan")
             feats["idiovol_126d"] = idiovol
 
-        # Fundamentals: ep, sp, bm
-        last_p = last_prices.get(ticker)
+        # Fundamentals: ep, sp, bm — mcap uses RAW (split-unadjusted) price.
+        raw_p = last_raw.get(ticker)
         ep, sp, bm = _fundamentals_ratios(
-            ticker, facts_by_ticker.get(ticker), decision_date, last_p
+            ticker, facts_by_ticker.get(ticker), decision_date, raw_p
         )
         feats["ep_ttm"] = ep
         feats["sp_ttm"] = sp

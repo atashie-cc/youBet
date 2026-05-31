@@ -234,6 +234,10 @@ class StockBacktester:
         panel["train_end"] = train_end
         panel["returns"] = self.returns
         panel["shares_outstanding_by_ticker"] = self.shares_outstanding_by_ticker
+        # Full raw (split-unadjusted) price frame for the fit path; the training
+        # matrix PIT-gates it per training rebal date internally (mirrors how
+        # `prices` is the full frame here, gated inside _build_training_matrix).
+        panel["raw_prices_full"] = self.raw_prices
         return panel
 
     def _run_fold(

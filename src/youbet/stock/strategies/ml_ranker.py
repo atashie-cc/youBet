@@ -193,11 +193,15 @@ class MLRanker(CrossSectionalStrategy):
         active_tickers: set[str], facts_by_ticker: dict, universe,
         ohlcv: dict | None = None,
         shares_outstanding_by_ticker: dict | None = None,
+        raw_prices: pd.DataFrame | None = None,
     ) -> pd.DataFrame:
         """Raw (unnormalized) features at one rebal date.
 
         If `ohlcv` is provided AND feature_set == "full", computes the
-        20-feature set including 6 volume/illiquidity features.
+        20-feature set including 6 volume/illiquidity features. `raw_prices`
+        (split-unadjusted close, PIT-gated < decision_date) is used for the
+        mcap-denominated value features (ep/sp/bm) — see the market-cap
+        split-adjust fix in `gkx_chars.compute_chars_at_date`.
         """
         return compute_chars_at_date(
             decision_date=decision_date,
@@ -208,6 +212,7 @@ class MLRanker(CrossSectionalStrategy):
             universe=universe,
             ohlcv=ohlcv if self.feature_set == "full" else None,
             shares_outstanding_by_ticker=shares_outstanding_by_ticker,
+            raw_prices=raw_prices,
         )
 
     def _build_training_matrix(
@@ -219,6 +224,7 @@ class MLRanker(CrossSectionalStrategy):
         universe,
         ohlcv: dict | None = None,
         shares_outstanding_by_ticker: dict | None = None,
+        raw_prices: pd.DataFrame | None = None,
     ) -> tuple[pd.DataFrame, pd.Series, pd.DatetimeIndex]:
         """Build the stacked (ticker, rebal_date) training matrix.
 
@@ -238,11 +244,16 @@ class MLRanker(CrossSectionalStrategy):
 
         for rd in training_rebal_dates:
             panel_prices = full_prices.loc[full_prices.index < rd]
+            raw_prices_rd = (
+                raw_prices.loc[raw_prices.index < rd]
+                if raw_prices is not None else None
+            )
             active = universe.active_as_of(rd)
             raw = self._build_features_one_date(
                 rd, panel_prices, active, facts_by_ticker, universe,
                 ohlcv=ohlcv,
                 shares_outstanding_by_ticker=shares_outstanding_by_ticker,
+                raw_prices=raw_prices_rd,
             )
             if raw.empty:
                 continue
@@ -364,10 +375,12 @@ class MLRanker(CrossSectionalStrategy):
 
         ohlcv = train_panel.get("ohlcv")
         shares_by = train_panel.get("shares_outstanding_by_ticker")
+        raw_full = train_panel.get("raw_prices_full")
         X, y, dates = self._build_training_matrix(
             training_rebal_dates, full_prices, full_returns, facts_by_ticker, universe,
             ohlcv=ohlcv,
             shares_outstanding_by_ticker=shares_by,
+            raw_prices=raw_full,
         )
         if X.empty:
             logger.warning(
@@ -428,10 +441,12 @@ class MLRanker(CrossSectionalStrategy):
 
         ohlcv = panel.get("ohlcv")
         shares_by = panel.get("shares_outstanding_by_ticker")
+        raw_prices = panel.get("raw_prices")  # PIT-gated < decision_date by _panel_at
         raw = self._build_features_one_date(
             decision_date, panel_prices, active_tickers, facts_by_ticker, universe,
             ohlcv=ohlcv,
             shares_outstanding_by_ticker=shares_by,
+            raw_prices=raw_prices,
         )
         if raw.empty:
             return pd.Series(dtype=float)

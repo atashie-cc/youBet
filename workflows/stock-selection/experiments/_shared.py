@@ -31,7 +31,7 @@ from youbet.stock.backtester import (
     StockBacktestResult,
 )
 from youbet.stock.costs import StockCostModel
-from youbet.stock.data import fetch_stock_prices
+from youbet.stock.data import fetch_raw_close, fetch_stock_prices
 from youbet.stock.strategies.base import BuyAndHoldETF, CrossSectionalStrategy
 from youbet.stock.universe import Universe
 
