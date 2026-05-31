@@ -117,8 +117,15 @@ def run_backtest(
     facts_by_ticker: dict | None = None,
     benchmark_ticker: str | None = None,
     tbill_rates: pd.Series | None = None,
+    raw_prices: pd.DataFrame | None = None,
 ) -> StockBacktestResult:
-    """Run a strategy through StockBacktester with config-driven defaults."""
+    """Run a strategy through StockBacktester with config-driven defaults.
+
+    `raw_prices` (split-unadjusted close, e.g. from `fetch_raw_close`) is required
+    for a correct market cap on any value/ML strategy — see the market-cap
+    split-adjust fix. If omitted, the backtester falls back to adjusted-price mcap
+    with a warning (contaminated for split names).
+    """
     config = config or load_config()
     bench_ticker = benchmark_ticker or config["benchmark"]["ticker"]
     bt_cfg = make_backtest_config(config)
@@ -151,8 +158,21 @@ def run_backtest(
         cost_model=cost,
         tbill_rates=tbill_rates,
         facts_by_ticker=facts_by_ticker,
+        raw_prices=raw_prices,
     )
     return bt.run(strategy=strategy, benchmark=BuyAndHoldETF(bench_ticker))
+
+
+def load_raw_prices(universe: Universe, prices: pd.DataFrame) -> pd.DataFrame:
+    """Split-unadjusted close aligned to `prices`, for correct market cap.
+
+    Thin wrapper over `fetch_raw_close` (default snapshot dir =
+    stock-selection/data/snapshots/prices, same as `fetch_stock_prices`), so
+    experiments can do `raw_prices=load_raw_prices(uni, prices)` and pass it to
+    `run_backtest` / `StockBacktester`. See the market-cap split-adjust fix
+    (`workflows/stock-selection/research/contamination_rerun_2026-05-30.md`).
+    """
+    return fetch_raw_close(universe, prices)
 
 
 # ---------------------------------------------------------------------------
