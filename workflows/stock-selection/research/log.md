@@ -1241,3 +1241,57 @@ Gate: 0/11 pass
 ### Final final headline (replaces prior)
 
 S&P 500 individual-stock selection on free data does not produce CONFIRMATORY excess returns over SPY across 11 pre-committed strategies (4 rule-based, 3 composites, 2 ML 14-feature, 2 ML 20-feature OHLCV+Amihud). 0/11 pass the locked Holm-controlled gate. **5 of 11 have positive point estimates** (top: value_EY +0.351, ml_gkx_lightgbm_v20 +0.259), with raw p_up < 0.10 for 3 of these (value_EY, lightgbm_v20, quality_ROE). All Holm-adjusted p ≥ 0.70, so multiplicity correction kills any positive claim. The closest one to passing is value_EY (raw p_up=0.064; would marginally pass an exploratory uncorrected gate but not the pre-committed Holm-controlled gate). No CI-lower > 0. The workflow validates that strict pre-committed multiplicity correction + repeated bug-fix-and-rerun cycles can suppress publishable false positives AND publishable false negatives — both directions matter.
+
+
+---
+
+## Session — 2026-05-30 — Contamination rerun (market-cap split-adjust bug) — RESULT-CORRECTING
+
+Triggered by the `individual-stocks-snp500` round-2 finding (mcap = adjusted_price ×
+as-reported_shares understates mcap by the cumulative split factor). Audited + reran
+every contaminated stock-selection strategy. Full detail: `contamination_rerun_2026-05-30.md`.
+
+**Code audit:** bug is in the shared engine. FULL: `rules.ValueScore` (value_EY).
+PARTIAL: `composites.QualityValue` (z_ey 1/3), `composites.ValueProfitability` (z_ey 1/2),
+`gkx_chars._fundamentals_ratios` (ep/sp/bm, 3/20 ML feats). CLEAN: magic_formula (assets-EV
+proxy), quality_roe, gross_profitability, momentum (price ratio), lowvol (returns).
+
+**Method:** raw-price mcap (`unadj_close` = split-adj close × cumulative split factor × PIT
+shares); backtester returns keep adjusted prices, only the signal denominator changes. value_EY
+reconstructed both ways on the identical (date,ticker) set; ML rerun via a raw-price monkeypatch
+on `_fundamentals_ratios` + a date-keyed feature cache. The contaminated value_EY reconstruction
+reproduced +0.361 vs reported +0.351 → method validated; corrected matches the independent
+`earnings_yield_v2` clone (−0.100).
+
+**VERIFIED — value_EY only:**
+- value_earnings_yield **+0.351 → −0.098** (RETRACTED — entire value premium was the bug;
+  high-split mega-caps CMG 50× / NVDA 40× / BKNG 25× / GOOGL,AMZN 20× sorted spuriously "cheap")
+**VERIFIED composites (complete 202-date legs, 10k bootstrap, fidelity check passed via
+magic_formula clean-control recon +0.078 ≈ reported +0.093):**
+- quality_value_zsum +0.068 → **+0.004** (raw p 0.498, CI [−0.388,+0.395], hAdj 1.000) —
+  collapses to ≈0: the value leg was a NET CONTRIBUTOR, so correcting it removes the spurious
+  mega-cap tilt, leaving clean ROE/GM legs (net ~0). FAIL.
+- value_profitability −0.073 → **−0.109** (raw p 0.672, CI [−0.505,+0.290]) — stays negative, FAIL.
+- Refines the earlier "barely moves" guess: the value leg contributed NET POSITIVE to qv (via the
+  bug), so removing it pushes qv to zero — still well short of the gate.
+
+**ML — corrected point estimate NOT measured (walk-forward blocked by RAM starvation: 8GB box,
+~8 zombie python procs held ~3.5GB → numpy MemoryError; first misdiagnosed as suspends. After
+killing zombies + a disk feature cache the MemoryError stopped but the 600s per-call cap +
+restart re-traversal prevented completion); contamination BOUNDED instead.** The 3 affected GKX feats
+(ep/sp/bm) are rank-transformed before the model sees them, so the only channel is their
+cross-sectional rank. Measured per-date Spearman (contam vs correct ranks), 202 dates:
+ep mean 0.841 (74% of dates <0.90), sp 0.870 (72%), bm 0.860 (67%); mean norm rank-shift ~0.08.
+**The value features are MATERIALLY reordered — this REVISES the earlier "3/20 ⇒ small change"
+guess: corrected ML could move meaningfully in an unknown direction.** Contaminated
+lightgbm +0.259 / elasticnet −0.215; corrected genuinely uncertain. Resolve via
+`tmp/ml_one.py {elasticnet,lightgbm}` (saves on finish) under a non-suspending machine.
+- magic_formula +0.093, quality_roe +0.242, gross_prof −0.095, momentum −0.322, lowvol −0.349,
+  piotroski −0.825 (all clean, unchanged)
+
+**Reassessment:** pure value is DEAD on free large-cap PIT data 2010-2026 (post-bug-fix);
+the weak (non-significant) directional survivors are QUALITY + ML. Gate verdict unchanged
+(0/11, power-limited, MDE > +0.5). **The shared engine still contains the bug** — bake raw-price
+mcap into `ValueScore`/composites/`_fundamentals_ratios` before any future value/ML run, else
+re-contamination. Lesson (again): sanity-check value-ratio distributions; never pair
+adjusted prices with as-reported shares.

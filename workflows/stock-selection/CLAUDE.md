@@ -45,9 +45,30 @@ Any change to these requires explicit re-commitment in this file with rationale 
 
 ## Current Status
 
-**WORKFLOW COMPLETE** (2026-04-18 → 2026-04-29). All phases done; no further experiments planned.
+**WORKFLOW COMPLETE** (2026-04-18 → 2026-04-29); **CONTAMINATION-CORRECTED 2026-05-30.**
 
-### R9 FINAL Joint Holm(N=11) — AUTHORITATIVE
+> ⚠️ **Correction (2026-05-30): market-cap split-adjust bug.** `mcap = adjusted_price ×
+> as-reported_shares` understates mcap by each stock's cumulative split factor (yfinance
+> `auto_adjust=True` vs EDGAR as-reported shares), inflating value yields on high-split
+> mega-caps (CMG 50×, NVDA 40×, AMZN 20×). **VERIFIED: `value_earnings_yield` corrects from
+> +0.351 → −0.098 (RETRACTED — the entire value premium was the bug; pure value UNDERPERFORMS
+> SPY).** Affected (code-audited): `value_EY` (full), `quality_value_zsum`/`value_profitability`
+> (z_ey leg, partial), `ml_gkx_*_v20` (ep/sp/bm, 3/20 feats, partial). Clean: `quality_roe`,
+> `magic_formula` (assets-EV proxy), `gross_profitability`, momentum, lowvol. **VERIFIED composites
+> (complete 202-date legs, fidelity-checked via magic_formula recon +0.078≈+0.093): `quality_value_zsum`
+> +0.068→+0.004 (collapses to ≈0 — the value leg was a net contributor; clean ROE/GM legs net ~0),
+> `value_profitability` −0.073→−0.109 — both fail the gate by a wide margin.** ML corrected values NOT
+> measured (walk-forward blocked by RAM starvation — 8GB box, numpy MemoryError; not science); contamination BOUNDED instead — the 3
+> affected feats (ep/sp/bm) are MATERIALLY reordered (per-date Spearman contam-vs-correct ~0.85, ~70% of
+> dates <0.90), so corrected ML is genuinely uncertain, NOT "small change" (contaminated lightgbm +0.259 /
+> elasticnet −0.215). **ROBUST: gate stays 0/11; directional positives drop 5/11 → 2–4/11 (value_EY flips
+> negative; quality_value_zsum collapses to ≈0; only CONFIRMED survivors quality_roe +0.242 and
+> magic_formula +0.093, both clean; lightgbm unresolved); pure value is dead; the robust directional edge
+> is quality, ML unresolved.** Bug is in committed engine code
+> (`rules.ValueScore`, `composites`, `gkx_chars._fundamentals_ratios`) — NOT yet fixed.
+> See `research/contamination_rerun_2026-05-30.md`. The R9 table below is the PRE-correction record.
+
+### R9 FINAL Joint Holm(N=11) — AUTHORITATIVE (pre-correction; see 2026-05-30 banner)
 
 | rank | phase | strategy | exSh | 90% CI | raw p_up |
 |---|---|---|---:|---|---:|
@@ -95,7 +116,7 @@ Any change to these requires explicit re-commitment in this file with rationale 
 - R6 contamination-checks-before-claim policy (validated 4 times: R3, R5, R7, R9)
 - R9 lesson: **bug-audit-and-rerun catches both false positives AND false negatives**; contamination-checks alone aren't sufficient when implementation has structural-NaN bugs
 
-### Honest final headline
-S&P 500 individual-stock selection on free data does NOT produce confirmatory excess returns over SPY across 11 pre-committed strategies. 0/11 pass the locked Holm-controlled gate. 5/11 point-estimate positive (top: value_EY +0.351), but multiplicity correction kills any positive claim. **The closest one to passing is value_EY (raw p_up=0.064; would marginally pass an exploratory uncorrected gate but not the pre-committed Holm-controlled gate).** No CI-lower > 0 anywhere.
+### Honest final headline (CONTAMINATION-CORRECTED 2026-05-30)
+S&P 500 individual-stock selection on free data does NOT produce confirmatory excess returns over SPY across 11 pre-committed strategies. **0/11 pass the locked Holm-controlled gate (robustly unchanged after correction).** **The previously-headlined value_EY (+0.351, "closest to passing") was a market-cap split-adjust artifact and corrects to −0.098 (VERIFIED) — pure value UNDERPERFORMS SPY.** Directional positives drop from 5/11 to 2–4/11: value_EY flips negative and quality_value_zsum collapses to ≈0 (+0.004, VERIFIED — its prior +0.068 was partly the value bug). Only CONFIRMED survivors: quality_roe_ttm (+0.242, clean) and magic_formula (+0.093, clean); ml_gkx_lightgbm_v20 (+0.259 contaminated; corrected unmeasured and genuinely uncertain — its 3 contaminated features are materially reordered) is unresolved. The robust directional edge that remains is QUALITY, ML unresolved, not value. No CI-lower > 0 anywhere; pure value is dead. See `research/contamination_rerun_2026-05-30.md`.
 
 See `research/log.md` for full session-by-session details (1200+ lines).
