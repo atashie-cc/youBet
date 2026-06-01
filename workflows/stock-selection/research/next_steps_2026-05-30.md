@@ -166,9 +166,19 @@ feature study). If it collapses toward/below zero → the only survivors are qua
 
 ---
 
-## Phase C — Quality-only composite (next pre-registered strategy)
+## Phase C — Quality-only composite — DONE (2026-05-31): FAIL, −0.057
 
-**Rationale.** Pure value is dead post-correction; the only confirmed directional
+**RESULT: quality_composite_v1 ExSharpe = −0.057, raw_p 0.596, 90% CI [−0.441,+0.349],
+strat Sharpe 0.795 vs SPY 0.867 — GATE FAIL** (complete 202-date panel, 17 folds,
+zero cash-hold warnings; pre-registered `precommit/phase8_quality.json` + committed
+`7adab8a` before running; result 53f6736). **CONTRADICTS the pre-registered
++0.15..+0.30** — the ROE edge (+0.242 standalone) does NOT survive naive equal-weight
+quality combination; it dilutes to mildly negative. Quality, like value, yields no
+free-data edge beating SPY; gate stays 0/N. Deferred (compute-bound): the precommit
+leave-one-in decomposition (ROE-only / GP-A-only / magic-only) to attribute the
+dilution. Runners: `experiments/phase8_{quality,precompute,run_from_panel}.py`.
+
+**Rationale (as written before the run).** Pure value is dead post-correction; the only confirmed directional
 survivors are `quality_roe_ttm` (+0.242) and `magic_formula` (+0.093) — both clean,
 both quality. A quality composite recombines exactly these, uses free PIT data, and
 is **immune to the mcap bug** (no price-denominated value leg).
