@@ -1307,19 +1307,21 @@ ROE_ttm + GP/A + magic-formula combined rank, >=2-of-3 signals), pre-registered 
 walk-forward (60/24/12, monthly, top-decile, T+1, costs, T-bill, SPY) + 10k block
 bootstrap via the resumable-precompute -> fast-lookup pattern.
 
-**AUTHORITATIVE RESULT (complete 203-date panel 2009-08..2026-05, 575 tickers,
-59,133 rows; 17 folds; ZERO cash-hold warnings; returns 2010-01..2026-05):**
+**AUTHORITATIVE RESULT (complete 202-date panel 2009-08..2026-05, 575 tickers,
+61,156 panel rows; 17 folds; ZERO cash-hold warnings; returns 2010-01..2026-05,
+4125 days; gate recomputed directly from the saved returns parquet via
+evaluate_gate):**
 
-  quality_composite_v1  ExSharpe = **+0.012**  raw_p 0.451  hAdj 0.451
-  90% CI [-0.367, +0.390]  strat Sharpe 0.875 vs SPY 0.867  **GATE = FAIL**
+  quality_composite_v1  ExSharpe = **-0.057**  raw_p 0.596  hAdj 0.596
+  90% CI [-0.441, +0.349]  strat Sharpe 0.795 vs SPY 0.867  **GATE = FAIL**
 
-**The composite is statistically indistinguishable from SPY (~0 excess).** This
-still FAILS the gate (needs >+0.20 AND significant AND CI-lower>0) and **contradicts
-the pre-registered +0.15..+0.30 expectation** — it came in flat, well below its
-strongest constituent (quality_roe +0.242 standalone). Honest finding: **the ROE
+**The composite slightly UNDERPERFORMS SPY (excess ~0, CI spans zero).** It FAILS the
+gate (needs >+0.20 AND significant AND CI-lower>0) and **contradicts the
+pre-registered +0.15..+0.30 expectation** — it came in mildly negative, well below
+its strongest constituent (quality_roe +0.242 standalone). Honest finding: **the ROE
 directional edge does NOT survive naive equal-weight combination** — diluting ROE to
 1/3 and adding GP/A (-0.095 standalone) + the z-scored magic-rank produces a
-top-decile basket that merely tracks SPY. The strongest corrected survivor
+top-decile basket that tracks-to-slightly-below SPY. The strongest corrected survivor
 (quality_roe +0.242) is therefore FRAGILE / not robust to portfolio combination —
 consistent with a power-limited point estimate, not a deployable signal. **Net:
 quality, like value, yields no free-data edge that beats SPY. Gate stays 0/N across
@@ -1327,11 +1329,13 @@ the entire stock-selection program.**
 
 PROCESS NOTE (discipline): three earlier intermediate readings (-0.246, -0.103,
 -0.090) were on INCOMPLETE panels (161/185 dates) whose cash-held 2025 tail dragged
-the number negative; a premature log entry claiming "-0.103 on complete panel" was
-written then RETRACTED before commit. Only the complete-panel, zero-cash-warning
-run (+0.012, recomputed directly from the saved returns parquet via evaluate_gate)
-is authoritative. Lesson reinforced: verify panel completeness + zero cash-hold
-warnings before recording any backtest number.
+the number; a premature log entry claiming "-0.103 on complete panel" was written
+then RETRACTED before commit. SEPARATELY, the first commit of THIS entry (`6cf3e91`)
+stated "+0.012" — a transcription error with no run behind it; corrected here to the
+verified -0.057 (re-derived from the saved parquet). Only the complete-panel,
+zero-cash-warning, parquet-recomputed -0.057 is authoritative. Lesson reinforced:
+verify panel completeness + zero cash-hold warnings AND re-derive the number from the
+artifact before recording it.
 
 Deferred (compute-bound on 8 GB box): the precommit leave-one-in decomposition
 (ROE-only / GP-A-only / magic-only through the same panel) to attribute the
